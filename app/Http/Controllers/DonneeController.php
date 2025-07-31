@@ -41,7 +41,7 @@ class DonneeController extends Controller
             'terrain' => $terrain,
             'terrains' => $terrains,
             'references_usages' => ReferenceUsage::with('terrain')->get(), 
-                        'evaluations_batis' => EvaluationBati::with('terrain')->get(), 
+            'evaluations_batis' => EvaluationBati::with('terrain')->get(), 
         ]);
     }
 

@@ -22,27 +22,43 @@ class GeometreController extends Controller
         return Inertia::render("geometre/index");
     }
   
+    // public function create(Request $request)
+    // {
+    //     // Récupération du dossier à partir du numéro en session
+    //     $dossier = Dossier::where('txt_num_dossier', session('txt_num_dossier'))->first();
+
+    //     // Vérifie que le dossier existe avant de chercher le terrain
+    //     $terrain = $dossier ? Terrain::where('txt_num_dossier', $dossier->id)->first() : null;
+
+    //     return Inertia::render('geometre/create', [
+    //         'terrain' => $terrain,
+    //         // 'txt_nicad' => $terrain?->txt_nicad,
+    //         // 'nbr_surface' => $terrain?->nbr_surface,
+    //         'nbr_surface' => $request->session()->get('nbr_surface', 0),
+    //         'txt_nicad' => $request->session()->get('txt_nicad', ''),
+    //         'txt_num_dossier' => $request->session()->get('txt_num_dossier', ''),
+    //     ]);
+    // } 
     public function create()
     {
-        // Récupération du dossier à partir du numéro en session
-        $dossier = Dossier::where('txt_num_dossier', session('txt_num_dossier'))->first();
+        // Récupère le dernier dossier créé (ou modifie cette logique selon ton besoin)
+        $dossier = Dossier::latest()->first();
 
-        // Vérifie que le dossier existe avant de chercher le terrain
-        $terrain = $dossier ? Terrain::where('txt_num_dossier', $dossier->id)->first() : null;
+        // Vérifie que le dossier existe
+        if (!$dossier) {
+            return redirect()->back()->with('error', 'Aucun dossier trouvé.');
+        }
+
+        // Récupère le terrain associé à ce dossier
+        $terrain = Terrain::where('txt_num_dossier', $dossier->txt_num_dossier)->first();
 
         return Inertia::render('geometre/create', [
-            'terrain' => $terrain,
+            'txt_num_dossier' => $dossier->txt_num_dossier,
             'txt_nicad' => $terrain?->txt_nicad,
             'nbr_surface' => $terrain?->nbr_surface,
         ]);
     }
  
-    public function show()
-    {
-        $Niveau = 0; // Exemple de récupération d'un nombre depuis la base de données
-        return view('geometre/create', compact('Niveau'));
-    }
-     
     public function verify(Request $request)
     {
         $request->validate([
@@ -50,7 +66,7 @@ class GeometreController extends Controller
         ]);
     
         $dossier = Dossier::where('txt_num_dossier', $request->txt_num_dossier)->first();
-        $terrain = Terrain::where('txt_num_dossier', $request->txt_num_dossier)->first();
+        $terrain = $dossier ? Terrain::where('txt_num_dossier', $dossier->id)->first() : null;
  
         if ($dossier) {
             // Pas de redirection — juste retour d'un flag JSON
@@ -67,7 +83,15 @@ class GeometreController extends Controller
             ], 422);
         }
     } 
- 
+
+    // vérifie si le nicad existe dans la base de données 
+    public function verifierNicad($nicad)
+    {
+        $existe = ReferenceUsage::where('txt_nicad', $nicad)->exists();
+
+        return response()->json(['existe' => $existe]);
+    } 
+
      // PAGES GEOMETRE
     public function store(Request $request)
     {

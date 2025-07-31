@@ -26,9 +26,9 @@ const submit = () => {
         <Head title="Forgot Password" />
 
         <div class="mb-4 text-sm text-primary">
-            Forgot your password ? No problem. Just let us know your email
-            address and we will email you a password reset link that will allow
-            you to choose a new one.
+            Vous avez oublié votre mot de passe ?
+            Indiquez votre adresse e-mail et nous vous enverrons un 
+            lien de réinitialisation qui vous permettra d’en choisir un nouveau. 
         </div>
 
         <div
@@ -63,7 +63,7 @@ const submit = () => {
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
                 >
-                    Email Password Reset Link
+                    Lien de réinitialisation du mot de passe par e-mail
                 </PrimaryButton>
             </div>
         </form>

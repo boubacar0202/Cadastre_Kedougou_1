@@ -16,10 +16,7 @@ return new class extends Migration
             $table->id();
             $table->string('rd_immatriculation_terrain');
             $table->string('slt_dependant_domaine')->nullable();
-            $table->string('ussu_bornage')->nullable();
-            $table->string('txt_titre_mere')->nullable();
-            $table->string('txt_num_titre')->nullable(); 
-            $table->string('txt_appartement')->nullable(); 
+            $table->string('ussu_bornage')->nullable();  
             $table->string('slt_lf')->nullable();
             $table->string('txt_num_requisition')->nullable();
             $table->string('txt_surface_bornage')->nullable();

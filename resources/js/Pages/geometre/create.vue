@@ -9,11 +9,14 @@ import { reactive, ref, watch, watchEffect, computed } from 'vue';
 import DefaultLayout from "@/Layouts/DefaultLayout.vue"; 
 import { useToast } from 'maz-ui'
 import axios from 'axios'
-
+import { usePage } from '@inertiajs/vue3';
+ 
 defineOptions({ layout: DefaultLayout });
 
 const toast = useToast();
 const txt_num_dossier = ref(''); 
+const txt_nicad = ref('')
+const nbr_surface = ref(0)
 const formVisible = ref(false); 
 const maxOccupants = 25
 const maxOccupantsBP = 4;
@@ -22,18 +25,19 @@ const maxOccupantsCL = 3;
 const maxOccupantsAP = 3;
 
 const currentCat = ref('');
+const page = usePage();
 
-const props = defineProps({
-    terrain: Object,
-    txt_nicad: String,
-    nbr_surface: Number,
-}); 
-  
+// const props = defineProps({
+//     terrain: Object,
+//     txt_nicad: String,
+//     nbr_surface: Number,
+// }); 
+
 const form = useForm({
     //recupèration
     txt_num_dossier:"",
-    txt_nicad: props.txt_nicad,
-    nbr_surface: props.nbr_surface,
+    txt_nicad:  "",
+    nbr_surface:  "",
     // reference usage 
     slt_usage:'',
     slt_residence:'',
@@ -183,8 +187,7 @@ function removeBlock(i) {
 function addBlockBP() {
     if (form.occupantsBP.length < maxOccupantsBP) {
         form.occupantsBP.push({
-            id: Date.now() + Math.random(),
-            // chk_bati_principalTG: '',
+            id: Date.now() + Math.random(), 
             slt_dependant_domaineTG: '',
             nbr_prix_metre_carreTG: '',
             nbr_surface_bati_solTG: '',
@@ -312,7 +315,7 @@ watchEffect(() => {
 watch(currentCat, (newVal) => {
   form.currentCat = newVal
 })
-
+ 
 const rechercherDossier = async () => {
     try {
         const { data } = await axios.post('/dossier/verify', {
@@ -320,32 +323,41 @@ const rechercherDossier = async () => {
         });
 
         if (data.exists) {
-            formVisible.value = true;
-            form.txt_num_dossier = txt_num_dossier.value;
-            toast.success(data.success);
+        // ✅ Afficher le formulaire
+        formVisible.value = true;
 
-            // ✅ Récupérer les infos du terrain directement ici
-            const terrain = data.terrain;
+        // ✅ Affecter les données récupérées du dossier
+        form.txt_num_dossier = txt_num_dossier.value;
 
-            form.txt_nicad = terrain?.txt_nicad ?? '';
-            form.nbr_surface = terrain?.nbr_surface ?? 0;
+        // ✅ Affecter les données du terrain s'il existe
+        const terrain = data.terrain;
 
-            console.log("Terrain chargé :", terrain);
+        form.txt_nicad = terrain?.txt_nicad ?? '';
+        form.nbr_surface = terrain?.nbr_surface ?? 0;
+
+        // ✅ Message de confirmation
+        toast.success(data.success);
+
+        console.log("✅ Terrain chargé :", terrain);
+        } else {
+        formVisible.value = false;
+        toast.error("Dossier introuvable.");
         }
     } catch (err) {
         formVisible.value = false;
-
-        console.error("Erreur complète :", err);
+        console.error("❌ Erreur complète :", err);
 
         if (err.response?.status === 422 && err.response.data.errors) {
-            Object.values(err.response.data.errors).forEach(msg => toast.error(msg));
+        Object.values(err.response.data.errors).forEach(msg => toast.error(msg));
         } else {
         toast.error("Une erreur est survenue lors de la vérification.");
         }
     }
 };
- 
+  
 //  Calculer Montant Total Loyer 
+ 
+
 const nbr_montantLoyerTotal = computed(() => {
     return form.occupants.reduce((total, occupant) => {
         const montant = parseFloat(occupant.nbr_montantLoyerTG) || 0;
@@ -374,6 +386,7 @@ watchEffect(() => {
         form.nbr_surface_bati_solPR = surface; // Ou remettre à 0 si tu préfères        
     }
 });
+
 // Verification saisis nbr_surface_bati_solTG
 function verifierSurfaceOccupant(occupant) {
     const surfaceTotale = Number(form.nbr_surface);
@@ -602,17 +615,31 @@ watchEffect(() => {
     form.nbr_valeurLocative = nbr_valeurLocative.value;
 });
 
-const submitForm = () => {
+
+const submitForm = async () => {
+  try {
+    const response = await axios.get(`/verifier-nicad/${form.txt_nicad}`)
+
+    if (response.data.existe) {
+      toast.error('Ce Terrain est déjà évaluer.  Vérifier le N° de terrain')
+      return
+    }
+
     form.post(route('geometre.store'), {
-        onSuccess: (page) => {
-        toast.success(page.props.flash?.success || 'Opération réussie !')
+      onSuccess: (page) => {
+        toast.success(page.props.flash?.success || 'Opération réussie !')
         Inertia.reload()
-        },
-        onError: (errors) => {
+      },
+      onError: (errors) => {
         Object.values(errors).forEach(e => toast.error(e))
-        }
+      }
     })
-} 
+  } catch (error) {
+    toast.error('Erreur lors de la vérification du NICAD.')
+    console.error(error)
+  }
+}
+
 </script>
 
 <template>
@@ -623,17 +650,17 @@ const submitForm = () => {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">
+            <h2 class="text-xl font-semibold leading-tight text-primary-txt">
                 Enquête Cadastrale 
             </h2>
         </template> 
         <div class="py-12">
             <div class="flex justify-center">
-                <div class="w-full max-w-6xl">
+                <div class="w-full max-w-7xl">
 
-                    <div class="bg-white shadow-md rounded-lg">
-                        <div class="p-4 border-b bg-gray-100">
-                            <h1 class="text-lg font-semibold">Veillez vérifiier le numéro de dossier !</h1>
+                    <div class="bg-white border shadow-md rounded-lg">
+                        <div class="p-4 border-r bg-primary">
+                            <h1 class="text-lg text-white font-semibold">Veillez vérifiier le numéro de dossier !</h1>
                         </div>
                         <div class="py-6">
                             <!-- Wrapper flex pour centrer -->
@@ -647,8 +674,8 @@ const submitForm = () => {
                                             type="text"
                                             name="txt_num_dossier" 
                                             aria-label="Rechercher"
-                                            class="h-10 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 outline-offset-1 
-                                                outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-primary sm:text-sm/6"
+                                            class="h-10 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt outline outline-1 outline-offset-1 
+                                                outline-primary-only placeholder:text-gray-400 focus:outline-2 focus:outline-primary sm:text-sm/6"
                                             placeholder="Entrez le numéro du dossier" 
                                         />
                                     </div>
@@ -656,7 +683,7 @@ const submitForm = () => {
                                     <MazBtn 
                                         type="button" 
                                         title="Rechercher"
-                                        @click="rechercherDossier"
+                                        @click="rechercherDossier" 
                                         class="h-8 w-28 text-white bg-gradient-to-r from-primary via-primary-dark 
                                         to-primary hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
                                         focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 
@@ -670,30 +697,30 @@ const submitForm = () => {
                         </div>
                     </div><br>
  
-                    <div v-if="formVisible" class="bg-white shadow-md rounded-lg">
+                    <div v-if="formVisible" class="bg-white border shadow-md rounded-lg">
                         <!-- En-tête du formulaire -->
-                        <div class="p-4 border-b bg-gray-100">
-                            <h1 class="text-lg font-semibold">Formulaire</h1>
+                        <div class="p-4 border border-b bg-primary-menu">
+                            <h1 class="text-lg text-white font-semibold">Formulaire de renseignement Cadastrale</h1>
                         </div>
                         <!-- Corps du formulaire -->
                         <form @submit.prevent="submitForm" class="space-y-4">
                             <div class="p-6">
                                 <!--    References usages -->
-                                <h5 class="text-lg font-bold">Réferences Usage</h5><br>
+                                <h5 class="text-lg text-primary-txt font-bold">Réferences Usage</h5>
                                 <div class="mb-6">
                                     <div class="border-b">  
                                         <div class="mb-4">
                                             <div class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                                                 <div class="sm:col-span-2">
                                                     <div >
-                                                        <label for="Occupant" class="block text-sm/6 font-medium text-gray-900">Usage</label>
+                                                        <label for="Occupant" class="block text-sm/6 font-medium text-primary-txt">Usage</label>
                                                         <select 
                                                             v-model="form.slt_usage"   
                                                             required
                                                             name = "slt_usage"
                                                             id="Occupant"
-                                                            class="h-8 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                            class="h-8 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                             @change="handleSelectChange"
                                                         >
@@ -740,13 +767,13 @@ const submitForm = () => {
                                                 </div>
                                                 <div class="sm:col-span-4">
                                                     <div >
-                                                        <label for="Residence" class="block text-sm/6 font-medium text-gray-900">Type de residence</label>
+                                                        <label for="Residence" class="block text-sm/6 font-medium text-primary-txt">Type de residence</label>
                                                         <select type="select" 
                                                             v-model="form.slt_residence"  
                                                             required
                                                             name="slt_residence" id="Residence" 
-                                                            class="h-8 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                            class="h-8 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                         >
                                                             <option selected disabled></option>
@@ -761,10 +788,10 @@ const submitForm = () => {
                                 </div>
 
                                 <!--    References usages -->
-                                <h5 class="text-lg font-bold">Réferences Occupant</h5><br>
+                                <h5 class="text-lg text-primary-txt font-bold mt-8">Réferences Occupant</h5>
                                 <div class="mb-6">
                                     <div class="border-b">  
-                                        <div class="mb-4">
+                                        <div class="mb-4"> 
                                             <div  class="w-full flex flex-wrap justify-between gap-4 mt-4"> 
                                                 <TransitionGroup  name="slide-fade" tag="div">
                                                     <div 
@@ -775,7 +802,7 @@ const submitForm = () => {
                                                         <div  class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                                                             <!-- OCCUPANT -->
                                                             <div class="sm:col-span-1">
-                                                                <label :for="'NomOccupant_${i}'" class="block text-sm/6 font-medium text-gray-900">Nom Occupant {{ i }}</label>
+                                                                <label :for="'NomOccupant_${i}'" class="block text-sm/6 font-medium text-primary-txt">Nom Occupant {{ i }}</label>
                                                                 <div>  
                                                                     <input 
                                                                     autocomplete="off"
@@ -783,13 +810,13 @@ const submitForm = () => {
                                                                     type="text" 
                                                                     v-model="occupant.txt_nomOccupantTG"
                                                                     :id="'NomOccupant_${i}'"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>   
                                                             </div> 
                                                             <div class="sm:col-span-1">
-                                                                <label :for="'NunAppartement_${i}'" class="block text-sm/6 font-medium text-gray-900">N° Appart</label>
+                                                                <label :for="'NunAppartement_${i}'" class="block text-sm/6 font-medium text-primary-txt">N° Appart</label>
                                                                 <div>
                                                                     <input 
                                                                     autocomplete="off"
@@ -797,102 +824,102 @@ const submitForm = () => {
                                                                     type="text" 
                                                                     v-model="occupant.txt_numAppartementTG"
                                                                     :id="'NunAppartement_${i}'"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <!-- ACTIVITE -->
                                                             <div class="sm:col-span-1">
-                                                                <label :for="'Activite_${i}'" class="block text-sm/6 font-medium text-gray-900">Activite</label>
+                                                                <label :for="'Activite_${i}'" class="block text-sm/6 font-medium text-primary-txt">Activite</label>
                                                                 <div>
                                                                     <input type="text"
                                                                     autocomplete="off"
                                                                     autocorrect="off" 
                                                                     v-model="occupant.txt_activiteTG"
                                                                     :id="'Activite_${i}'"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <!-- NINEA -->
                                                             <div class="sm:col-span-1">
-                                                                <label :for="'Ninea_${i}'" class="block text-sm/6 font-medium text-gray-900">Ninea </label>
+                                                                <label :for="'Ninea_${i}'" class="block text-sm/6 font-medium text-primary-txt">Ninea </label>
                                                                 <div>
                                                                     <input type="text" 
                                                                     autocomplete="off"
                                                                     autocorrect="off" 
                                                                     v-model="occupant.txt_nineaTG"
                                                                     :id="'Ninea_${i}'"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <!-- TELEPHONE -->
                                                             <div class="sm:col-span-1">
-                                                                <label :for="'Telephone_${i}'" class="block text-sm/6 font-medium text-gray-900">Téléphone </label>
+                                                                <label :for="'Telephone_${i}'" class="block text-sm/6 font-medium text-primary-txt">Téléphone </label>
                                                                 <div>
                                                                     <input type="tel" 
                                                                     autocomplete="off"
                                                                     autocorrect="off" 
                                                                     v-model="occupant.tel_telephoneTG"
                                                                     :id="'Telephone_${i}'"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1">
-                                                                <label :for="'Montant_loyer_${i}'" class="block text-sm/6 font-medium text-gray-900">Mnt Loyer</label>
+                                                                <label :for="'Montant_loyer_${i}'" class="block text-sm/6 font-medium text-primary-txt">Mnt Loyer</label>
                                                                 <div>
                                                                     <input type="number"  
                                                                     autocomplete="off"
                                                                     autocorrect="off"  
                                                                     v-model="occupant.nbr_montantLoyerTG"
                                                                     :id="'Montant_loyer_${i}'"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1">
-                                                                <label :for="'DateNaissnace_${i}'" class="block text-sm/6 font-medium text-gray-900">Date-lieu Nais</label>
+                                                                <label :for="'DateNaissnace_${i}'" class="block text-sm/6 font-medium text-primary-txt">Date-lieu Nais</label>
                                                                 <div>
                                                                     <input type="text" 
                                                                     autocomplete="off"
                                                                     autocorrect="off" 
                                                                     v-model="occupant.txt_dateLieuNaissanceTG"
                                                                     :id="'DateNaissnace_${i}'"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1">
-                                                                <label :for="'CNIPasseport_${i}'" class="block text-sm/6 font-medium text-gray-900">CNI/Pasprt</label>
+                                                                <label :for="'CNIPasseport_${i}'" class="block text-sm/6 font-medium text-primary-txt">CNI/Pasprt</label>
                                                                 <div>
                                                                     <input type="text" 
                                                                     autocomplete="off"
                                                                     autocorrect="off" 
                                                                     v-model="occupant.txt_cniPasseportTG"
                                                                     :id="'CNIPasseport_${i}'"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1">
-                                                                <label :for="'DateDelivrance_${i}'" class="block text-sm/6 font-medium text-gray-900">Date Déliv</label>
+                                                                <label :for="'DateDelivrance_${i}'" class="block text-sm/6 font-medium text-primary-txt">Date Déliv</label>
                                                                 <div>
                                                                     <input type="date" 
                                                                     autocomplete="off"
                                                                     autocorrect="off" 
                                                                     v-model="occupant.dt_dateDelivranceTG"
                                                                     :id="'DateDelivrance_${i}'"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -924,45 +951,40 @@ const submitForm = () => {
                                                         Retirer
                                                     </button>
                                                 </div>
+
+                                                <div  class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-8">
+                                                    <div class="sm:col-span-2">
+                                                        <label for="MontantLoyerTotal" class="block text-sm/6 font-medium text-primary-txt">Montant Loyer Total</label>
+                                                        <div>
+                                                            <input type="number" 
+                                                            v-model="nbr_montantLoyerTotal"
+                                                            readonly
+                                                            id="MontantLoyerTotal"  
+                                                            class="h-8 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-form 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
+                                                        </div>
+                                                    </div>
+                                                    <div class="sm:col-span-2">
+                                                        <label for="TVATotal" class="block text-sm/6 font-medium text-primary-txt">TVA Totale</label>
+                                                        <div>
+                                                            <input type="number" 
+                                                            v-model="nbr_TVATotal"
+                                                            readonly
+                                                            id="TVATotal"  
+                                                            class="h-8 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-form 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>  
                                     </div>
-                                </div>
-                                <div class="mb-6">
-                                    <div class="border-b">  
-                                        <div class="mb-4">
-                                            <div  class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                                                <div class="sm:col-span-2">
-                                                    <label for="MontantLoyerTotal" class="block text-sm/6 font-medium text-gray-900">Montant Loyer Total</label>
-                                                    <div>
-                                                        <input type="number" 
-                                                        v-model="nbr_montantLoyerTotal"
-                                                        readonly
-                                                        id="MontantLoyerTotal"  
-                                                        class="h-8 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
-                                                    </div>
-                                                </div>
-                                                <div class="sm:col-span-2">
-                                                    <label for="TVATotal" class="block text-sm/6 font-medium text-gray-900">TVA Totale</label>
-                                                    <div>
-                                                        <input type="number" 
-                                                        v-model="nbr_TVATotal"
-                                                        readonly
-                                                        id="TVATotal"  
-                                                        class="h-8 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                </div> 
                                 
                                 <!-- evaluation de limeuble-->
-                                <h5 class="text-lg font-bold">Evaluation de l'immeuble</h5><br>
+                                <h5 class="text-lg text-primary-txt font-bold mt-8">Evaluation de l'immeuble</h5><br>
                                 <div class="mb-6">
                                     <div class="border-b">
                                         <ul class="flex justify-center text-sm font-medium text-gray-500 divide-x divide-gray-200 dark:divide-gray-700">
@@ -972,8 +994,8 @@ const submitForm = () => {
                                                     type="button"
                                                     @click="setActiveTab('terrain')"
                                                     :class="{
-                                                        'text-primary border-b-2 border-primary': activeTab === 'terrain',
-                                                        'hover:text-gray-700 hover:border-gray-300': activeTab !== 'terrain'
+                                                        'text-primary border-b-8 border border-primary': activeTab === 'terrain',
+                                                        'hover:text-lg text-primary-txt hover:border-primary': activeTab !== 'terrain'
                                                     }"
                                                     class="inline-block w-full p-4"
                                                 >
@@ -986,8 +1008,8 @@ const submitForm = () => {
                                                     type="button"
                                                     @click="setActiveTab('bati')"
                                                     :class="{
-                                                        'text-primary border-b-2 border-primary': activeTab === 'bati',
-                                                        'hover:text-gray-700 hover:border-gray-300': activeTab !== 'bati'
+                                                        'text-primary border-b-8 border border-primary': activeTab === 'bati',
+                                                        'hover:text-lg text-primary-txt hover:border-primary': activeTab !== 'bati'
                                                     }"
                                                     class="inline-block w-full p-4"
                                                 >
@@ -1000,8 +1022,8 @@ const submitForm = () => {
                                                     type="button"
                                                     @click="setActiveTab('Cours_amenagees')"
                                                     :class="{
-                                                        'text-primary border-b-2 border-primary': activeTab === 'Cours_amenagees',
-                                                        'hover:text-gray-700 hover:border-gray-300': activeTab !== 'Cours_amenagees'
+                                                        'text-primary border-b-8 border border-primary': activeTab === 'Cours_amenagees',
+                                                        'hover:text-lg text-primary-txt hover:border-primary': activeTab !== 'Cours_amenagees'
                                                     }"
                                                     class="inline-block w-full p-4"
                                                 >
@@ -1014,8 +1036,8 @@ const submitForm = () => {
                                                     type="button"
                                                     @click="setActiveTab('cloture')"
                                                     :class="{
-                                                        'text-primary border-b-2 border-primary': activeTab === 'cloture',
-                                                        'hover:text-gray-700 hover:border-gray-300': activeTab !== 'cloture'
+                                                        'text-primary border-b-8 border border-primary': activeTab === 'cloture',
+                                                        'hover:text-lg text-primary-txt hover:border-primary': activeTab !== 'cloture'
                                                     }"
                                                     class="inline-block w-full p-4"
                                                 >
@@ -1028,8 +1050,8 @@ const submitForm = () => {
                                                     type="button"
                                                     @click="setActiveTab('amenagement')"
                                                     :class="{
-                                                        'text-primary border-b-2 border-primary': activeTab === 'amenagement',
-                                                        'hover:text-gray-700 hover:border-gray-300': activeTab !== 'amenagement'
+                                                        'text-primary border-b-8 border border-primary': activeTab === 'amenagement',
+                                                        'hover:text-lg text-primary-txt hover:border-primary': activeTab !== 'amenagement'
                                                     }"
                                                     class="inline-block w-full p-4"
                                                 >
@@ -1048,24 +1070,25 @@ const submitForm = () => {
  
                                                     <div class="sm:col-span-2">
                                                         <div class="mt-6">   
-                                                            <label for="Superficie_totale" class="block text-sm/6 font-medium text-gray-900">Superficie Totale Terrain</label>
+                                                            <label for="Superficie_totale" class="block text-sm/6 font-medium text-primary-txt">Superficie Totale Terrain</label>
                                                             <div>
                                                                 <input  
-                                                                    type="number"  
-                                                                    v-model="form.nbr_surface"
+                                                                    type="number"   
                                                                     name="nbr_surface"
+                                                                    v-model="form.nbr_surface" 
                                                                     readonly
                                                                     id="nbr_surface" 
-                                                                    class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                             </div>
+ 
                                                         </div>
                                                     </div>
                                                 
                                                     <div class="sm:col-span-2">
                                                         <div class="mt-6">
-                                                            <label for="Superficie_bati_sol" class="block text-sm/6 font-medium text-gray-900">Superficie Bâti au sol</label>
+                                                            <label for="Superficie_bati_sol" class="block text-sm/6 font-medium text-primary-txt">Superficie Bâti au sol</label>
                                                             <div>
                                                                 <input 
                                                                 type="number" 
@@ -1075,8 +1098,8 @@ const submitForm = () => {
                                                                 id="Superficie_bati_sol" 
                                                                 :min="0"
                                                                 :max="form.nbr_surface"
-                                                                class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                             </div>
                                                         </div>
@@ -1084,15 +1107,15 @@ const submitForm = () => {
                                             
                                                     <div class="sm:col-span-2">
                                                         <div class="mt-6">
-                                                            <label for="Secteur" class="block text-sm/6 font-medium text-gray-900">Secteur</label>
+                                                            <label for="Secteur" class="block text-sm/6 font-medium text-primary-txt">Secteur</label>
                                                             <div> 
                                                                 <select type="select" 
                                                                 v-model="form.slt_secteur" 
                                                                 required
                                                                 name="slt_secteur" 
                                                                 id="Secteur" 
-                                                                class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                     <option selected desabled></option>
                                                                     <option :value="1">1 (3000 FCFA/m²)</option>
@@ -1105,29 +1128,29 @@ const submitForm = () => {
                                                 
                                                     <div class="sm:col-span-2">
                                                         <div class="mt-6">
-                                                            <label for="Prix_metre_carre" class="block text-sm/6 font-medium text-gray-900">Prix mètre Carré</label>
+                                                            <label for="Prix_metre_carre" class="block text-sm/6 font-medium text-primary-txt">Prix mètre Carré</label>
                                                             <div>
                                                                 <input 
                                                                 type="number" 
                                                                 v-model="form.nbr_prix_metre_carre"  
                                                                 readonly
                                                                 id="Prix_metre_carre"  
-                                                                class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                             </div>
                                                         </div>
                                                     </div>   
                                                     <div class="sm:col-span-2">
                                                         <div class="mt-6"> 
-                                                            <label for="Valeur_terrain" class="block text-sm/6 font-medium text-gray-900">Valeur du Terrain</label>
+                                                            <label for="Valeur_terrain" class="block text-sm/6 font-medium text-primary-txt">Valeur du Terrain</label>
                                                             <div>
                                                                 <input type="number"
                                                                 v-model="nbr_valeur_terrain"  
                                                                 readonly
                                                                 id="Valeur_terrain"  
-                                                                class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                             </div>
                                                         </div>
@@ -1141,14 +1164,14 @@ const submitForm = () => {
                                             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                                                 <!-- Boutons radio -->
                                                 <div class="sm:col-span-2">
-                                                    <div class="h-10 flex items-center ps-8 border border-gray-200 rounded dark:border-primary">
+                                                    <div class="h-10 flex items-center ps-8 border border-primary-only rounded dark:border-primary">
                                                         <MazRadio v-model="currentCat" 
                                                         value="Maison individuelle" 
                                                         label="Maison individuelle" />
                                                     </div>
                                                 </div>
                                                 <div class="sm:col-span-2">
-                                                    <div class="h-10 flex items-center ps-8 border border-gray-200 rounded dark:border-primary">
+                                                    <div class="h-10 flex items-center ps-8 border border-primary-only rounded dark:border-primary">
                                                         <MazRadio v-model="currentCat" 
                                                         value="Immeuble collectif" 
                                                         label="Immeuble collectif" />
@@ -1164,15 +1187,15 @@ const submitForm = () => {
                                                         class="sm:col-span-8">
                                                         <div  class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
                                                             <div class="sm:col-span-1">
-                                                                <label for="Dependant_domaine" class="block text-sm/6 font-medium text-gray-900">Bâtiment </label>
+                                                                <label for="Dependant_domaine" class="block text-sm/6 font-medium text-primary-txt">Bâtiment </label>
                                                                     <div>   
                                                                         <input 
                                                                         v-model="form.txt_dependant_domainePR" 
                                                                         name="txt_dependant_domainePR" 
                                                                         readonly
                                                                         id="Dependant_domaine" 
-                                                                        class="h-8 block w-36 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                                outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                        class="h-8 block w-36 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-dark 
                                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"> 
                                                                     </input>
                                                                     </div>
@@ -1180,14 +1203,14 @@ const submitForm = () => {
                                                             <div  class="sm:col-span-2">
                                                                 <div v-if="currentCat === 'Maison individuelle'" class="sm:col-span-1">
                                                                     <!-- Vous avez sélectionné une catégorie de type Maison individuelle. -->
-                                                                    <label for="Dependant_domaine" class="block text-sm/6 font-medium text-gray-900">CAT</label>
+                                                                    <label for="Dependant_domaine" class="block text-sm/6 font-medium text-primary-txt">CAT</label>
                                                                     <div>   
                                                                         <select 
                                                                         v-model="form.slt_categoriePR" 
                                                                         name="slt_categoriePR" 
                                                                         id="Dependant_domaine" 
-                                                                        class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                                outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                        class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-dark 
                                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desable></option> 
                                                                             <option value="1">1</option>
@@ -1206,13 +1229,13 @@ const submitForm = () => {
                                                                 </div>
                                                                 <div v-else-if="currentCat === 'Immeuble collectif'" class="block text-sm/6 font-medium text-gray-900">
                                                                     <!-- Vous avez sélectionné une autre catégorie. -->
-                                                                    <label for="Dependant_domaine" class="block text-sm/6 font-medium text-gray-900">CAT</label>
+                                                                    <label for="Dependant_domaine" class="block text-sm/6 font-medium text-primary-txt">CAT</label>
                                                                     <select 
                                                                     v-model="form.slt_categoriePR"
                                                                     name="slt_categoriePR" 
                                                                     id="Dependant_domaine" 
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-dark 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desable></option>  
                                                                         <option value="A">A</option>   
@@ -1232,20 +1255,20 @@ const submitForm = () => {
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1"> 
-                                                                <label for="Prix_mettre_carre" class="block text-sm/6 font-medium text-gray-900">Prix m²</label>
+                                                                <label for="Prix_mettre_carre" class="block text-sm/6 font-medium text-primary-txt">Prix m²</label>
                                                                 <div>  
                                                                     <input 
                                                                     v-model="form.nbr_prix_metre_carrePR"  
                                                                     readonly
                                                                     type="number" 
                                                                     id="Prix_mettre_carre"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-dark 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>  
                                                             <div  class="sm:col-span-1"> 
-                                                                <label for="Surface_bati_sol" class="block text-sm/6 font-medium text-gray-900">Surf B S</label>
+                                                                <label for="Surface_bati_sol" class="block text-sm/6 font-medium text-primary-txt">Surf B S</label>
                                                                 <div>
                                                                     <input  
                                                                     v-model="form.nbr_surface_bati_solPR"
@@ -1254,26 +1277,26 @@ const submitForm = () => {
                                                                     :max="form.nbr_surface"
                                                                     type="number" 
                                                                     id="Surface_bati_sol"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-primary-dark 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1">  
-                                                                <label for="nbr_niveauPR" class="block text-sm/6 font-medium text-gray-900">Niveau</label>
+                                                                <label for="nbr_niveauPR" class="block text-sm/6 font-medium text-primary-txt">Niveau</label>
                                                                 <div>
                                                                     <input  
                                                                     v-model="form.nbr_niveauPR"
                                                                     name="nbr_niveauPR"
                                                                     type="number" 
                                                                     id="nbr_niveauPR" 
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-dark 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <div  class="sm:col-span-1"> 
-                                                                <label for="Surface_utile" class="block text-sm/6 font-medium text-gray-900">Surf Utile</label>
+                                                                <label for="Surface_utile" class="block text-sm/6 font-medium text-primary-txt">Surf Utile</label>
                                                                 <div>   
                                                                     <input  
                                                                     v-model="form.nbr_surface_utilePR"
@@ -1281,21 +1304,20 @@ const submitForm = () => {
                                                                     type="number" 
                                                                     id="Surface_utile" 
                                                                     readonly
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1"> 
-                                                                <label for="Coeff" class="block text-sm/6 font-medium text-gray-900">Coeff</label>
+                                                                <label for="Coeff" class="block text-sm/6 font-medium text-primary-txt">Coeff</label>
                                                                 <div>  
                                                                     <select  
                                                                     v-model="form.slt_coeffPR"
                                                                     name="slt_coeffPR"
                                                                     id="Coeff"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
-                                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
+                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-graprimary-dark                                                                      focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desabled></option>
                                                                         <option value="0.1">0.1</option>
                                                                         <option value="0.2">0.2</option>
@@ -1309,7 +1331,7 @@ const submitForm = () => {
                                                                 </div>
                                                             </div>
                                                             <div  class="sm:col-span-1"> 
-                                                                <label for="Surface_corriger" class="block text-sm/6 font-medium text-gray-900">S.Corrigee</label>
+                                                                <label for="Surface_corriger" class="block text-sm/6 font-medium text-primary-txt">S.Corrigee</label>
                                                                 <div> 
                                                                     <input                                               
                                                                     v-model="form.nbr_surface_corrigerPR"
@@ -1317,13 +1339,12 @@ const submitForm = () => {
                                                                     type="number" 
                                                                     id="Surface_corriger" 
                                                                     readonly
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
-                                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
+                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-graprimary-dark                                                                      focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1"> 
-                                                                <label for="Valeur" class="block text-sm/6 font-medium text-gray-900">Valeur</label>
+                                                                <label for="Valeur" class="block text-sm/6 font-medium text-primary-txt">Valeur</label>
                                                                 <div>
                                                                     <input 
                                                                     type="number" 
@@ -1331,9 +1352,8 @@ const submitForm = () => {
                                                                     name="nbr_valeurPR"
                                                                     readonly
                                                                     id="Valeur"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
-                                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-graprimary-dark                                                                      focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1348,14 +1368,14 @@ const submitForm = () => {
                                                         class="sm:col-span-8">
                                                         <div  class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
                                                             <div class="sm:col-span-1">
-                                                                <label for="Dependant_domaine" class="block text-sm/6 font-medium text-gray-900">Bâtiment </label>
+                                                                <label for="Dependant_domaine" class="block text-sm/6 font-medium text-primary-txt">Bâtiment </label>
                                                                     <div>   
                                                                         <select 
                                                                         v-model="occupant.slt_dependant_domaineTG" 
                                                                         name="slt_dependant_domaine" 
                                                                         id="Dependant_domaine" 
-                                                                        class="h-8 block w-36 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                                outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                        class="h-8 block w-36 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"> 
                                                                             <option value="Secondaire">Secondaire</option>
                                                                             <option value="Tertiaire">Tertiaire</option>
@@ -1367,14 +1387,14 @@ const submitForm = () => {
                                                             <div  class="sm:col-span-2">
                                                                 <div v-if="currentCat === 'Maison individuelle'" class="sm:col-span-1">
                                                                     <!-- Vous avez sélectionné une catégorie de type Maison individuelle. -->
-                                                                    <label for="Dependant_domaine" class="block text-sm/6 font-medium text-gray-900">CAT</label>
+                                                                    <label for="Dependant_domaine" class="block text-sm/6 font-medium text-primary-txt">CAT</label>
                                                                     <div>   
                                                                         <select 
                                                                         v-model="occupant.slt_categorieTG" 
                                                                         name="slt_categorieTG" 
                                                                         id="Dependant_domaine" 
-                                                                        class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                                outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                        class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desable></option>
                                                                             <option value="1">1</option>
@@ -1391,15 +1411,15 @@ const submitForm = () => {
                                                                         </select>
                                                                     </div>
                                                                 </div>
-                                                                <div v-else-if="currentCat === 'Immeuble collectif'" class="block text-sm/6 font-medium text-gray-900">
+                                                                <div v-else-if="currentCat === 'Immeuble collectif'" class="block text-sm/6 font-medium text-primary-txt">
                                                                     <!-- Vous avez sélectionné une autre catégorie. -->
-                                                                    <label for="Dependant_domaine" class="block text-sm/6 font-medium text-gray-900">CAT</label>
+                                                                    <label for="Dependant_domaine" class="block text-sm/6 font-medium text-primary-txt">CAT</label>
                                                                     <select 
                                                                     v-model="occupant.slt_categorieTG"
                                                                     name="slt_categorieTG" 
                                                                     id="Dependant_domaine" 
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desable></option>
                                                                         <option value="A">A</option>   
@@ -1419,20 +1439,20 @@ const submitForm = () => {
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1"> 
-                                                                <label for="Prix_mettre_carre" class="block text-sm/6 font-medium text-gray-900">Prix m²</label>
+                                                                <label for="Prix_mettre_carre" class="block text-sm/6 font-medium text-primary-txt">Prix m²</label>
                                                                 <div>  
                                                                     <input 
                                                                     v-model="occupant.nbr_prix_metre_carreTG" 
                                                                     readonly
                                                                     type="number" 
                                                                     id="Prix_mettre_carre"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>  
                                                             <div  class="sm:col-span-1"> 
-                                                                <label for="Surface_bati_sol" class="block text-sm/6 font-medium text-gray-900">Surf B S</label>
+                                                                <label for="Surface_bati_sol" class="block text-sm/6 font-medium text-primary-txt">Surf B S</label>
                                                                 <div>
                                                                     <input  
                                                                     v-model="occupant.nbr_surface_bati_solTG"
@@ -1441,26 +1461,26 @@ const submitForm = () => {
                                                                     @input="verifierSurfaceOccupant(occupant)"
                                                                     type="number" 
                                                                     id="Surface_bati_sol"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1">  
-                                                                <label for="Niveau" class="block text-sm/6 font-medium text-gray-900">Niveau</label>
+                                                                <label for="Niveau" class="block text-sm/6 font-medium text-primary-txt">Niveau</label>
                                                                 <div>
                                                                     <input  
                                                                     v-model="occupant.nbr_niveauTG"
                                                                     name="nbr_niveauTG"
                                                                     type="number" 
                                                                     id="Niveau" 
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <div  class="sm:col-span-1"> 
-                                                                <label for="Surface_utile" class="block text-sm/6 font-medium text-gray-900">Surf Utile</label>
+                                                                <label for="Surface_utile" class="block text-sm/6 font-medium text-primary-txt">Surf Utile</label>
                                                                 <div>   
                                                                     <input  
                                                                     v-model="occupant.nbr_surface_utileTG"
@@ -1468,20 +1488,20 @@ const submitForm = () => {
                                                                     type="number" 
                                                                     id="Surface_utile" 
                                                                     readonly
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1"> 
-                                                                <label for="Coeff" class="block text-sm/6 font-medium text-gray-900">Coeff</label>
+                                                                <label for="Coeff" class="block text-sm/6 font-medium text-primary-txt">Coeff</label>
                                                                 <div>  
                                                                     <select  
                                                                     v-model="occupant.slt_coeffTG"
                                                                     name="slt_coeffTG"
                                                                     id="Coeff"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desabled></option>
                                                                         <option value="0.1">0.1</option>
@@ -1496,7 +1516,7 @@ const submitForm = () => {
                                                                 </div>
                                                             </div>
                                                             <div  class="sm:col-span-1"> 
-                                                                <label for="Surface_corriger" class="block text-sm/6 font-medium text-gray-900">S.Corrigee</label>
+                                                                <label for="Surface_corriger" class="block text-sm/6 font-medium text-primary-txt">S.Corrigee</label>
                                                                 <div> 
                                                                     <input                                               
                                                                     v-model="occupant.nbr_surface_corrigerTG"
@@ -1504,13 +1524,13 @@ const submitForm = () => {
                                                                     type="number" 
                                                                     id="Surface_corriger" 
                                                                     readonly
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1"> 
-                                                                <label for="Valeur" class="block text-sm/6 font-medium text-gray-900">Valeur</label>
+                                                                <label for="Valeur" class="block text-sm/6 font-medium text-primary-txt">Valeur</label>
                                                                 <div>
                                                                     <input 
                                                                     type="number" 
@@ -1518,8 +1538,8 @@ const submitForm = () => {
                                                                     name="nbr_valeurTG"
                                                                     readonly
                                                                     id="Valeur"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1555,15 +1575,15 @@ const submitForm = () => {
                                             </div>  
                                             <div  class="flex justify-center gap-6 mb-8">
                                                 <div> 
-                                                    <label for="Valeur_terrain_bati">Valeur(s) bâtiment (s)</label>
+                                                    <label for="Valeur_terrain_bati" class="block text-sm/6 font-medium text-primary-txt">Valeur(s) bâtiment (s)</label>
                                                     <input 
                                                         type="number" 
                                                         :value="txt_valeur_terrain_bati"
                                                         readonly
                                                         id="Valeur_terrain_bati"
                                                         class="block w-full rounded-md bg-white 
-                                                            px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 
-                                                            outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                            px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
+                                                            outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                             focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                                 </div>
                                             </div>
@@ -1582,14 +1602,14 @@ const submitForm = () => {
                                                         class="sm:col-span-8"> 
                                                         <div  class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"> 
                                                             <div class="sm:col-span-1">
-                                                                    <label for="CoursAmenagerTotale" class="block text-sm/6 font-medium text-gray-900">Cours Aménagées Totale</label>
+                                                                    <label for="CoursAmenagerTotale" class="block text-sm/6 font-medium text-primary-txt">Cours Aménagées Totale</label>
                                                                 <div>   
                                                                     <select 
                                                                     v-model="occupant.slt_cours_amenager_totale" 
                                                                     name="slt_dependant_domaine" 
                                                                     id="Dependant_domaine" 
-                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desable></option>
                                                                         <option value="Cours Amenagées Totale">Cours Amenagées Totale</option>
@@ -1602,7 +1622,7 @@ const submitForm = () => {
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1">
-                                                                    <label for="SurfaceCATotal" class="block text-sm/6 font-medium text-gray-900">Surface</label>
+                                                                    <label for="SurfaceCATotal" class="block text-sm/6 font-medium text-primary-txt">Surface</label>
                                                                 <div> 
                                                                     <input type="number"
                                                                     v-model="occupant.nbr_surface_ca_total" 
@@ -1610,20 +1630,20 @@ const submitForm = () => {
                                                                     :max="form.nbr_surface"
                                                                     @input="verifierSurfaceOccupant(occupant)"
                                                                     name="nbr_surface_ca_total" id="Surface_ca_total"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">                         
                                                                 </div>
                                                             </div>  
                                                             <div class="sm:col-span-1">
-                                                                    <label for="Categorie_ca_total" class="block text-sm/6 font-medium text-gray-900">Catégorie</label>
+                                                                    <label for="Categorie_ca_total" class="block text-sm/6 font-medium text-primary-txt">Catégorie</label>
                                                                 <div> 
                                                                     <select type="select" 
                                                                     v-model="occupant.slt_categorie_ca_total" 
                                                                     name="slt_categorie_ca_total"  
                                                                     id="Categorie_ca_total"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected sesabled></option>
                                                                             <option :value="1">1</option>
@@ -1634,27 +1654,27 @@ const submitForm = () => {
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1">
-                                                                    <label for="Prix_metre_carre_ca_total" class="block text-sm/6 font-medium text-gray-900">P/m²</label>
+                                                                    <label for="Prix_metre_carre_ca_total" class="block text-sm/6 font-medium text-primary-txt">P/m²</label>
                                                                 <div> 
                                                                     <input type="number" 
                                                                     v-model="occupant.nbr_prix_metre_carre_ca_total"  
                                                                     readonly
                                                                     name="nbr_prix_metre_carre_ca_total" 
                                                                     id="Prix_metre_carre_ca_total"
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-36 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1">
-                                                                    <label for="Coefficient_ca_total" class="block text-sm/6 font-medium text-gray-900">Coefficient</label>
+                                                                    <label for="Coefficient_ca_total" class="block text-sm/6 font-medium text-primary-txt">Coefficient</label>
                                                                 <div> 
                                                                     <select type="select" 
                                                                     v-model="occupant.nbr_coefficient_ca_total" 
                                                                     name="nbr_coefficient_ca_total" 
                                                                     id="Coefficient_ca_total"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desabled></option>
                                                                             <option value="0.1">0.1</option>
@@ -1669,15 +1689,15 @@ const submitForm = () => {
                                                                 </div>
                                                             </div> 
                                                             <div class="sm:col-span-1">
-                                                                    <label for="Valeur_ca_total" class="block text-sm/6 font-medium text-gray-900">Valeur</label>
+                                                                    <label for="Valeur_ca_total" class="block text-sm/6 font-medium text-primary-txt">Valeur</label>
                                                                 <div> 
                                                                     <input type="number" 
                                                                     v-model="occupant.nbr_valeur_ca_total" 
                                                                     readonly
                                                                     name="nbr_valeur_ca_total" 
                                                                     id="Valeur_ca_total"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1710,13 +1730,13 @@ const submitForm = () => {
                                             </div> 
                                             <div  class="flex justify-center gap-6 mb-8">
                                                 <div> 
-                                                    <label for="Valeur_total_cours" class="block text-sm/6 font-medium text-gray-900">Valeur Total des Cours</label>
+                                                    <label for="Valeur_total_cours" class="block text-sm/6 font-medium text-primary-txt">Valeur Total des Cours</label>
                                                     <input type="number" 
                                                     v-model="nbr_valeur_total_ca" 
                                                     readonly
                                                     name="nbr_valeur_total_cours" id="Valeur_total_cours"  class="block w-full rounded-md bg-white 
-                                                        px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 
-                                                        outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                        px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
+                                                        outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                         focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                                 </div>
                                             </div> 
@@ -1735,14 +1755,14 @@ const submitForm = () => {
                                                         class="sm:col-span-8"> 
                                                         <div class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                                                             <div class="sm:col-span-1">
-                                                                    <label for="CoursAmenagerTotale" class="block text-sm/6 font-medium text-gray-900">Clôtures</label>
+                                                                    <label for="CoursAmenagerTotale" class="block text-sm/6 font-medium text-primary-txt">Clôtures</label>
                                                                 <div>   
                                                                     <select 
                                                                     v-model="occupant.slt_cours_amenager_clo" 
                                                                     name="slt_dependant_domaine" 
                                                                     id="Dependant_domaine" 
-                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desable></option>
                                                                         <option value="Longueur Totale">Longueur Totale</option>
@@ -1755,26 +1775,26 @@ const submitForm = () => {
                                                                 </div>
                                                             </div>
                                                             <div  class="sm:col-span-1">
-                                                                    <label for="Longueur_avant_clo" class="block text-sm/6 font-medium text-gray-900">Linéaire</label>
+                                                                    <label for="Longueur_avant_clo" class="block text-sm/6 font-medium text-primary-txt">Linéaire</label>
                                                                 <div>  
                                                                     <input type="number" 
                                                                     v-model="occupant.nbr_longueur_avant_clo" 
                                                                     name="nbr_longueur_avant_clo" 
                                                                     id="Longueur_avant_clo"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">                         
                                                                 </div>
                                                             </div>  
                                                             <div  class="sm:col-span-1">
-                                                                    <label for="Categorie_clo" class="block text-sm/6 font-medium text-gray-900">Catégorie</label>
+                                                                    <label for="Categorie_clo" class="block text-sm/6 font-medium text-primary-txt">Catégorie</label>
                                                                 <div>  
                                                                     <select type="select" 
                                                                     v-model="occupant.slt_categorie_clo" 
                                                                     name="slt_categorie_clo" 
                                                                     id="Categorie_clo"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected sesabled></option>
                                                                         <option :value="1">1</option>
@@ -1788,26 +1808,26 @@ const submitForm = () => {
                                                                 </div>
                                                             </div> 
                                                             <div  class="sm:col-span-1"> 
-                                                                    <label for="Prix_metre_carre_clo" class="block text-sm/6 font-medium text-gray-900">P/mL</label>
+                                                                    <label for="Prix_metre_carre_clo" class="block text-sm/6 font-medium text-primary-txt">P/mL</label>
                                                                 <div> 
                                                                     <input type="number" 
                                                                     v-model="occupant.nbr_prix_metre_carre_clo" 
                                                                     name="nbr_prix_metre_carre_clo" 
                                                                     id="Prix_metre_carre_clo"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1"> 
-                                                                    <label for="Coefficient_clo" class="block text-sm/6 font-medium text-gray-900">Coefficient</label>
+                                                                    <label for="Coefficient_clo" class="block text-sm/6 font-medium text-primary-txt">Coefficient</label>
                                                                 <div> 
                                                                     <select type="select"  
                                                                     v-model="occupant.nbr_coefficient_clo" 
                                                                     name="nbr_coefficient_clo" 
                                                                     id="Coefficient_clo"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desabled></option>
                                                                             <option value="0.1">0.1</option>
@@ -1822,14 +1842,14 @@ const submitForm = () => {
                                                                 </div>
                                                             </div>
                                                             <div class="sm:col-span-1"> 
-                                                                    <label for="Valeur_clo" class="block text-sm/6 font-medium text-gray-900">Valeur</label>
+                                                                    <label for="Valeur_clo" class="block text-sm/6 font-medium text-primary-txt">Valeur</label>
                                                                 <div> 
                                                                     <input type="number"   
                                                                     v-model="occupant.nbr_valeur_clo" 
                                                                     name="nbr_valeur_clo" 
                                                                     id="Valeur_clo"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1863,15 +1883,17 @@ const submitForm = () => {
                                             </div>
                                             <div class="flex justify-center gap-6 mb-8">
                                                 <div> 
-                                                    <label for="Valeur_total_clotur">Valeurs Totale des Clôtures</label>
+                                                    <label for="Valeur_total_clotur" 
+                                                        class="block text-sm/6 font-medium text-primary-txt">Valeurs Totale des Clôtures
+                                                    </label>
                                                     <input type="number"         
                                                         v-model="nbr_valeur_total_clotur" 
                                                         readonly
                                                         name="nbr_valeur_total_clotur" 
                                                         id="Valeur_total_clotur"  
                                                         class="block w-full rounded-md bg-white 
-                                                        px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 
-                                                        outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                        px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
+                                                        outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                         focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                                 </div>
                                             </div>
@@ -1879,7 +1901,7 @@ const submitForm = () => {
 
                                         <!--    AMENAGEMENTS PARTICULIERS   -->
                                         <div v-show="activeTab === 'amenagement'" class="space-y-4">
-                                            <center><h6 class="text-lg">VALEUR</h6></center>  
+                                            <center><h6 class="text-lg font-bold text-primary-txt">VALEUR</h6></center>  
                                 
                                             <div class="w-full flex flex-wrap justify-between gap-4 mt-4">
                                                 <TransitionGroup  name="slide-fade" tag="div"> 
@@ -1891,45 +1913,45 @@ const submitForm = () => {
 
                                                             <div  class="sm:col-span-1">
                                                                 <div>
-                                                                    <label for="Designation_1" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Designeation</label>
+                                                                    <label for="Designation_1" class="ms-2 text-sm font-medium text-primary-txt dark:text-gray-300">Designeation</label>
                                                                     <input id="Designation_1"          
                                                                     v-model="occupant.txt_designation_am" 
                                                                     type="text" 
-                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6" />
                                                                 </div>
                                                             </div>
                                                             <div  class="sm:col-span-1"> 
                                                                 <div>
-                                                                    <label for="Valeur_unitaire_1" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Valeur Unitaire</label>
+                                                                    <label for="Valeur_unitaire_1" class="ms-2 text-sm font-medium text-primary-txt dark:text-gray-300">Valeur Unitaire</label>
                                                                     <input type="number"           
                                                                     v-model="occupant.nbr_valeur_unitaire_am"
                                                                     id="Valeur_unitaire_1"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">                         
                                                                 </div>
                                                             </div>  
                                                             <div  class="sm:col-span-1">
                                                                 <div> 
-                                                                    <label for="Quantile_1" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Quantité</label>
+                                                                    <label for="Quantile_1" class="ms-2 text-sm font-medium text-primary-txt dark:text-gray-300">Quantité</label>
                                                                     <input type="number"            
                                                                     v-model="occupant.nbr_quantile_am" 
                                                                     id="Quantile_1" 
-                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div> 
                                                             <div  class="sm:col-span-1">
                                                                 <div> 
-                                                                    <label for="Coeficien_1" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Coeficien</label>
+                                                                    <label for="Coeficien_1" class="ms-2 text-sm font-medium text-primary-txt dark:text-gray-300">Coeficien</label>
                                                                     <select type="select"             
                                                                     v-model="occupant.slt_coeficien_am" 
                                                                     id="Coeficien_1"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desabled></option>
                                                                             <option value="0.1">0.1</option>
@@ -1947,12 +1969,12 @@ const submitForm = () => {
                                                             </div>
                                                             <div  class="sm:col-span-1">
                                                                 <div> 
-                                                                    <label for="Valeur" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Valeur</label>
+                                                                    <label for="Valeur" class="ms-2 text-sm font-medium text-primary-txt dark:text-gray-300">Valeur</label>
                                                                     <input type="number"              
                                                                     v-model="occupant.nbr_valeur_am" 
                                                                     id="Valeur"  
-                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                    outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1984,17 +2006,19 @@ const submitForm = () => {
                                                 </div>  
 
                                             </div>
-                                            <div  class="flex justify-center gap-6 mb-8">
+                                            <div  class="flex justify-center text-primary-txt gap-6 mb-8" >
                                                 <div> 
-                                                    <label for="valeur_totale_ap">Valeur Totale des A.P</label>
+                                                    <label for="valeur_totale_ap" class="text-primary-txt gap-6 mb-8" >
+                                                        Valeur Totale des A.P
+                                                    </label>
                                                     <input type="number"                    
                                                         v-model="nbr_valeur_totale_ap" 
                                                         readonly
                                                         name="nbr_valeur_totale_ap" 
                                                         id="valeur_totale_ap"  
                                                         class="block w-full rounded-md bg-white 
-                                                        px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 
-                                                        outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                        px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
+                                                        outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                         focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                                 </div>
                                             </div>
@@ -2006,40 +2030,40 @@ const submitForm = () => {
                                 <div class="mb-6">
                                     <div class="border-b">  
                                         <div class="mb-4">
-                                            <div  class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                                            <div  class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 justify-center">
 
                                                 <div  class="grid gap-6 mb-6 md:grid-cols-1">
                                                     <div> 
-                                                        <label for="Valeur_Venale" class="block text-sm/6 font-medium text-gray-900">Valeur Vénale de l'immeuble</label>
+                                                        <label for="Valeur_Venale" class="block text-sm/6 font-medium text-primary-txt">Valeur Vénale de l'immeuble</label>
                                                         <input type="number"        
                                                             v-model="nbr_valeurVenaleLimeuble" 
                                                             readonly
                                                             name="nbr_valeurVenaleLimeuble" 
                                                             id="Valeur_Venale"  
                                                             class="block w-64 rounded-md bg-white 
-                                                            px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 
-                                                            outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                            px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
+                                                            outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                             focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                                     </div>
                                                 </div>
                                                 <div  class="grid gap-6 mb-6 md:grid-cols-1">
                                                     <div> 
-                                                        <label for="Valeur_locative" class="block text-sm/6 font-medium text-gray-900">Valeur Locative</label>
+                                                        <label for="Valeur_locative" class="block text-sm/6 font-medium text-primary-txt">Valeur Locative</label>
                                                         <input type="number"        
                                                             v-model="nbr_valeurLocative" 
                                                             readonly
                                                             name="nbr_valeurLocative" 
                                                             id="Valeur_locative"  
                                                             class="block w-64 rounded-md bg-white 
-                                                            px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 
-                                                            outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                            px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
+                                                            outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                             focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                                     </div>
                                                     <!-- <p>Taux détecté : {{ occupant.tauxValeurLocative }}</p> -->
                                                 </div>
                                                 <div  class="grid gap-6 mb-6 md:grid-cols-1">
                                                     <div> 
-                                                        <label for="Date_devaluation" class="block text-sm/6 font-medium text-gray-900">Date d'évaluation</label>
+                                                        <label for="Date_devaluation" class="block text-sm/6 font-medium text-primary-txt">Date d'évaluation</label>
                                                         <input 
                                                             type="date" 
                                                             v-model="form.dt_dateEvaluation" 
@@ -2047,11 +2071,11 @@ const submitForm = () => {
                                                             name="dt_dateEvaluation" 
                                                             id="Date_devaluation" 
                                                             class="block w-64 rounded-md bg-white 
-                                                                px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 
-                                                                outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                                px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
+                                                                outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                                 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                                     </div>
-                                                </div>
+                                                </div> 
                                             </div>
                                         </div>
                                     </div>

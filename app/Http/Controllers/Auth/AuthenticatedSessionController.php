@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\LoginRequest;  
+use Illuminate\Support\Facades\Session;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,6 +33,16 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+        
+        $user = Auth::user();
+
+        // Ajoute le message flash 
+        if ($user) {
+            Session::flash('success', 'Bienvenue : ' . $user->name);
+        } else {
+            Session::flash('error', 'Utilisateur non connecté.');
+        }
+
 
         return redirect()->intended(route('dashboard', absolute: false));
     }

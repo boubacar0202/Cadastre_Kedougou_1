@@ -15,8 +15,12 @@ export default {
      theme: {
         extend: {
             colors: {
-                primary: '#6d3500', // Définir primary comme    #6d3500
-                "primary-dark": "#bd7b00", //   #bd7b00
+                primary: '#5f2e01', // Définir primary comme  #5f2e01
+                "primary-dark": "#A35200", //   #A35200
+                "primary-txt": "#592D00",   // #592D00
+                "primary-only": "#E6C5A2", // #E6C5A2
+                "primary-menu": "#C7812E", //  #C7812E
+                "primary-form": "#ffe5c5", //  #ffe5c5
             },
             // Ajoute la personnalisation de la scrollbar
             scrollbar: ['rounded'],

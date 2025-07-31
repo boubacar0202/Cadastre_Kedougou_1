@@ -18,6 +18,8 @@ class Terrain extends Model
         'txt_num_section',
         'txt_num_parcelle', 
         'nbr_surface',
+        'txt_titre_mere',
+        'txt_num_titre',
         'txt_appartement',
         'slt_document_admin',
         'txt_num_deliberation',
@@ -27,7 +29,7 @@ class Terrain extends Model
         'slt_departement',
         'slt_arrondissement',
         'slt_commune',
-        'referencesCadastrale_id',
+        'reference_cadastrale_id',
         'titulaire_id', 
     ];
 
@@ -86,7 +88,7 @@ class Terrain extends Model
 
     public function references_cadastrales()
     {
-        return $this->belongsTo(ReferenceCadastrale::class, 'referencesCadastrale_id');
+        return $this->belongsTo(ReferenceCadastrale::class, 'reference_cadastrale_id');
     }
 
  

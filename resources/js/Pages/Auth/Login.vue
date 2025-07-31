@@ -6,6 +6,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Inertia } from '@inertiajs/inertia';
 
 defineProps({
     canResetPassword: {
@@ -30,22 +31,22 @@ const submit = () => {
 </script>
 
 <template>
-    <GuestLayout>
-        <Head title="Log in" />
+    <GuestLayout class="bg-primary-only">
+        <Head title="Login" />
 
-        <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
+        <div v-if="status" class="mb-4 text-sm font-medium text-primary-txt font-bold">
             {{ status }}
         </div>
-
+          
         <form @submit.prevent="submit">
             <div>
-                <InputLabel for="email" value="Email" class="text-primary" />
+                <InputLabel for="email" value="Adresse Email" class="text-primary-txt font-bold" />
 
                 <TextInput
                     id="email"
                     type="email"
-                    class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-gray-900 
-                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                    class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-primary-txt 
+                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
                     v-model="form.email"
                     required
@@ -57,13 +58,13 @@ const submit = () => {
             </div>
 
             <div class="mt-4">
-                <InputLabel for="password" value="Password" class="text-primary" />
+                <InputLabel for="password" value="Mot de Passe" class="text-primary-txt font-bold" />
 
                 <TextInput
                     id="password"
                     type="password"
-                    class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-gray-900 
-                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                    class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-primary-txt 
+                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
                     v-model="form.password"
                     required
@@ -77,7 +78,7 @@ const submit = () => {
                 <label class="flex items-center">
                     <Checkbox name="remember" v-model:checked="form.remember" class="text-primary" />
                     <span class="ms-2 text-sm text-primary"
-                        >Remember me</span
+                        >Se souvenir de moi </span
                     >
                 </label>
             </div>
@@ -88,7 +89,7 @@ const submit = () => {
                     :href="route('password.request')"
                     class="rounded-md text-sm text-primary underline hover:text-primary-dark focus:outline-none focus:ring-primary focus:ring-indigo-500 focus:ring-offset-2"
                 >
-                    Forgot your password?
+                    Mot de passe oublié ?
                 </Link>
 
                 <PrimaryButton
@@ -96,9 +97,10 @@ const submit = () => {
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
                 >
-                    Connexion
+                    Se Connecter
                 </PrimaryButton>
             </div>
         </form>
+      
     </GuestLayout>
 </template>

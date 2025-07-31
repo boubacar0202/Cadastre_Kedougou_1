@@ -17,6 +17,7 @@ use App\Models\Terrain;
 use App\Models\Titulaire;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 class SecretariatController extends Controller
 {
 
@@ -32,11 +33,13 @@ class SecretariatController extends Controller
 
     public function create()
     {
-        $regions = Region::all();
+        $regions = Region::all(); 
 
         return Inertia::render("secretariat/create",  [
             "regions" => $regions,
-            "departements" => [],
+            "departements" => [], 
+ 
+  
         ]);
     }
  
@@ -59,12 +62,21 @@ class SecretariatController extends Controller
         ])->findOrFail($id);
  
         return Inertia::render('secretariat/edit', [
-            'terrain' => $terrain, 
-            // 'terrain' => $terrain->load('references_usages'), 
+            'terrain' => $terrain,  
             'regions' => Region::select('id', 'slt_region')->get(),
             'departements' => Departement::select('id', 'slt_departement')->get(),
             'arrondissements' => Arrondissement::select('id', 'slt_arrondissement')->get(),
             'communes' => Commune::select('id', 'slt_commune')->get(),  
+        ]);
+    }
+
+    public function dernierOrdre($annee)
+    {
+        $dernier = Dossier::whereYear('dt_date_creation', $annee)
+            ->max('txt_num_dordre');
+
+        return response()->json([
+            'dernier' => $dernier ? (int) $dernier : 0
         ]);
     }
 
@@ -74,18 +86,16 @@ class SecretariatController extends Controller
 
         $validatedData = $request->validate([
             'txt_num_dossier' => 'required|string|unique:dossiers,txt_num_dossier',
+            'txt_num_dordre' => 'required|numeric',
             'slt_service_rendu' => 'nullable|string',
             'txt_etat_cession' => 'nullable|string',
             'txt_cession_definitive' => 'nullable|string',
             'dt_date_creation' => 'required|date',
 
             // table Reference_Cadastral
-            'rd_immatriculation_terrain' => 'nullable|string',
+            'rd_immatriculation_terrain' => 'required|string',
             'slt_dependant_domaine' => 'nullable|string',
-            'ussu_bornage' => 'nullable|string',
-            'txt_titre_mere' => 'nullable|string',
-            // 'txt_appartement' => 'nullable|string', 
-            // 'txt_num_titre' => 'nullable|string',
+            'ussu_bornage' => 'nullable|string', 
             'slt_lf' => 'nullable|string',
             'txt_num_requisition' => 'nullable|string',
             'txt_surface_bornage' => 'nullable|string',
@@ -103,51 +113,54 @@ class SecretariatController extends Controller
             'dt_date_delivrance' => 'required|date',
             'dt_date_naissance' => 'required|date',
             'txt_lieu_naissance' => 'required|string',
-            'txt_adresse' => 'nullable|string',
+            'txt_adresse' => 'required|string',
             'tel_telephone' => 'required|string',
-            'txt_ninea' => 'nullable|string',
+            'txt_ninea' => 'required|string',
             'eml_email' => 'nullable|string',
             'txt_representant' => 'nullable|string',
             'tel_telRepresentant' => 'nullable|string',
-            
+          
             // table Terrain 
             'txt_lotissement' => 'nullable|string',
             'txt_HorsLotissement' => 'nullable|string',
             'txt_num_lotissement' => 'nullable|string',
             'txt_num_section' => 'nullable|string',
-            'txt_num_parcelle' => 'nullable|string',
+            'txt_num_parcelle' => 'nullable|string', 
+            'nbr_surface' => 'nullable|numeric',
             'txt_num_titre' => 'nullable|string',
-            'nbr_surface' => 'nullable|numeric|min:0|max:99999999.99',
+            'txt_titre_mere' => 'nullable|string',
             'txt_appartement' => 'nullable|string',
             'slt_document_admin' => 'nullable|string',
             'txt_num_deliberation' => 'nullable|string',
-            'dt_date_deliberation' => 'nullable|date',
-            'txt_nicad' => 'nullable|string|unique:terrains,txt_nicad',
+            'dt_date_deliberation' => 'nullable|date', 
+            'txt_nicad' => 'nullable|string|unique:terrains,txt_nicad', 
             'slt_region' => 'required|exists:regions,id',
             'slt_departement' => 'required|exists:departements,id',
             'slt_arrondissement' => 'required|exists:arrondissements,id',
             'slt_commune' => 'required|exists:communes,id',
- 
+
 
         ], [
-         
-
-            // 'txt_num_dordre.required' => "Numéro ordre requis.",
-            // 'txt_num_dordre.integer' => "Numéro ordre en chiffre.",
-
-            // 'slt_service_rendu.required' => "Le service rendu requis.",
-            // // 'txt_etat_cession.required' => "Etat Cession requis.", 
-            // 'dt_date_creation.required' => "Date création requis.",
-            // 'dt_date_creation.date' => "Corrige la date.",
-
-            // 'txt_nicad.nullable' => 'NICAD existant.',
-
-            'slt_region.required' => 'Region requis',
+          
+            'slt_region.required' => 'Region est Obligatoire',
             'slt_departement.required' => 'Departement requis',
             'slt_arrondissement.required' => 'Arrondissement requis',
             'slt_commune.required'=> 'Commune requis',
-
-
+            'txt_nicad.unique' => 'Ce NICAD existe déjà dans la base.',
+            'slt_titulaire.required' => 'Titulaire est Obligatoire',
+            'txt_nationalite.required' => 'Nationalite est Obligatoire',
+            'slt_civilite.required' => 'Civilite est Obligatoire',
+            'txt_prenom.required' => 'Prenom est Obligatoire',
+            'txt_nom.required' => 'Nom est Obligatoire',
+            'slt_piece.required' => 'Piece est Obligatoire',
+            'txt_numPiece.required' => 'Num Piece est Obligatoire',
+            'dt_date_delivrance.required' => 'Date Delivrance est Obligatoire',
+            'dt_date_naissance.required' => 'Date Naissance est Obligatoire',
+            'txt_lieu_naissance.required' => 'Lieu Naissance est Obligatoire',
+            'txt_adresse.required' => 'Adresse est Obligatoire',
+            'tel_telephone.required' => 'Telephone est Obligatoire',
+            'txt_ninea.required' => 'Ninea est Obligatoire',
+            'rd_immatriculation_terrain' => 'Immatriculation Terrain est obligatoire'  
         ]);     
 
             $region = Region::find($request->slt_region);
@@ -158,28 +171,20 @@ class SecretariatController extends Controller
             if (!$region || !$departement || !$arrondissement || !$commune) {
                 return back()->with('danger', 'Une des relations est introuvable.');
             }
-
-            // Récupérer le dernier numéro d'ordre et incrémenter
-            $lastNumOrder = Dossier::max('txt_num_dordre'); // Trouve la valeur max dans la colonne
-            $newOrder = $lastNumOrder ? $lastNumOrder + 1 : 1; // Si null, commence à 1
-
-
+  
             $dossier = Dossier::create([
                 'txt_num_dossier' =>  $validatedData['txt_num_dossier'], 
-                'txt_num_dordre' => $newOrder,  // numero d/'incementer 
-                'slt_service_rendu' => $validatedData['slt_service_rendu'],
-                'txt_etat_cession' => $validatedData['txt_etat_cession'],
-                'txt_cession_definitive' => $validatedData['txt_cession_definitive'],
+                'txt_num_dordre' => $validatedData['txt_num_dordre'],  // numero d/'incementer 
+                'slt_service_rendu' => $validatedData['slt_service_rendu'] ?? null,
+                'txt_etat_cession' => $validatedData['txt_etat_cession'] ?? null,
+                'txt_cession_definitive' => $validatedData['txt_cession_definitive'] ?? null,
                 'dt_date_creation' => $validatedData['dt_date_creation'],
             ]);
-
+  
             $referenceCadastrale = ReferenceCadastrale::create([   
                 'rd_immatriculation_terrain' => $validatedData['rd_immatriculation_terrain'],
                 'slt_dependant_domaine' => $validatedData['slt_dependant_domaine'] ?? null,
-                'ussu_bornage' => $validatedData['ussu_bornage'] ?? null,
-                'txt_titre_mere' => $validatedData['txt_titre_mere'] ?? null,
-                'txt_appartement' => $validatedData['txt_appartement'] ?? null, 
-                'txt_num_titre' => $validatedData['txt_num_titre'] ?? null,
+                'ussu_bornage' => $validatedData['ussu_bornage'] ?? null, 
                 'slt_lf' => $validatedData['slt_lf'] ?? null,
                 'txt_num_requisition' => $validatedData['txt_num_requisition'] ?? null,
                 'txt_surface_bornage' => $validatedData['txt_surface_bornage'] ?? null,
@@ -188,19 +193,19 @@ class SecretariatController extends Controller
             ]);
     
             $titulaire = Titulaire::create([
-                'slt_titulaire' => $validatedData['slt_titulaire'] ?? null,
-                'txt_nationalite' => $validatedData['txt_nationalite'] ?? null,
-                'slt_civilite' => $validatedData['slt_civilite'] ?? null,
-                'txt_prenom' => $validatedData['txt_prenom'] ?? null,
-                'txt_nom' => $validatedData['txt_nom'] ?? null,
-                'slt_piece' => $validatedData['slt_piece'] ?? null,
-                'txt_numPiece' => $validatedData['txt_numPiece'] ?? null,
-                'dt_date_delivrance' => $validatedData ['dt_date_delivrance'] ?? null,
-                'dt_date_naissance' => $validatedData ['dt_date_naissance'] ?? null,
-                'txt_lieu_naissance' => $validatedData['txt_lieu_naissance'] ?? null,
-                'txt_adresse' => $validatedData['txt_adresse'] ?? null,
-                'tel_telephone' => $validatedData['tel_telephone'] ?? null,
-                'txt_ninea' => $validatedData['txt_ninea'] ?? null,
+                'slt_titulaire' => $validatedData['slt_titulaire'],
+                'txt_nationalite' => $validatedData['txt_nationalite'],
+                'slt_civilite' => $validatedData['slt_civilite'],
+                'txt_prenom' => $validatedData['txt_prenom'],
+                'txt_nom' => $validatedData['txt_nom'],
+                'slt_piece' => $validatedData['slt_piece'],
+                'txt_numPiece' => $validatedData['txt_numPiece'],
+                'dt_date_delivrance' => $validatedData ['dt_date_delivrance'],
+                'dt_date_naissance' => $validatedData ['dt_date_naissance'],
+                'txt_lieu_naissance' => $validatedData['txt_lieu_naissance'],
+                'txt_adresse' => $validatedData['txt_adresse'],
+                'tel_telephone' => $validatedData['tel_telephone'],
+                'txt_ninea' => $validatedData['txt_ninea'],
                 'eml_email' => $validatedData['eml_email'] ?? null,
                 'txt_representant' => $validatedData['txt_representant'] ?? null,
                 'tel_telRepresentant' => $validatedData['tel_telRepresentant'] ?? null,
@@ -208,42 +213,39 @@ class SecretariatController extends Controller
         
             // table Terrain
             $terrain = Terrain::create([
+                        
                 'txt_lotissement' => $validatedData['txt_lotissement'] ?? null,
                 'txt_HorsLotissement' => $validatedData['txt_HorsLotissement'] ?? null,
                 'txt_num_lotissement' => $validatedData['txt_num_lotissement'] ?? null,
                 'txt_num_section' => $validatedData['txt_num_section'] ?? null,
-                'txt_num_parcelle' => $validatedData['txt_num_parcelle'] ?? null,
-                'txt_num_titre' => $validatedData['txt_num_titre'] ?? null,
+                'txt_num_parcelle' => $validatedData['txt_num_parcelle'] ?? null, 
                 'nbr_surface' => $validatedData['nbr_surface'] ?? null,
-                'txt_appartement' => $validatedData['txt_appartement'] ?? null,
+                'txt_num_titre' => $validatedData['txt_num_titre'] ?? null,
+                'txt_titre_mere' => $validatedData['txt_titre_mere'] ?? null,          
+                'txt_appartement' => $validatedData['txt_appartement'] ?? null,  
                 'slt_document_admin' => $validatedData['slt_document_admin'] ?? null,
                 'txt_num_deliberation' => $validatedData['txt_num_deliberation'] ?? null,
                 'dt_date_deliberation' => $validatedData['dt_date_deliberation'] ?? null,
                 'txt_nicad' => $validatedData['txt_nicad'] ?? null,
+
+                // Clés étrangères
                 'slt_region' => $region->id,
                 'slt_departement' => $departement->id,
                 'slt_arrondissement' => $arrondissement->id,
                 'slt_commune' => $commune->id,
-                'txt_num_dossier' => $dossier->id, // Utiliser l'ID réel du dossier // Correction ici
-                'referencesCadastrale_id' => $referenceCadastrale->id,
+
+                'txt_num_dossier' => $dossier->id, // 👍 Correct
+                'reference_cadastrale_id' => $referenceCadastrale->id,
                 'titulaire_id' => $titulaire->id,
             ]);
-
-            session([
-                'txt_nicad' => $terrain->txt_nicad, 
+ 
+            return redirect()->route('secretariat.create')->with([
                 'nbr_surface' => $terrain->nbr_surface,
-                'txt_num_dossier' => $dossier->txt_num_dossier
+                'txt_nicad' => $terrain->txt_nicad,
+                'txt_num_dossier' => $dossier->txt_num_dossier,
             ]);
+
             
-
-            // return redirect()->back()->with('success', 'Donnée enregistrée !');
-
-            return Inertia::render('secretariat/create', [
-                'nbr_surface' => session('nbr_surface'), 
-                'txt_nicad' => session('txt_nicad'),  
-                'txt_num_dossier' => session('txt_num_dossier'),  
-            ]);
-        
     }
 
     public function update(Request $request, $id)
@@ -263,6 +265,8 @@ class SecretariatController extends Controller
             'txt_num_lotissement',
             'txt_num_section',
             'txt_num_parcelle',
+            'txt_titre_mere',
+            'txt_num_titre',
             'txt_appartement',
             'nbr_surface',
             'slt_document_admin',
@@ -287,10 +291,7 @@ class SecretariatController extends Controller
             $terrain->references_cadastrales->update($request->only([
                 'rd_immatriculation_terrain',
                 'slt_dependant_domaine',
-                'issu_bornage',
-                'txt_num_titre',
-                'txt_titre_mere',
-                'txt_appartement',
+                'issu_bornage', 
                 'slt_lf',
                 'txt_num_requisition',
                 'txt_surface_bornage',
@@ -315,7 +316,7 @@ class SecretariatController extends Controller
                 'txt_adresse',
                 'tel_telephone',
                 'txt_ninea',
-                'eml_email',
+                'eml_email', 
                 'txt_representant',
                 'tel_telRepresentant',
             ]));
@@ -326,18 +327,18 @@ class SecretariatController extends Controller
             foreach ($request->input('occupants') as $occupantData) {
                 ReferenceUsage::updateOrCreate(
                     [
-                        'txt_nicad' => $terrain->txt_nicad,
-                        'txt_nomOccupantTG' => $occupantData['txt_nomOccupantTG'] ?? null, // ou autre champ unique
+                        'txt_nicad' => $terrain->txt_nicad, // ou autre champ unique
                     ],
                     array_merge([
                         'txt_num_dossier' => $terrain->dossier?->txt_num_dossier ?? $terrain->txt_num_dossier,
-                        'slt_usage', 
-                        'slt_residence',
+                        'slt_usage' => $request->input('slt_usage'),
+                        'slt_residence' => $request->input('slt_residence'),
                         'nbr_montantLoyerTotal' => $request->input('nbr_montantLoyerTotal') ?? 0,
                         'nbr_TVATotal' => $request->input('nbr_TVATotal') ?? 0,
                     ], $occupantData)
                 );
-            }
+            } 
+            
         }
 
         // ✅ Mise à jour de la relation evaluation_terrains
@@ -345,6 +346,7 @@ class SecretariatController extends Controller
             $terrain->evaluations_terrains->update($request->only([
                 'nbr_surface',
                 'txt_superficie_bati_sol',
+                'txt_superficie_totale',
                 'slt_secteur',
                 'nbr_prix_metre_carre',
                 'nbr_valeur_terrain',
@@ -412,7 +414,7 @@ class SecretariatController extends Controller
             }
         }
 
-        // ✅ Mise à jour de la relation evaluation_clotures
+        // ✅ Mise à jour de la relation evaluation_amenagements
         if ($terrain->evaluations_amenagements && $request->has('occupantsAP')) {
             foreach ($request->input('occupantsAP') as $occupantData) {
                 EvaluationAmenagement::updateOrCreate(

@@ -13,13 +13,11 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SecretariatController;
 use App\Http\Controllers\TerrainController; 
 use GuzzleHttp\Psr7\Request;
-use Illuminate\Container\Attributes\Auth;
+use Illuminate\Container\Attributes\Auth; 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 
-// use Illuminate\Http\Request;
-// use Illuminate\Support\Facades\Auth;
-
+ 
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -62,12 +60,16 @@ Route::resource('donnee', DonneeController::class);
 Route::resource('matriceCadastrale', MatriceCadastraleController::class);
 Route::get('/secretariat/create', [SecretariatController::class, 'create'])->name('secretariat.create');
 Route::get('/donnee/create', [DonneeController::class, 'create'])->name('donnee.create'); 
+Route::get('/secretariat/dernier-ordre/{annee}', [SecretariatController::class, 'dernierOrdre']);
+
   
 Route::post('dossier/verify', [GeometreController::class, 'verify'])->name('dossier.verify');
  
 Route::get('/secretariat', [SecretariatController::class, 'create'])->name('secretariat.create');
 Route::post('/secretariat', [SecretariatController::class, 'store'])->name('secretariat.store');
-Route::post('/geometre', [GeometreController::class, 'store'])->name('geometre.store');
+Route::get('/geometre/create', [GeometreController::class, 'create'])->name('geometre.create'); 
+// Route::get('/geometre/create/{txt_num_dossier}', [GeometreController::class, 'create'])->name('geometre.create');
+
 Route::get('/dossier/last', function () {
     $lastDossier = Dossier::latest('id')->first(); 
     return response()->json([
@@ -77,11 +79,16 @@ Route::get('/dossier/last', function () {
 // code d'accée
 Route::post('/code/verify', [CodeAccesController::class, 'verify'])->name('code.verify'); 
 Route::get('/donnee/create', [DonneeController::class, 'create'])->name('donnee.create');
+
+// vérifier Nicad
+// routes/web.php
+Route::get('/verifier-nicad/{nicad}', [GeometreController::class, 'verifierNicad']);
  
-Route::put('/secretariat/update/{terrain}', [SecretariatController::class, 'update'])->name('secretariat.update'); 
-Route::get('/secretariat/edit/{terrain}', [SecretariatController::class, 'edit'])->name('secretariat.edit'); 
+Route::put('/secretariat/update/{id}', [SecretariatController::class, 'update'])->name('secretariat.update'); 
+Route::get('/secretariat/edit/{id}', [SecretariatController::class, 'edit'])->name('secretariat.edit'); 
 Route::delete('/terrains/{terrain}', [TerrainController::class, 'destroy'])->name('terrains.destroy');
- 
+
+
  
 
 require __DIR__ . '/auth.php';
