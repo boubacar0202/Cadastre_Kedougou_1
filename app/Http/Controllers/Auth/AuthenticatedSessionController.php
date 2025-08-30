@@ -33,17 +33,17 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
-        
+
         $user = Auth::user();
 
         // Ajoute le message flash 
         if ($user) {
-            Session::flash('success', 'Bienvenue : ' . $user->name);
+            Session::flash('success', $user->name . ", bienvenue sur le Système !");
+
         } else {
             Session::flash('error', 'Utilisateur non connecté.');
         }
-
-
+ 
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
@@ -52,12 +52,15 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+        
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        // Message de déconnexion avec une nouvelle session
+        return redirect('/')->with('success', 'Au revoir ' . $user->name . ' ! Vous êtes maintenant déconnecté(e).');
     }
 }

@@ -1,5 +1,19 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
+import { useToast } from 'maz-ui';
+import { onMounted } from 'vue';
+
+const page = usePage();
+const toast = useToast();
+
+onMounted(() => {
+  if (page.props.flash.success) {
+    toast.success(page.props.flash.success);
+  }
+  if (page.props.flash.error) {
+    toast.error(page.props.flash.error);
+  }
+});
 </script>
 
 <template>

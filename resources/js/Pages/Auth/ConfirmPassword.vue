@@ -28,7 +28,7 @@ const submit = () => {
 
         <form @submit.prevent="submit">
             <div>
-                <InputLabel for="password" value="Password" class="text-primary" />
+                <InputLabel for="password" value="Mot de passe" class="text-primary" />
                 <TextInput
                     id="password"
                     type="password"

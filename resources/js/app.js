@@ -8,9 +8,19 @@ import { ZiggyVue } from "../../vendor/tightenco/ziggy";
 import * as MazUI from "maz-ui";
 import DefaultLayout from "./Layouts/DefaultLayout.vue";
 import { installToaster } from 'maz-ui'; 
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
 
+window.Pusher = Pusher;
 
-
+window.Echo = new Echo({
+    broadcaster: 'pusher',
+    key: import.meta.env.VITE_PUSHER_APP_KEY,
+    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
+    forceTLS: true
+});
+ 
+ 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
 import "maz-ui/styles";
@@ -20,6 +30,7 @@ const toasterOptions = {
     timeout: 5000,
     persistent: false,
 };
+ 
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
@@ -57,4 +68,5 @@ createInertiaApp({
     progress: {
         color: "#FE5835",
     },
+
 });

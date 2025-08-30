@@ -12,7 +12,7 @@ const props = defineProps({
     terrains: Array,  
 });
  
- 
+const annee = ref('');
 const numero = ref('')
 const numeroRecherche = ref('')
 
@@ -26,30 +26,34 @@ function normalize(str) {
   return str?.toString().trim().toLowerCase()
 }
  
-
+ 
 const terrains = computed(() => {
-    if (!numero.value) return props.terrains
-
-    const search = normalize(numero.value)
+    // Normalisation des champs de recherche
+    const searchNumero = normalize(numero.value || '')
+    const searchAnnee = normalize(annee.value || '')
 
     return props.terrains.filter(terrain => {
         const dossierNum = normalize(terrain.dossier?.txt_num_dossier)
-        return dossierNum?.includes(search)
+        const dossierAnnee = normalize(terrain.dossier?.dt_date_creation)
+
+        const matchNumero = !searchNumero || dossierNum?.includes(searchNumero)
+        const matchAnnee = !searchAnnee || dossierAnnee?.includes(searchAnnee)
+
+        return matchNumero && matchAnnee
     })
 })
 
-
+ 
 // Fonction pour formater la date
 const formatDate = (dateString) => {
-    if (!dateString) return 'Date inconnue';
+    if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('fr-FR', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
     });
 };
-
-
+ 
 // Suppromer enregistrement
 function supprimerTerrain(terrain) {
     if (confirm(`Voulez-vous vraiment supprimer ce terrain avec le NICAD : ${terrain.txt_nicad} ?`)) {
@@ -107,27 +111,42 @@ function supprimerTerrain(terrain) {
                 <div class="w-full max-w-7xl">    
                     <div class="bg-white shadow-md rounded-lg "><br> 
                         <div class="mx-auto max-w-7xl sm:px-8 lg:px-12 mt-4 mb-4">  
-                            <div class="card-header">
+                            <div class="card-header"> 
                                 <form @submit.prevent="searchDossier" class="max-w-md mx-auto">
-                                    <div class="sm:col-span-4">
+                             
                                         <label for="default-search"
-                                            class="text-2xl text-primary-txt font-bold">
+                                            class="text-xl text-primary-txt font-bold">
                                             <b>Recherche Dossier</b>
                                         </label>
-                                        <div class="flex items-center space-x-6 mt-3">  
-                                            <input 
-                                                v-model="numero"
-                                                type="search"
-                                                id="default-search"
-                                                aria-label="Rechercher"
-                                                class="h-10 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                placeholder="Entrez le numéro du dossier"
-                                                required
-                                            />  
-                                        </div>
-                                    </div>
+                                        <div class="flex w-full items-start space-x-4">  
+                                            <div>
+                                                <input 
+                                                    v-model="numero"
+                                                    type="search"
+                                                    id="default-search"
+                                                    aria-label="Rechercher"
+                                                    class="h-9 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                        outline outline-1 -outline-offset-1 outline-primary-menu placeholder:text-gray-400 
+                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                    placeholder="Entrez le numéro du dossier"
+                                                    required
+                                                />  
+                                            </div>
+                                            <div>
+                                                <input 
+                                                    v-model="annee"
+                                                    type="search"
+                                                    maxlength="4"
+                                                    id="default-search"
+                                                    aria-label="Rechercher"
+                                                    class="h-9 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                        border border-primary-menu  placeholder:text-gray-400 
+                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                    placeholder="année"
+                                                /> 
+                                            </div>
+                                        </div> 
+                                  
                                 </form>
                                 
                             </div>
@@ -195,6 +214,8 @@ function supprimerTerrain(terrain) {
                                                                     </th>
                                                                 </tr>
                                                                 <tr>
+                                                                    
+                                                                    <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Occupant</th>
                                                                     <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Usage</th>
                                                                     <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Résidence</th>
                                                                     <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">N° Appartement</th>
@@ -263,6 +284,12 @@ function supprimerTerrain(terrain) {
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Coeficien AP</th>
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur AP</th>
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur totale AP</th>
+                                                        <!-- Actions -->
+                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur venale de l'imeuble</th>
+                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur locative</th>
+                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Date d'évaluation</th>
+
+                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Voir le PDF</th>
 
                                                         <th scope="col" class="px-6 py-3 text-lg text-primary-txt text-center border-b bg-primary-only font-bold whitespace-nowrap">
                                                             ACTIONS
@@ -274,8 +301,8 @@ function supprimerTerrain(terrain) {
                                                     <tr v-for="terrain in terrains" :key="terrain.id"  
                                                     class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                             
-                                                        <th scope="row" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.dossier ? terrain.dossier.txt_num_dordre : '-' }}</th>
-                                                        <td scope="row" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.dossier ? terrain.dossier.txt_num_dossier : '-' }} </td> 
+                                                        <th class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.dossier.txt_num_dordre || '-' }}</th>
+                                                        <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.dossier.txt_num_dossier || '-' }} </td> 
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.region ? terrain.region.slt_region : '-' }}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.departement ? terrain.departement.slt_departement : '-' }}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.arrondissement ? terrain.arrondissement.slt_arrondissement : '-' }}</td>
@@ -283,7 +310,7 @@ function supprimerTerrain(terrain) {
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain?.dossier.slt_service_rendu || '-' }}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.dossier.txt_etat_cession || '-'}}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.dossier.txt_cession_definitive || '-'}}</td>
-                                                        <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ formatDate(terrain.dt_date_deliberation) || '-' }}</td>
+                                                        <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ formatDate(terrain.dt_date_creation) || '-' }}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_num_parcelle || '-'}}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_lotissement || '-'}}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_HorsLotissement || '-'}}</td>
@@ -307,7 +334,7 @@ function supprimerTerrain(terrain) {
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{formatDate(terrain.references_cadastrales?.dt_date_bornage) || '-'}}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.references_cadastrales?.txt_nom_geometre || '-'}}</td>
                                                         <!-- Titulaire -->
-                                                        <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.titulaire && terrain.titulaire.slt_titulaire ? terrain.titulaire.slt_titulaire : 'Nom definie' }} </td>
+                                                        <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.slt_titulaire || '-' }} </td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_nationalite || '-'}}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.slt_civilite || '-'}}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_prenom || '-'}}</td>
@@ -327,6 +354,7 @@ function supprimerTerrain(terrain) {
                                                         <template v-if="terrain.references_usages && terrain.references_usages.length > 0">
                                                             <tr v-for="usage in terrain.references_usages" :key="usage.id"  class="border-b border-primary text-sm">
                                                                 
+                                                                <td scope="col" class="px-6 py-3 text-primary-txt border border-primary-only text-center">{{usage.txt_nomOccupantTG || '-' }}</td> 
                                                                 <td scope="col" class="px-6 py-3 text-primary-txt border border-primary-only text-center">{{usage.slt_usage || '-' }}</td>
                                                                 <td scope="col" class="px-6 py-3 text-primary-txt border border-primary-only text-center">{{usage.slt_residence || '-' }}</td>
                                                                 <td scope="col" class="px-6 py-3 text-primary-txt border border-primary-only text-center">{{usage.txt_numAppartementTG || '-' }}</td>
@@ -396,7 +424,20 @@ function supprimerTerrain(terrain) {
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_amenagements?.slt_coeficien_am    ||  '-'  }}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_amenagements?.nbr_valeur_am   ||  '-'  }}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_amenagements?.nbr_valeur_totale_ap    ||  '-'  }}</td>
-            
+
+                                                       <!-- terrain -->
+                                                        <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_terrains?.nbr_valeurVenaleLimeuble || '-' }}</td> 
+                                                        <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_terrains?.nbr_valeurLocative || '-' }}</td> 
+                                                        <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{formatDate(terrain.evaluations_terrains?.dt_dateEvaluation) || '-' }}</td> 
+ 
+                                                        <td scope="col" class="px-6 py-3 text-center border border-primary-only font-bold whitespace-nowrap"> 
+                                                            <div v-if="terrain && terrain.titulaire.fichierPDF">
+                                                                <a :href="`/storage/${terrain.titulaire.fichierPDF}?t=${Date.now()}`" target="_blank" class="text-blue-600 underline">
+                                                                    Voir PDF
+                                                                </a>
+                                                            </div>
+                                                            <div v-else class="text-primary-txt italic">Aucun fichier PDF</div>
+                                                        </td>
                                                         <td class="flex items px-6 py-6 border-b border-primary-only">
                                                             <div class="mt-2 ml-4">
                                                                 <InertiaLink :href="`/secretariat/edit/${terrain.id}`">

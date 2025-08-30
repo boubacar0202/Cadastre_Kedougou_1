@@ -7,13 +7,33 @@ import DefaultLayout from "@/Layouts/DefaultLayout.vue";
 defineOptions({ layout: DefaultLayout });
 
 const props = defineProps({
-  terrains: Array,
+    terrain: Object,
+    terrains: Array,  
 });
 
 onMounted(() => {
   console.log(props.terrains); // Vérifie la structure des données
 });
 
+function splitNomPrenom(fullName) {
+  if (!fullName) return { nom: '-', prenom: '-' }
+
+  const parts = fullName.trim().split(' ')
+  const prenom = parts[0] || '-'
+  const nom = parts.slice(1).join(' ') || '-'
+
+  return { nom, prenom }
+}
+
+function splitDateLieunaissance(fullDateLieu) {
+  if (!fullDateLieu) return { date: '-', lieunaissance: '-' }
+
+  const parts = fullDateLieu.trim().split(' à ' || ' a ')
+  const date = parts[0] || '-'
+  const lieunaissance = parts.slice(1).join(' ') || '-'
+
+  return { date, lieunaissance }
+}
 
 // Fonction pour formater la date
 const formatDate = (dateString) => {
@@ -91,8 +111,8 @@ const formatDate = (dateString) => {
                                                         <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Nom_Pro</th>
                                                         <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">CIN_Pro</th>
                                                         <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Passport_Pro</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">DateDelivrance_Pro</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Date_Naissance</th>
+                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">DateDelivrance_Pro  /</th>
+                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Date_Naissanc |</th>
                                                         <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Lieu_Naissance</th>
                                                         <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">NINEA_PRO</th>
                                                         <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Telephone1_Pro</th>
@@ -113,56 +133,179 @@ const formatDate = (dateString) => {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr v-for="terrain in terrains" :key="terrain.id" class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                                        <th scope="row" class="px-6 py-4 border-l border border-primary-only font-bold text-primary-txt whitespace-nowrap dark:text-white">
-                                                            {{ terrain.dossier ? terrain.dossier.txt_num_dordre : 'Dossier Inconnue' }}
-                                                        </th>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.region?.slt_region || 'Region inconnue' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.departement?.slt_departement || 'Departement inconnue' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.commune?.slt_commune || 'Commune inconnue' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.txt_lotissement || '-' }}</td>
+                                                    <tr v-for="terrain in terrains" :key="terrain.id" 
+                                                        class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+
+                                                        <th class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.dossier ? terrain.dossier.txt_num_dordre : 'Dossier Inconnue' }}</th>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.region?.slt_region || 'Region inconnue' }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.departement?.slt_departement || 'Departement inconnue' }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.commune?.slt_commune || 'Commune inconnue' }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.txt_lotissement || '-' }}</td>
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Rue</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.txt_num_section || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.txt_lotissement || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.txt_num_lotissement || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.txt_num_parcelle || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.txt_nicad || '-' }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.txt_num_section || '-' }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.txt_lotissement || '-' }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.txt_num_lotissement || '-' }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.txt_num_parcelle || '-' }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.txt_nicad || '-' }}</td>
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Numéro_Prote</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.nbr_surface || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.nbr_surface_bati || '-' }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.nbr_surface || '-' }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.evaluations_terrains?.txt_superficie_bati_sol || '-' }}</td>
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.evaluations_batis?.currentCat || 'Null' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Niveau</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Superfice_NBatie</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Type_Designation</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.evaluations_batis?.nbr_niveauPR || '-'  }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.evaluations_terrains?.txt_superficie_bati_sol || '-' }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.evaluations_amenagements?.txt_designation_am  || '-' }}</td>
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Cat_Occupant</td>
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Source_Donnee</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.txt_titre_mere || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Titre Parcelle</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.references_cadastrales.txt_titre_mere || '-' }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.references_cadastrales?.txt_titre_mere || '-'}}</td>
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Type_DocFoncier</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.references_cadastrales?.rd_immatriculation_terrain}}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.titulaire?.txt_prenom || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.titulaire?.txt_nom || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.titulaire?.slt_piece || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.titulaire?.slt_piece || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ formatDate(terrain.dt_date_deliberation) || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ formatDate(terrain.titulaire?.dt_date_naissance) || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.titulaire?.txt_lieu_naissance || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.titulaire?.txt_ninea || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.titulaire?.tel_telephone || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.titulaire?.tel_telephone || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.titulaire?.eml_email || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.titulaire?.txt_representant || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Nom_Occupant</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">CIN_Ocupant</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Passeport_Occupant</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Date_Delivrance</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">DateNaiss_Occupant</td>txt_num_titre
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">LieuNaiss_Occupant</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">NINEA_Occupant</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{ terrain.titulaire?.tel_telRepresentant || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Email_Occupant</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Valeur_Locative</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Observations</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.references_cadastrales?.rd_immatriculation_terrain}}</td>
+                                                        
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.txt_prenom || '-'}}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.txt_nom || '-'}}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.slt_piece || '-'}}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.slt_piece || '-'}}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{formatDate(terrain.titulaire?.dt_date_delivrance) || '-'}}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{formatDate(terrain.titulaire?.dt_date_naissance) || '-'}}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.txt_lieu_naissance || '-'}}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.txt_ninea || '-'}}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.tel_telephone || '-'}}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.tel_telRepresentant || '-'}}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.eml_email || '-'}}</td>
+                                                        
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
+                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
+                                                                <div
+                                                                    v-for="(ref, index) in terrain.references_usages"
+                                                                    :key="index"
+                                                                    class="block"
+                                                                    > 
+                                                                    {{ splitNomPrenom(ref.txt_nomOccupantTG).prenom }}
+                                                                </div>
+                                                            </div>
+                                                            <div v-else>-</div>
+                                                        </td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
+                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
+                                                                    <div
+                                                                        v-for="(ref, index) in terrain.references_usages"
+                                                                        :key="index"
+                                                                        class="block"
+                                                                        >
+                                                                        {{ splitNomPrenom(ref.txt_nomOccupantTG).nom }}
+                                                            </div>
+                                                                </div>
+                                                            <div v-else>-</div>
+                                                        </td> 
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
+                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
+                                                                    <span
+                                                                        v-for="(ref, index) in terrain.references_usages"
+                                                                        :key="index"
+                                                                        class="block"
+                                                                        >
+                                                                        {{ ref.txt_cniPasseportTG }}
+                                                                    </span>
+                                                                </div>
+                                                            <div v-else>-</div>
+                                                        </td> 
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
+                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
+                                                                    <span
+                                                                        v-for="(ref, index) in terrain.references_usages"
+                                                                        :key="index"
+                                                                        class="block"
+                                                                        >
+                                                                        {{ ref.txt_cniPasseportTG }}
+                                                                    </span>
+                                                                </div>
+                                                            <div v-else>-</div>
+                                                        </td> 
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
+                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
+                                                                    <span
+                                                                        v-for="(ref, index) in terrain.references_usages"
+                                                                        :key="index"
+                                                                        class="block" splitDateLieunaissance
+                                                                        >
+                                                                        {{ ref.dt_dateDelivranceTG }}
+                                                                    </span>
+                                                                </div>
+                                                            <div v-else>-</div>
+                                                        </td>   
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
+                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
+                                                                    <span
+                                                                        v-for="(ref, index) in terrain.references_usages"
+                                                                        :key="index"
+                                                                        class="block"
+                                                                        >
+                                                                        {{ splitDateLieunaissance(ref.txt_dateLieuNaissanceTG).date }}
+                                                                    </span>
+                                                                </div>
+                                                            <div v-else>-</div>
+                                                        </td>  
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
+                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
+                                                                    <div
+                                                                        v-for="(ref, index) in terrain.references_usages"
+                                                                        :key="index"
+                                                                        class="block"
+                                                                        >
+                                                                          {{ splitDateLieunaissance(ref.txt_dateLieuNaissanceTG).lieunaissance }}
+                                                            </div>
+                                                                </div>
+                                                            <div v-else>-</div>
+                                                        </td> 
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
+                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
+                                                                    <span
+                                                                        v-for="(ref, index) in terrain.references_usages"
+                                                                        :key="index"
+                                                                        class="block"
+                                                                        >
+                                                                        {{ ref.txt_nineaTG }}
+                                                                    </span>
+                                                                </div>
+                                                            <div v-else>-</div>
+                                                        </td> 
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
+                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
+                                                                    <span
+                                                                        v-for="(ref, index) in terrain.references_usages"
+                                                                        :key="index"
+                                                                        class="block"
+                                                                        >
+                                                                        {{ ref.tel_telephoneTG }}
+                                                                    </span>
+                                                                </div>
+                                                            <div v-else>-</div>
+                                                        </td> 
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
+                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
+                                                                    <span
+                                                                        v-for="(ref, index) in terrain.references_usages"
+                                                                        :key="index"
+                                                                        class="block"
+                                                                        >
+                                                                        {{ ref.tel_telephoneTG }}
+                                                                    </span>
+                                                                </div>
+                                                            <div v-else>-</div>
+                                                        </td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
+                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
+                                                                    <span
+                                                                        v-for="(ref, index) in terrain.references_usages"
+                                                                        :key="index"
+                                                                        class="block"
+                                                                        >
+                                                                        {{ ref.nbr_montantLoyerTotal }}
+                                                                    </span>
+                                                                </div>
+                                                            <div v-else>-</div>
+                                                        </td> 
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Observations</td> 
                                                     </tr> 
                                                 </tbody>
                                             </table>

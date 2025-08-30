@@ -32,9 +32,12 @@ export default defineConfig({
             ],
         }),
     ],
-    server: { 
-        host:   'localhost',
-        port:8000,
-
+    server: {
+        host: '0.0.0.0',
+        port: 5174,
+        hmr: {
+            host: 'cadastrekdg.sn',
+        },
+        cors: true,
     },
 });

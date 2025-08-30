@@ -7,11 +7,12 @@ import { usePage } from '@inertiajs/vue3';
 import {onMounted, ref, computed, watch, watchEffect } from 'vue';
 import axios from "axios"; 
 import { useToast } from "maz-ui";
+import MazTabs from 'maz-ui/components/MazTabs';
 import MazRadio from 'maz-ui/components/MazRadio';
 import DefaultLayout from "@/Layouts/DefaultLayout.vue"; 
 
-defineOptions({ layout: DefaultLayout });
-
+defineOptions({ layout: DefaultLayout }); 
+const fichierPDF = ref(null);
 
 const { terrain } = defineProps({
     terrain: Object,
@@ -23,6 +24,7 @@ const { terrain } = defineProps({
     occupants: Array,
     occupantsBP: Array,
 })
+
 
 const toast = useToast()
 const page = usePage() 
@@ -36,7 +38,52 @@ const maxOccupantsCL = 3;
 const maxOccupantsAP = 3; 
 const currentCat = ref('');  
   
- 
+const txt_nicad = computed(() => {
+    if (slt_commune.value === 1) {
+        return `13110100 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    } else if (slt_commune.value === 2) {
+        return `13120101 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    } else if (slt_commune.value === 3) {
+        return `13120102 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    }else if (slt_commune.value === 4) {
+        return `14120103 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    }else if (slt_commune.value === 5) {
+        return `13120104 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    }else if (slt_commune.value === 6) {
+        return `13120201 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    }else if (slt_commune.value === 7) {
+        return `13120202 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    } else if (slt_commune.value === 8) {
+        return `13210100 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    } else if (slt_commune.value === 9) {
+        return `13220101 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    }else if (slt_commune.value === 10) {
+        return `13220102 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    }else if (slt_commune.value === 11) {
+        return `13220201 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    }else if (slt_commune.value === 12) {
+        return `13220202 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    }else if (slt_commune.value === 13) {
+        return `13220103 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    } else if (slt_commune.value === 14) {
+        return `13310100 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    } else if (slt_commune.value === 15) {
+        return `13320101 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    }else if (slt_commune.value === 16) {
+        return `13320102 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    }else if (slt_commune.value === 17) {
+        return `13320201 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    }else if (slt_commune.value === 18) {
+        return `13310202 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    }else if (slt_commune.value === 19) {
+        return `13220203 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
+    }else {
+        return `${txt_num_section.value} ${txt_num_parcelle.value}  ${txt_appartement.value}`;
+    }
+});
+
+
+// Traitement Categorie 
 const categories = {
     'Maison individuelle': {
         '1': 205891, '2': 190883, '3': 180937, '4': 158411,
@@ -49,8 +96,7 @@ const categories = {
         'I': 53793, 'J': 25000, 'K': 22000, 'L': 20000, 'M': 8000,
     }
 }
-
-
+ 
 
 let show = ref(true);
     show.value = show;
@@ -71,6 +117,15 @@ const activeTab = ref('terrain');
 const setActiveTab = (tab) => {
     activeTab.value = tab;
 };
+ 
+const nbr_valeurPR = ref('');
+const nbr_valeurTG = ref(''); 
+//arondire les résultat
+function arrondirDeuxDecimales(valeur) {
+    const num = parseFloat(valeur);
+    if (isNaN(num)) return 0;
+    return Math.round((num + Number.EPSILON) * 100) / 100;
+}
 
 // Reference usage 
 function formatOccupants(references_usages) {
@@ -84,6 +139,7 @@ function formatOccupants(references_usages) {
 
   return [formatOccupant()];
 } 
+
 function formatOccupant(o = {}) {
   return {
     txt_nomOccupantTG: o.txt_nomOccupantTG || '',
@@ -223,7 +279,7 @@ const form = useForm({
   // Table ReferenceCadastrale
   rd_immatriculation_terrain: terrain?.references_cadastrales?.rd_immatriculation_terrain || '',
   slt_dependant_domaine: terrain?.references_cadastrales?.slt_dependant_domaine || '', 
-  issu_bornage: terrain?.references_cadastrales?.issu_bornage || '',
+  issu_bornage: terrain?.references_cadastrales?.ussu_bornage || '',
   txt_num_titre:  terrain?.references_cadastrales?.txt_num_titre || '', 
   txt_titre_mere: terrain?.references_cadastrales?.txt_titre_mere || '', 
   txt_appartement: terrain?.references_cadastrales?.txt_appartement || '', 
@@ -249,6 +305,7 @@ const form = useForm({
   eml_email:  terrain?.titulaire?.eml_email || '',
   txt_representant: terrain?.titulaire?.txt_representant || '',
   tel_telRepresentant:  terrain?.titulaire?.tel_telRepresentant || '',
+  fichierPDF: terrain.titulaire?.fichierPDF || '',
   // References Usage   
   slt_usage: terrain?.references_usages?.[0]?.slt_usage || '',
   slt_residence: terrain?.references_usages?.[0]?.slt_residence || '',
@@ -256,8 +313,7 @@ const form = useForm({
   occupants: formatOccupants(terrain?.references_usages), 
   nbr_montantLoyerTotal: terrain?.references_usages?.nbr_montantLoyerTotal  ||  '',
   nbr_TVATotal: terrain?.references_usages?.nbr_TVATotal  ||  '', 
-  // Evaluation Terrain 
-  nbr_surface: terrain?.evaluations_terrains?.nbr_surface || 0,
+  // Evaluation Terrain  
   txt_superficie_totale: terrain?.evaluations_terrains?.txt_superficie_totale || '',
   txt_superficie_bati_sol: terrain?.evaluations_terrains?.txt_superficie_bati_sol || '',
   slt_secteur: terrain?.evaluations_terrains?.slt_secteur || '',
@@ -290,7 +346,32 @@ const form = useForm({
   nbr_valeur_totale_ap: terrain?.evaluations_amenagements?.nbr_valeur_totale_ap || '',
 })
 
+// Reference usage
 
+const showUB = ref(false);
+const handleSelectChange = () => {
+    showUB.value = form.ussu_bornage === "Morcellement de Copropriété";
+};
+watch(() => form.ussu_bornage, (newValue) => {
+    showUB.value = newValue === "Morcellement de Copropriété";
+});
+
+const errorMessage = ref("");
+const validateInput = () => {
+    const value = txt_appartement.value.toString();
+
+    if (value.length > 3) {
+        txt_appartement.value = value.slice(0, 3); // Coupe à 3 chiffres max
+    }
+
+    if (value.length < 3) {
+        errorMessage.value = "❌ 3 chiffres.";
+    } else {
+        errorMessage.value = "";
+    }
+};
+
+// Occupants
 function addBlock() {
   if (form.occupants.length < maxOccupants) {
     form.occupants.push({
@@ -434,6 +515,41 @@ const nbr_TVATotal = computed(() => {
 watchEffect(() => {
   form.nbr_TVATotal = nbr_TVATotal.value.toFixed(2) // 2 décimales
 })
+
+// Verification saisis txt_superficie_bati_sol 
+watchEffect(() => {
+    const bati = Number(form.txt_superficie_bati_sol);
+    const surfacebatiSolPR = Number(form.nbr_surface_bati_solPR);
+ 
+    const surface = Number(form.nbr_surface);
+    form.txt_superficie_non_bati = (surface - bati).toFixed(2);
+
+    if (bati > surface) {
+        toast.error("Surface bâtie dépasse la superficie terrain.");
+        form.txt_superficie_bati_sol = surface; 
+    }if (surfacebatiSolPR > bati) {
+        toast.error("Surface bâtiment Principal dépasse la Superficie Bati.");
+        form.nbr_surface_bati_solPR = bati;       
+    }
+
+});
+
+// Verification saisis nbr_surface_bati_solTG 
+function verifierSurfaceOccupant(occupant) {
+    const bati = Number(form.txt_superficie_bati_sol);
+    const surfacebatisolTG = Number(occupant.nbr_surface_bati_solTG);
+    const surfaceCA = Number(occupant.nbr_surface_ca_total);
+        
+    const srfNonBati = Number(form.txt_superficie_non_bati);
+
+    if (surfacebatisolTG > bati) {
+        toast.error("Surface bâtiment dépasse la Superficie Bati.");
+        occupant.nbr_surface_bati_solTG = bati; 
+    } if (surfaceCA > srfNonBati) {
+        toast.error("Surface Cours de l'occupant dépasser la superficie non Bati.");
+        occupant.nbr_surface_ca_total = srfNonBati; 
+    }
+}
 
 // Calculer Valeur Terrain  
 const prixParSecteur = {
@@ -642,7 +758,7 @@ watchEffect(() => {
 });
 
 
-const isPrincipalSelected = computed(() => form.txt_dependant_domainePR = 'Principale');
+const isPrincipalSelected = computed(() => form.txt_dependant_domainePR === 'Principale');
 
 const tauxValeurLocative = computed(() => {
     if (!isPrincipalSelected.value) return 0;
@@ -714,28 +830,59 @@ const rechercherDossier = async () => {
     }
 }
  
-function submit() {
-    console.log('Data envoyée :', form.occupantsCA);
-    form.put(route('secretariat.update', terrain?.id), {
-        preserveScroll: true,
-        onSuccess: (page) => {
-          console.log("✅ Succès Laravel :", page);
-          const message = page.props.flash?.success || "Modification réussie !";
-          toast.success(message);  
-        },
-        onError: (errors) => {
-          console.error('Erreur lors de la mise à jour', errors);
-          Object.values(errors).forEach((error) => {
-            toast.error(error);
-          });
-        }
-    });
+// Récuperation des fichier PDF 
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+        toast.error("Veuillez sélectionner un fichier PDF valide.");
+        event.target.value = ""; // reset input
+        return;
+    }
+
+    if (file.size > 100 * 1024 * 1024) { // 100 Mo
+        toast.error("Le fichier dépasse 100 Mo !");
+        event.target.value = ""; // reset input
+        return;
+    }
+
+    form.fichierPDF = file;
+
+    console.log("✅ Fichier PDF sélectionné :", file);
 }
+
+
+function submit() {
+  console.log('Data envoyée :', form);
+  
+  form.put(route('secretariat.update', terrain.id), {
+    onSuccess: () => {
+      toast.success("✅ Modification réussie !");
+        console.log("✅ Succès Laravel :", page);
+
+        const message = page.props.flash?.success || "Modification réussie !"; 
+
+        // ✅ Réaffecter le fichierPDF depuis le backend
+        if (page.props.flash?.fichierPDF) {
+          form.fichierPDF = page.props.flash.fichierPDF;
+        }
+    },
+    onError: (errors) => {
+      Object.values(errors).forEach(msg => toast.error(msg));
+    }
+  });
+}
+
    
 </script>
 
 <template>
-  <Head title="Modifier Terrain" />
+  <Head title="Modifier Terrain" >
+
+      <meta name="csrf-token" content="{{ csrf_token() }}">
+  </Head>
 
   <AuthenticatedLayout>
     <template #header>
@@ -806,7 +953,7 @@ function submit() {
 
                             <div class="flex justify-center"> 
                               <h1 class="text-lg text-primary-txt font-bold">
-                                Modifier le terrain numéro : {{ terrain.dossier.txt_num_dossier }}
+                                Modifier la parcelle de numéro dossier : {{ terrain.dossier.txt_num_dossier }}
                               </h1> 
                             </div>
 
@@ -859,8 +1006,8 @@ function submit() {
                                       </div>
                                                                       
                                       <div>
-                                        <label for="dt_date_creation" class="block font-medium text-primary-txt">Date creation</label>
-                                        <input v-model="form.dt_date_creation" id="dt_date_creation" type="text" 
+                                        <label for="dt_date_creation" class="block font-medium text-primary-txt">Date creation</label> 
+                                        <input v-model="form.dt_date_creation" id="dt_date_creation" type="date" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -991,7 +1138,7 @@ function submit() {
                             
                                       <div>
                                         <label for="dt_date_deliberation" class="block font-medium text-primary-txt">Date Déliberation</label>
-                                        <input v-model="form.dt_date_deliberation" id="dt_date_deliberation" type="text" 
+                                        <input v-model="form.dt_date_deliberation" id="dt_date_deliberation" type="date" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1087,10 +1234,10 @@ function submit() {
                                     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
 
                                         <div>
-                                            <label for="issu_bornage" class="block font-medium text-primary-txt">Issu de bornage</label> 
+                                            <label for="ussu_bornage" class="block font-medium text-primary-txt">Ussu de bornage</label> 
                                             <select
-                                                v-model="form.issu_bornage" 
-                                                id="issu_bornage"
+                                                v-model="form.ussu_bornage" 
+                                                id="ussu_bornage"
                                                 class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                                 outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1317,7 +1464,7 @@ function submit() {
                                                                     
                                       <div>
                                         <label for="dt_date_delivrance" class="block font-medium text-primary-txt">Date Délivrance</label>
-                                        <input v-model="form.dt_date_delivrance" id="dt_date_delivrance" type="text" 
+                                        <input v-model="form.dt_date_delivrance" id="dt_date_delivrance" type="date" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1326,7 +1473,7 @@ function submit() {
                                                                     
                                       <div>
                                         <label for="dt_date_naissance" class="block font-medium text-primary-txt">Date Naissance</label>
-                                        <input v-model="form.dt_date_naissance" id="dt_date_naissance" type="text" 
+                                        <input v-model="form.dt_date_naissance" id="dt_date_naissance" type="date" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1696,12 +1843,31 @@ function submit() {
                                                                   v-model="form.txt_superficie_bati_sol"   
                                                                   id="Superficie_bati_sol" 
                                                                   min="0"
+                                                                  :max="form.nbr_surface" 
                                                                   class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                                                   outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                   focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                               </div>
                                                           </div>
                                                       </div>
+
+                                                      <div class="sm:col-span-2">
+                                                        <div class="mt-6">
+                                                            <label for="Superficie_non_bati" class="block text-sm/6 font-medium text-primary-txt">Superficie Non Bâti</label>
+                                                            <div>
+                                                                <input 
+                                                                type="number" 
+                                                                v-model="form.txt_superficie_non_bati"  
+                                                                readonly
+                                                                name="Superficie_non_bati"
+                                                                id="Superficie_non_bati" 
+                                                                :min="0" 
+                                                                class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                               
                                                       <div class="sm:col-span-2">
                                                           <div class="mt-6">
@@ -1743,6 +1909,8 @@ function submit() {
                                                               <div>
                                                                   <input type="number"
                                                                   v-model="form.nbr_valeur_terrain"  
+                                                                  step="0.01"
+                                                                  @blur="arrondirDeuxDecimales(nbr_valeur_terrain)" 
                                                                   readonly 
                                                                   class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                                                   outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
@@ -1909,7 +2077,7 @@ function submit() {
                                                                               outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                               focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                                       >
-                                                                        <option disabled value="">-- Choisir --</option>
+                                                                        <option  selected desabled></option>
                                                                         <option value="0.10">0.1</option>
                                                                         <option value="0.20">0.2</option>
                                                                         <option value="0.30">0.3</option>
@@ -1939,6 +2107,8 @@ function submit() {
                                                                       <input 
                                                                       type="number" 
                                                                       v-model="form.nbr_valeurPR" 
+                                                                      step="0.01"
+                                                                      @blur="() => arrondirDeuxDecimales(nbr_valeurPR)"
                                                                       readonly 
                                                                       class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
@@ -2112,6 +2282,8 @@ function submit() {
                                                                       <input 
                                                                       type="number" 
                                                                       v-model="occupant.nbr_valeurTG" 
+                                                                      step="0.01"
+                                                                      @blur="arrondirOccupantValeur(occupant)"
                                                                       readonly 
                                                                       class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
@@ -2154,6 +2326,8 @@ function submit() {
                                                       <input 
                                                           type="number" 
                                                           :value="txt_valeur_terrain_bati"
+                                                          step="0.01"
+                                                          @blur="() => arrondirDeuxDecimales(txt_valeur_terrain_bati)"
                                                           readonly
                                                           id="Valeur_terrain_bati"
                                                           class="block w-full rounded-md bg-white 
@@ -2261,6 +2435,8 @@ function submit() {
                                                                   <div> 
                                                                       <input type="number" 
                                                                       v-model="occupant.nbr_valeur_ca_total" 
+                                                                      step="0.01"
+                                                                      @blur="() => arrondirDeuxDecimales(occupant)"
                                                                       readonly 
                                                                       id="Valeur_ca_total"  
                                                                       class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
@@ -2299,7 +2475,9 @@ function submit() {
                                                   <div> 
                                                       <label for="nbr_valeur_total_ca" class="block font-medium text-primary-txt">Valeur Total des Cours</label>
                                                       <input type="number" 
-                                                      v-model="form.nbr_valeur_total_ca" 
+                                                      v-model="form.nbr_valeur_total_ca"
+                                                      step="0.01" 
+                                                      @blur="() => arrondirDeuxDecimales(nbr_valeur_total_ca)"
                                                       readonly
                                                       id="nbr_valeur_total_ca"  class="block w-full rounded-md bg-white 
                                                           px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 
@@ -2449,6 +2627,8 @@ function submit() {
                                                       <input type="number"  
                                                           step="0.01"       
                                                           v-model="form.nbr_valeur_total_clotur" 
+                                                          :step="0.01"  
+                                                          @blur="() => arrondirDeuxDecimales(form.nbr_valeur_total_clotur)"
                                                           readonly
                                                           name="nbr_valeur_total_clotur" 
                                                           id="Valeur_total_clotur"  
@@ -2576,6 +2756,8 @@ function submit() {
                                                           v-model="form.nbr_valeur_totale_ap" 
                                                           readonly
                                                           name="nbr_valeur_totale_ap" 
+                                                          step="0.01"  
+                                                          @blur="() => arrondirDeuxDecimales(form.nbr_valeur_totale_ap)"
                                                           id="valeur_totale_ap"  
                                                           class="block w-full rounded-md bg-white 
                                                           px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 
@@ -2598,6 +2780,8 @@ function submit() {
                                                           <label for="nbr_valeurVenaleLimeuble" class="block font-medium text-primary-txt">Valeur Vénale de l'immeuble</label>
                                                           <input type="number"        
                                                               v-model="form.nbr_valeurVenaleLimeuble" 
+                                                              step="0.01"  
+                                                              @blur="() => arrondirDeuxDecimales(form.nbr_valeurVenaleLimeuble)"
                                                               readonly 
                                                               id="nbr_valeurVenaleLimeuble"  
                                                               class="block w-64 rounded-md bg-white 
@@ -2611,14 +2795,15 @@ function submit() {
                                                           <label for="nbr_valeurLocative" class="block font-medium text-primary-txt">Valeur Locative</label>
                                                           <input type="number"        
                                                               v-model="form.nbr_valeurLocative" 
+                                                              step="0.01"
+                                                               @blur="() => arrondirDeuxDecimales(form.nbr_valeurLocative)"
                                                               readonly 
                                                               id="nbr_valeurLocative"  
                                                               class="block w-64 rounded-md bg-white 
                                                               px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 
                                                               outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                               focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
-                                                      </div>
-                                                      <!-- <p>Taux détecté : {{ occupant.tauxValeurLocative }}</p> -->
+                                                      </div> 
                                                   </div>
                                                   <div  class="grid gap-6 mb-6 md:grid-cols-1">
                                                       <div> 
@@ -2631,6 +2816,32 @@ function submit() {
                                                                   px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 
                                                                   outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                                   focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
+                                                      </div>
+                                                  </div>
+                                                  <div class="sm:col-span-2">
+                                                      <div class="sm:col-span-1">
+                                                          <label for="fichierPDF" class="block font-medium text-primary-txt">Importer le Fichier PDF</label> 
+                                                          <input
+                                                              type="file"
+                                                              name="fichierPDF"
+                                                              accept="application/pdf"  
+                                                              id="fichierPDF" 
+                                                              @change="handleFileUpload"
+                                                              class="block w-64 rounded-md bg-white 
+                                                                  px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 
+                                                                  outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                                  focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                                                          /> 
+                                                          <!-- ✅ Affichage le fichier enregistré -->
+                                                          <div v-if="form.fichierPDF && typeof form.fichierPDF === 'string'" class="mt-2"> 
+                                                              <a
+                                                                  :href="`/storage/${form.fichierPDF}`"
+                                                                  target="_blank"
+                                                                  class="text-blue-600 underline"
+                                                              >
+                                                                  Voir le fichier
+                                                              </a>
+                                                          </div> 
                                                       </div>
                                                   </div>
                                               </div>

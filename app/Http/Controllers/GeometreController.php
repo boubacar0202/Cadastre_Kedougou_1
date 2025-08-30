@@ -22,23 +22,7 @@ class GeometreController extends Controller
         return Inertia::render("geometre/index");
     }
   
-    // public function create(Request $request)
-    // {
-    //     // Récupération du dossier à partir du numéro en session
-    //     $dossier = Dossier::where('txt_num_dossier', session('txt_num_dossier'))->first();
 
-    //     // Vérifie que le dossier existe avant de chercher le terrain
-    //     $terrain = $dossier ? Terrain::where('txt_num_dossier', $dossier->id)->first() : null;
-
-    //     return Inertia::render('geometre/create', [
-    //         'terrain' => $terrain,
-    //         // 'txt_nicad' => $terrain?->txt_nicad,
-    //         // 'nbr_surface' => $terrain?->nbr_surface,
-    //         'nbr_surface' => $request->session()->get('nbr_surface', 0),
-    //         'txt_nicad' => $request->session()->get('txt_nicad', ''),
-    //         'txt_num_dossier' => $request->session()->get('txt_num_dossier', ''),
-    //     ]);
-    // } 
     public function create()
     {
         // Récupère le dernier dossier créé (ou modifie cette logique selon ton besoin)
@@ -63,6 +47,8 @@ class GeometreController extends Controller
     {
         $request->validate([
             'txt_num_dossier' => 'required|string',
+        ],[
+            'txt_num_dossier.required' => '❌ Entrer le Numéro dossier',
         ]);
     
         $dossier = Dossier::where('txt_num_dossier', $request->txt_num_dossier)->first();
@@ -71,14 +57,14 @@ class GeometreController extends Controller
         if ($dossier) {
             // Pas de redirection — juste retour d'un flag JSON
             return response()->json([
-                'success' => 'Dossier trouvé !',
+                'success' => '✅ Numéro Dossier trouvé !',
                 'exists' => true,
                 'terrain' => $terrain,
             ], 200);
         } else {
             return response()->json([
                 'errors' => [
-                    'txt_num_dossier' => 'Numéro introuvable.'
+                    'txt_num_dossier' => '❌ Numéro dossier introuvable.'
                 ]
             ], 422);
         }
@@ -183,7 +169,30 @@ class GeometreController extends Controller
         'nbr_prix_metre_carre' => 'nullable|numeric',
         'nbr_valeur_terrain' => 'nullable|numeric', 
 
+        ],[
+
+            'slt_region.required' => 'Region est Obligatoire',
+            'txt_num_dossier.required' => 'Numéro dossier est Obligatoire',
+            'txt_nicad.required' => 'Nicad est Obligatoire',
+            'slt_residence.required' => 'Résidence est Obligatoire',
+            'slt_usage.required' => 'Usage est Obligatoire',
+            'occupants.required' => 'Occupants est Obligatoire',
+            'occupantsCA.required' => 'Occupants CA est Obligatoire', 
+            'occupantsCL.required' => 'Occupants CL est Obligatoire',
+            'occupantsAP.required' => 'Occupants AP est Obligatoire',
+            'currentCat.required' => 'Catégorie est Obligatoire',
+            'occupantsBP.required' => 'Occupants BP est Obligatoire',
+            'nbr_surface' => 'Surface est Obligatoire', 
+            'nbr_valeurVenaleLimeuble.required' => 'Valeur Vénale est Obligatoire',
+            'nbr_valeurLocative.required' => 'Valeur Locative est Obligatoire',
+            'dt_dateEvaluation.required' => 'Date d\'évaluation est Obligatoire',  
+
+            'fichierPDF.file' => 'Le fichier sélectionné est invalide.',
+            'fichierPDF.mimes' => 'Le fichier doit être au format PDF.',
+            'fichierPDF.max' => 'La taille du fichier ne doit pas dépasser 120 Mo.',
+
         ]); 
+
             $occupants = $request->input('occupants');
             $montantLoyerTotal = 0;
             foreach ($request->input('occupants') as $occupant) {
@@ -341,7 +350,7 @@ class GeometreController extends Controller
                 ]);
             }
             
-            return redirect()->back()->with('success', 'Donnée enregistrée !');
+            return redirect()->back()->with('success', '✅ Donnée enregistrée !');
  
     }
 

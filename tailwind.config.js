@@ -21,6 +21,7 @@ export default {
                 "primary-only": "#E6C5A2", // #E6C5A2
                 "primary-menu": "#C7812E", //  #C7812E
                 "primary-form": "#ffe5c5", //  #ffe5c5
+                "primary-layout": "#faefe6ff", //  #ffe5c5
             },
             // Ajoute la personnalisation de la scrollbar
             scrollbar: ['rounded'],

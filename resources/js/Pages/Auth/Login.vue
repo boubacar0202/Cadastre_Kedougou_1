@@ -1,4 +1,5 @@
 <script setup>
+ 
 import Checkbox from '@/Components/Checkbox.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import InputError from '@/Components/InputError.vue';
@@ -7,6 +8,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Inertia } from '@inertiajs/inertia';
+
 
 defineProps({
     canResetPassword: {
@@ -31,7 +33,7 @@ const submit = () => {
 </script>
 
 <template>
-    <GuestLayout class="bg-primary-only">
+    <GuestLayout class="bg-white">
         <Head title="Login" />
 
         <div v-if="status" class="mb-4 text-sm font-medium text-primary-txt font-bold">
@@ -78,7 +80,7 @@ const submit = () => {
                 <label class="flex items-center">
                     <Checkbox name="remember" v-model:checked="form.remember" class="text-primary" />
                     <span class="ms-2 text-sm text-primary"
-                        >Se souvenir de moi </span
+                        >Se souvenir de moi</span
                     >
                 </label>
             </div>

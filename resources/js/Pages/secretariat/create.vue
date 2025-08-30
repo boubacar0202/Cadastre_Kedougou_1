@@ -1,5 +1,5 @@
 <script setup>
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue"; 
 import { Head, useForm } from "@inertiajs/vue3";
 import MazBtn from "maz-ui/components/MazBtn";
 import MazRadio from "maz-ui/components/MazRadio";
@@ -8,9 +8,11 @@ import axios from "axios";
 import { useToast } from "maz-ui";
 import DefaultLayout from "@/Layouts/DefaultLayout.vue";
 import { Inertia } from '@inertiajs/inertia';
+ 
 
 defineOptions({ layout: DefaultLayout });
 
+const toast = useToast();
 const slt_region = ref();
 const slt_departement = ref();
 const slt_arrondissement = ref();
@@ -23,7 +25,32 @@ const slt_dependant_domaine = ref(null); // ou ref({}) selon l'utilisation
 const txt_num_section = ref('');
 const txt_num_parcelle = ref('');
 const txt_appartement = ref('');
-//
+const today = new Date().toISOString().split('T')[0];
+const fichierPDF = ref(null);
+
+// Récuperer le fichier PDF 
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+        toast.error("❌ Veuillez sélectionner un fichier PDF valide.");
+        event.target.value = ""; // reset input
+        return;
+    }
+
+    if (file.size > 100 * 1024 * 1024) { // 100 Mo
+        toast.error("❌ Le fichier dépasse 100 Mo !");
+        event.target.value = ""; // reset input
+        return;
+    }
+
+    fichierPDF.value = file;
+    form.fichierPDF = file;
+
+    console.log("Fichier PDF sélectionné :", fichierPDF.value);
+}
 
 const txt_nicad = computed(() => {
     if (slt_commune.value === 1) {
@@ -68,16 +95,6 @@ const txt_nicad = computed(() => {
         return `${txt_num_section.value} ${txt_num_parcelle.value}  ${txt_appartement.value}`;
     }
 });
-
-const toast = useToast();
-
-const showError = (message) => {
-    if (toast?.error) {
-        toast.error(message);
-    } else {
-        console.error("Erreur MazUI Toast : ", message);
-    }
-};
 
 const props = defineProps({
     regions: {
@@ -141,24 +158,9 @@ const form = useForm({
     eml_email: "",
     txt_representant: "",
     tel_telRepresentant: "", 
+    fichierPDF: "",
 });
-
-// Récupérer le prochain numéro de dossier
-// const fetchNextDossier = async () => {
-//     try {
-//         const response = await axios.get("/dossier/next");
-
-//         console.log("Numéro de dossier suivant :", response.data.num_dossier);
-//         form.txt_num_dossier = response.data.num_dossier || "";
-    
-//     } catch (error) {
-//         console.error("Erreur lors de la récupération du numéro de dossier :", error);
-//     }
-// };   
-
-// Charger le numéro de dossier au chargement du composant
-// onMounted(fetchNextDossier);
-
+ 
 const fetchNextDossier = async () => {
     try {
         const response = await axios.get("/dossier/next");
@@ -169,18 +171,7 @@ const fetchNextDossier = async () => {
     }
 };
 onMounted(fetchNextDossier);
-
-// Charger le numéro dordre 
-onMounted(async () => {
-    const annee = new Date().getFullYear()
-    try {
-        const res = await axios.get(`/secretariat/dernier-ordre/${annee}`)
-        form.txt_num_dordre = res.data.dernier + 1
-        form.txt_num_dossier = String(form.txt_num_dordre).padStart(5, '0') + '/' + annee
-    } catch (err) {
-        console.error("Erreur lors du chargement du numéro d'ordre :", err)
-    }
-})
+ 
 
 // Mettez à jour les watchers pour utiliser form.selectedRegion, etc.
 watch(
@@ -278,7 +269,7 @@ const validateInput = () => {
     }
 
     if (value.length < 3) {
-        errorMessage.value = "3 chiffres.";
+        errorMessage.value = "❌ 3 chiffres.";
     } else {
         errorMessage.value = "";
     }
@@ -295,7 +286,7 @@ const validateInputNumSection = () => {
     }
     // Validation pour une saisie de 3 caractères exactement
     if (value.length < 3) {
-        errorMessageNumSection.value = "3 chiffres.";
+        errorMessageNumSection.value = "❌ 3 chiffres.";
     } else {
         errorMessageNumSection.value = "";
     }
@@ -314,7 +305,7 @@ const validateInputNumParcelle = () => {
 
     // Validation pour une saisie de 5 caractères exactement
     if (value.length < 5) {
-        errorMessageNumParcelle.value = "5 chiffres.";
+        errorMessageNumParcelle.value = "❌ 5 chiffres.";
     } else {
         errorMessageNumParcelle.value = "";
     }
@@ -327,29 +318,6 @@ const mazTabs = [
     },
 ];
 
-// Récuperer le fichier PDF 
-function handleFileUpload(event) {
-    const file = event.target.files[0];
-
-    if (!file) return;
-
-    if (file.type !== "application/pdf") {
-        toast.error("Veuillez sélectionner un fichier PDF valide.");
-        event.target.value = ""; // reset input
-        return;
-    }
-
-    if (file.size > 100 * 1024 * 1024) { // 100 Mo
-        toast.error("Le fichier dépasse 100 Mo !");
-        event.target.value = ""; // reset input
-        return;
-    }
-
-    fichierPDF.value = file;
-    form.fichierPDF = file;
-
-    console.log("Fichier PDF sélectionné :", fichierPDF.value);
-}
  
 const submitForm = function () {  // Ajoutez `async` ici
     console.log("📤 Envoi du formulaire :", form);
@@ -368,7 +336,7 @@ const submitForm = function () {  // Ajoutez `async` ici
     form.post(route('secretariat.store'), {
         onSuccess: (page) => {
             console.log("✅ Enregistré !", page);
-            toast.success(page.props.flash?.success || "Dossier enregistré !");
+            toast.success(page.props.flash?.success || "✅ Dossier enregistré !");
             Inertia.visit(route("secretariat.create"), { replace: true });
         },
         onError: (errors) => {
@@ -431,8 +399,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         type="text"
                                                         name="txt_num_dossier"
                                                         v-model="form.txt_num_dossier" 
-                                                        required
-                                                        readonly
+                                                        required 
                                                         id="txt_num_dossier"
                                                         class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
@@ -569,7 +536,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                 <label
                                                     for="txt_cession_definitive"
                                                     class="block text-sm/6 font-medium text-primary-txt"
-                                                    >Cesssion définitive</label
+                                                    >Cession définitive</label
                                                 >
                                                 <div class="mt-2">
                                                     <input
@@ -601,6 +568,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         v-model="
                                                             form.dt_date_creation
                                                         "
+                                                        :max="today"
                                                         required
                                                         id="dt_date_creation"
                                                         autocomplete="address-level2"
@@ -1059,7 +1027,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     </label>
                                                     <div class="mt-2">
                                                         <select
-                                                            v-model="slt_dependant_domaine"
+                                                            v-model="form.slt_dependant_domaine"
                                                             name="slt_dependant_domaine"
                                                             id="slt_dependant_domaine"
                                                             class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1450,6 +1418,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         form.dt_date_delivrance
                                                     "
                                                     required
+                                                    :max="new Date().toISOString().split('T')[0]"
                                                     id="dateDelivrance"
                                                     autocomplete="address-level2"
                                                     class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1471,6 +1440,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     v-model="
                                                         form.dt_date_naissance
                                                     "
+                                                    :max="new Date().toISOString().split('T')[0]"
                                                     required
                                                     id="dateNaissance"
                                                     autocomplete="address-level2"
@@ -1625,17 +1595,17 @@ const submitForm = function () {  // Ajoutez `async` ici
                                         
                                         <div  class="sm:col-span-2"> 
                                             <label 
-                                                for="Date_devaluation" 
+                                                for="fichierPDF" 
                                                 class="block text-sm/6 font-medium text-primary-txt"
                                                 >Importer le fichier</label
                                             >
                                             <div class="mt-2">
                                                 <input 
                                                 type="file"  
-                                                name="fichier_PDF"
+                                                name="fichierPDF"
                                                 accept="application/pdf"
-                                                @change="handleFileUpload"
-                                                id="fichier_PDF"
+                                                @change="handleFileUpload" 
+                                                id="fichierPDF"
                                                 autocomplete="off"  
                                                 class="h-8 block w-full rounded-md bg-white 
                                                     px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 

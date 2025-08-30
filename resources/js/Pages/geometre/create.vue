@@ -27,11 +27,6 @@ const maxOccupantsAP = 3;
 const currentCat = ref('');
 const page = usePage();
 
-// const props = defineProps({
-//     terrain: Object,
-//     txt_nicad: String,
-//     nbr_surface: Number,
-// }); 
 
 const form = useForm({
     //recupèration
@@ -154,6 +149,16 @@ const activeTab = ref('terrain');
 const setActiveTab = (tab) => {
     activeTab.value = tab;
 };
+
+
+const nbr_valeurPR = ref('');
+const nbr_valeurTG = ref(''); 
+//arondire les résultat
+function arrondirDeuxDecimales(valeur) {
+    const num = parseFloat(valeur);
+    if (isNaN(num)) return 0;
+    return Math.round((num + Number.EPSILON) * 100) / 100;
+}
 
 // Regference Usage
 // bloc ajouter 
@@ -311,49 +316,100 @@ watchEffect(() => {
         }
     })
 }) 
+
 // Synchronisation automatique
 watch(currentCat, (newVal) => {
   form.currentCat = newVal
 })
  
+// const rechercherDossier = async () => {
+//     try {
+//         const { data } = await axios.post('/dossier/verify', {
+//             txt_num_dossier: txt_num_dossier.value
+//         });
+
+//         if (data.exists) {
+//         // ✅ Afficher le formulaire
+//         formVisible.value = true;
+
+//         // ✅ Affecter les données récupérées du dossier
+//         form.txt_num_dossier = txt_num_dossier.value;
+
+//         // ✅ Affecter les données du terrain s'il existe
+//         const terrain = data.terrain;
+
+//         form.txt_nicad = terrain?.txt_nicad ?? '';
+//         form.nbr_surface = terrain?.nbr_surface ?? 0;
+
+//         // ✅ Message de confirmation
+//         toast.success(data.success);
+
+//         console.log("✅ Terrain chargé :", terrain);
+//         } else {
+//             formVisible.value = false;
+//             toast.error(date.error || "Dossier introuvable.");
+//         }
+//     } catch (err) {
+//         formVisible.value = false;
+//         console.error("❌ Erreur complète :", err);
+
+//         if (err.response?.status === 422 && err.response.data.errors) {
+//             Object.values(err.response.data.errors).forEach(msg => toast.error(msg));
+//         } else {
+//             toast.error("Une erreur est survenue lors de la vérification.");
+//         }
+//     }
+// };
+
 const rechercherDossier = async () => {
     try {
         const { data } = await axios.post('/dossier/verify', {
-        txt_num_dossier: txt_num_dossier.value
+            txt_num_dossier: txt_num_dossier.value
         });
 
         if (data.exists) {
-        // ✅ Afficher le formulaire
-        formVisible.value = true;
+            const terrain = data.terrain;
+            const nicad = terrain?.txt_nicad ?? "";
 
-        // ✅ Affecter les données récupérées du dossier
-        form.txt_num_dossier = txt_num_dossier.value;
+            // ✅ Vérification du NICAD
+            if (!nicad) {
+                formVisible.value = false;
+                toast.error("Ce dossier n'a pas de numéro NICAD.");
+                return;
+            }
 
-        // ✅ Affecter les données du terrain s'il existe
-        const terrain = data.terrain;
+            if (nicad.length <= 8) {
+                formVisible.value = false;
+                toast.error("Le NICAD est incomplet. Vérifiez !");
+                return;
+            }
 
-        form.txt_nicad = terrain?.txt_nicad ?? '';
-        form.nbr_surface = terrain?.nbr_surface ?? 0;
+            // ✅ Afficher le formulaire si tout est correct
+            formVisible.value = true;
+            form.txt_num_dossier = txt_num_dossier.value;
+            form.txt_nicad = nicad;
+            form.nbr_surface = terrain?.nbr_surface ?? 0;
 
-        // ✅ Message de confirmation
-        toast.success(data.success);
+            toast.success(data.success);
+            console.log("✅ Terrain chargé :", terrain);
 
-        console.log("✅ Terrain chargé :", terrain);
         } else {
-        formVisible.value = false;
-        toast.error("Dossier introuvable.");
+            formVisible.value = false;
+            toast.error(data.error || "Dossier introuvable.");
         }
     } catch (err) {
         formVisible.value = false;
         console.error("❌ Erreur complète :", err);
 
         if (err.response?.status === 422 && err.response.data.errors) {
-        Object.values(err.response.data.errors).forEach(msg => toast.error(msg));
+            Object.values(err.response.data.errors).forEach(msg => toast.error(msg));
         } else {
-        toast.error("Une erreur est survenue lors de la vérification.");
+            toast.error("Une erreur est survenue lors de la vérification.");
         }
     }
 };
+
+
   
 //  Calculer Montant Total Loyer 
  
@@ -370,37 +426,38 @@ const nbr_TVATotal = computed(() => {
     return (nbr_montantLoyerTotal.value * 0.18).toFixed(2);
 });
 
-// Calculer Valeur Terrain  
+// Verification saisis txt_superficie_bati_sol 
 watchEffect(() => {
     const bati = Number(form.txt_superficie_bati_sol);
     const surfacebatiSolPR = Number(form.nbr_surface_bati_solPR);
-    // const surfacebatiSolTG = Number(form.nbr_surface_bati_solTG);
-
+ 
     const surface = Number(form.nbr_surface);
+    form.txt_superficie_non_bati = (surface - bati).toFixed(2);
 
     if (bati > surface) {
         toast.error("Surface bâtie dépasse la superficie terrain.");
-        form.txt_superficie_bati_sol = surface; // Ou remettre à 0 si tu préfères
-    }if (surfacebatiSolPR > surface) {
-        toast.error("Surface bâtie dépasse la superficie terrain.");
-        form.nbr_surface_bati_solPR = surface; // Ou remettre à 0 si tu préfères        
+        form.txt_superficie_bati_sol = surface; 
+    }if (surfacebatiSolPR > bati) {
+        toast.error("Surface bâtiment Principal dépasse la Superficie Bati.");
+        form.nbr_surface_bati_solPR = bati;       
     }
+
 });
 
-// Verification saisis nbr_surface_bati_solTG
+// Verification saisis nbr_surface_bati_solTG 
 function verifierSurfaceOccupant(occupant) {
-    const surfaceTotale = Number(form.nbr_surface);
+    const bati = Number(form.txt_superficie_bati_sol);
     const surfacebatisolTG = Number(occupant.nbr_surface_bati_solTG);
     const surfaceCA = Number(occupant.nbr_surface_ca_total);
         
-    if (surfacebatisolTG > surfaceTotale) {
-        toast.error("Surface bâtie de l'occupant dépasser la superficie terrain.");
-        occupant.nbr_surface_bati_solTG = surfaceTotale;
-        // nbr_surface_bati_solTG
-    } if (surfaceCA > surfaceTotale) {
-        toast.error("Surface bâtie de l'occupant dépasser la superficie terrain.");
-        occupant.nbr_surface_ca_total = surfaceTotale;
-        // nbr_surface_ca_total
+    const srfNonBati = Number(form.txt_superficie_non_bati);
+
+    if (surfacebatisolTG > bati) {
+        toast.error("Surface bâtiment dépasse la Superficie Bati.");
+        occupant.nbr_surface_bati_solTG = bati; 
+    } if (surfaceCA > srfNonBati) {
+        toast.error("Surface Cours de l'occupant dépasser la superficie non Bati.");
+        occupant.nbr_surface_ca_total = srfNonBati; 
     }
 }
 
@@ -490,7 +547,7 @@ const coeffCAValues = {
     1: 17500,
     2: 13500,
     3: 10500,
-    4: 5000
+    4: 5000,
 }; 
 watchEffect(() => {
     form.occupantsCA.forEach((occupant) => {
@@ -549,8 +606,8 @@ watchEffect(() => {
 
 // calculer nbr_valeur_totale_ap, 
 watchEffect(() => {
-    form.occupantsAP.forEach((occupant) => {
-        // nbr_valeur_unitaire_am, nbr_quantile_am, slt_coeficien_am
+    form.occupantsAP.forEach((occupant) => { 
+
         const valeurUnitaire = parseFloat(occupant.nbr_valeur_unitaire_am) || 0; 
         const quantite = parseFloat(occupant.nbr_quantile_am) || 0;
         const coeffCA = parseFloat(occupant.slt_coeficien_am) || 0;
@@ -575,7 +632,9 @@ const nbr_valeurVenaleLimeuble = computed(() => {
     const clotur = parseFloat(nbr_valeur_total_clotur.value) || 0;
     const ap = parseFloat(nbr_valeur_totale_ap.value) || 0;
 
-    return terrain + ca + clotur + ap;
+    //return terrain + ca + clotur + ap;
+    const resulval = terrain + ca + clotur + ap;
+    return parseFloat(resulval.toFixed(2));
 });
 watchEffect(() => {
     form.nbr_valeurVenaleLimeuble = nbr_valeurVenaleLimeuble.value;
@@ -609,7 +668,9 @@ const nbr_valeurLocative = computed(() => {
     if (!isPrincipalSelected.value) return 0; 
     const valeurVenale = parseFloat(form.nbr_valeurVenaleLimeuble) || 0;
     const taux = tauxValeurLocative.value;
-    return valeurVenale * taux;
+   // return valeurVenale * taux;
+   const result = valeurVenale * taux;
+   return parseFloat(result.toFixed(2));
 });
 watchEffect(() => {
     form.nbr_valeurLocative = nbr_valeurLocative.value;
@@ -627,7 +688,7 @@ const submitForm = async () => {
 
     form.post(route('geometre.store'), {
       onSuccess: (page) => {
-        toast.success(page.props.flash?.success || 'Opération réussie !')
+        toast.success(page.props.flash?.success || '✅ Opération réussie !')
         Inertia.reload()
       },
       onError: (errors) => {
@@ -959,7 +1020,9 @@ const submitForm = async () => {
                                                             <input type="number" 
                                                             v-model="nbr_montantLoyerTotal"
                                                             readonly
-                                                            id="MontantLoyerTotal"  
+                                                            id="MontantLoyerTotal" 
+                                                            step="0.01"
+                                                            @blur="arrondirDeuxDecimales(nbr_montantLoyerTotal)"  
                                                             class="h-8 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-form 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
@@ -1097,13 +1160,31 @@ const submitForm = async () => {
                                                                 name="txt_superficie_bati_sol"
                                                                 id="Superficie_bati_sol" 
                                                                 :min="0"
-                                                                :max="form.nbr_surface"
+                                                                :max="form.nbr_surface" 
                                                                 class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                 outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                             </div>
                                                         </div>
                                                     </div>
+                                                    <div class="sm:col-span-2">
+                                                        <div class="mt-6">
+                                                            <label for="Superficie_non_bati" class="block text-sm/6 font-medium text-primary-txt">Superficie Non Bâti</label>
+                                                            <div>
+                                                                <input 
+                                                                type="number" 
+                                                                v-model="form.txt_superficie_non_bati"  
+                                                                readonly
+                                                                name="Superficie_non_bati"
+                                                                id="Superficie_non_bati" 
+                                                                :min="0" 
+                                                                class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                            
                                             
                                                     <div class="sm:col-span-2">
                                                         <div class="mt-6">
@@ -1147,6 +1228,8 @@ const submitForm = async () => {
                                                             <div>
                                                                 <input type="number"
                                                                 v-model="nbr_valeur_terrain"  
+                                                                step="0.01"
+                                                                @blur="arrondirDeuxDecimales(nbr_valeur_terrain)" 
                                                                 readonly
                                                                 id="Valeur_terrain"  
                                                                 class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1274,7 +1357,7 @@ const submitForm = async () => {
                                                                     v-model="form.nbr_surface_bati_solPR"
                                                                     name="nbr_surface_bati_solPR"
                                                                     :min="0"
-                                                                    :max="form.nbr_surface"
+                                                                    :max="form.txt_superficie_bati_sol"
                                                                     type="number" 
                                                                     id="Surface_bati_sol"  
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1327,6 +1410,7 @@ const submitForm = async () => {
                                                                         <option value="0.6">0.6</option>
                                                                         <option value="0.7">0.7</option>
                                                                         <option value="0.8">0.8</option>
+                                                                        <option value="0.9">0.9</option>
                                                                     </select>
                                                                 </div>
                                                             </div>
@@ -1350,6 +1434,8 @@ const submitForm = async () => {
                                                                     type="number" 
                                                                     v-model="form.nbr_valeurPR"
                                                                     name="nbr_valeurPR"
+                                                                    step="0.01"
+                                                                    @blur="() => arrondirDeuxDecimales(nbr_valeurPR)"
                                                                     readonly
                                                                     id="Valeur"  
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1457,8 +1543,8 @@ const submitForm = async () => {
                                                                     <input  
                                                                     v-model="occupant.nbr_surface_bati_solTG"
                                                                     :min="0"
-                                                                    :max="form.nbr_surface"
-                                                                    @input="verifierSurfaceOccupant(occupant)"
+                                                                    :max="form.txt_superficie_bati_sol"
+                                                                    @blur="arrondirOccupantValeur(occupant)"
                                                                     type="number" 
                                                                     id="Surface_bati_sol"  
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
@@ -1471,7 +1557,7 @@ const submitForm = async () => {
                                                                 <div>
                                                                     <input  
                                                                     v-model="occupant.nbr_niveauTG"
-                                                                    name="nbr_niveauTG"
+                                                                    name="nbr_niveauTG" 
                                                                     type="number" 
                                                                     id="Niveau" 
                                                                     class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1512,6 +1598,7 @@ const submitForm = async () => {
                                                                         <option value="0.6">0.6</option>
                                                                         <option value="0.7">0.7</option>
                                                                         <option value="0.8">0.8</option>
+                                                                        <option value="0.9">0.9</option>
                                                                     </select>
                                                                 </div>
                                                             </div>
@@ -1535,6 +1622,8 @@ const submitForm = async () => {
                                                                     <input 
                                                                     type="number" 
                                                                     v-model="occupant.nbr_valeurTG"
+                                                                    step="0.01"
+                                                                    @blur="arrondirOccupantValeur(occupant)"
                                                                     name="nbr_valeurTG"
                                                                     readonly
                                                                     id="Valeur"  
@@ -1579,6 +1668,8 @@ const submitForm = async () => {
                                                     <input 
                                                         type="number" 
                                                         :value="txt_valeur_terrain_bati"
+                                                        step="0.01"  
+                                                        @blur="txt_valeur_terrain_bati = arrondirDeuxDecimales(txt_valeur_terrain_bati)" 
                                                         readonly
                                                         id="Valeur_terrain_bati"
                                                         class="block w-full rounded-md bg-white 
@@ -1602,7 +1693,7 @@ const submitForm = async () => {
                                                         class="sm:col-span-8"> 
                                                         <div  class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"> 
                                                             <div class="sm:col-span-1">
-                                                                    <label for="CoursAmenagerTotale" class="block text-sm/6 font-medium text-primary-txt">Cours Aménagées Totale</label>
+                                                                    <label for="CoursAmenagerTotale" class="block text-sm/6 font-medium text-primary-txt">Désignation</label>
                                                                 <div>   
                                                                     <select 
                                                                     v-model="occupant.slt_cours_amenager_totale" 
@@ -1692,7 +1783,7 @@ const submitForm = async () => {
                                                                     <label for="Valeur_ca_total" class="block text-sm/6 font-medium text-primary-txt">Valeur</label>
                                                                 <div> 
                                                                     <input type="number" 
-                                                                    v-model="occupant.nbr_valeur_ca_total" 
+                                                                    v-model="occupant.nbr_valeur_ca_total"  
                                                                     readonly
                                                                     name="nbr_valeur_ca_total" 
                                                                     id="Valeur_ca_total"  
@@ -1733,6 +1824,8 @@ const submitForm = async () => {
                                                     <label for="Valeur_total_cours" class="block text-sm/6 font-medium text-primary-txt">Valeur Total des Cours</label>
                                                     <input type="number" 
                                                     v-model="nbr_valeur_total_ca" 
+                                                    step="0.01"
+                                                    @blur="nbr_valeur_total_ca = arrondirDeuxDecimales(nbr_valeur_total_ca)" 
                                                     readonly
                                                     name="nbr_valeur_total_cours" id="Valeur_total_cours"  class="block w-full rounded-md bg-white 
                                                         px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
@@ -1846,6 +1939,7 @@ const submitForm = async () => {
                                                                 <div> 
                                                                     <input type="number"   
                                                                     v-model="occupant.nbr_valeur_clo" 
+                                                                    @blur="arrondirOccupantValeur(occupant)"
                                                                     name="nbr_valeur_clo" 
                                                                     id="Valeur_clo"  
                                                                     class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1888,6 +1982,8 @@ const submitForm = async () => {
                                                     </label>
                                                     <input type="number"         
                                                         v-model="nbr_valeur_total_clotur" 
+                                                        step="0.01"
+                                                        @blur="nbr_valeur_total_clotur = arrondirDeuxDecimales(nbr_valeur_total_clotur)" 
                                                         readonly
                                                         name="nbr_valeur_total_clotur" 
                                                         id="Valeur_total_clotur"  
@@ -1971,7 +2067,7 @@ const submitForm = async () => {
                                                                 <div> 
                                                                     <label for="Valeur" class="ms-2 text-sm font-medium text-primary-txt dark:text-gray-300">Valeur</label>
                                                                     <input type="number"              
-                                                                    v-model="occupant.nbr_valeur_am" 
+                                                                    v-model="occupant.nbr_valeur_am"  
                                                                     id="Valeur"  
                                                                     class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
@@ -2013,6 +2109,8 @@ const submitForm = async () => {
                                                     </label>
                                                     <input type="number"                    
                                                         v-model="nbr_valeur_totale_ap" 
+                                                        step="0.01"  
+                                                        @blur="nbr_valeur_totale_ap = arrondirDeuxDecimales(nbr_valeur_totale_ap)" 
                                                         readonly
                                                         name="nbr_valeur_totale_ap" 
                                                         id="valeur_totale_ap"  
@@ -2034,12 +2132,14 @@ const submitForm = async () => {
 
                                                 <div  class="grid gap-6 mb-6 md:grid-cols-1">
                                                     <div> 
-                                                        <label for="Valeur_Venale" class="block text-sm/6 font-medium text-primary-txt">Valeur Vénale de l'immeuble</label>
+                                                        <label for="nbr_valeurVenaleLimeuble" class="block text-sm/6 font-medium text-primary-txt">Valeur Vénale de l'immeuble</label>
                                                         <input type="number"        
                                                             v-model="nbr_valeurVenaleLimeuble" 
                                                             readonly
                                                             name="nbr_valeurVenaleLimeuble" 
-                                                            id="Valeur_Venale"  
+                                                            id="nbr_valeurVenaleLimeuble"  
+                                                            step="0.01"  
+                                                            @blur="nbr_valeurVenaleLimeuble = arrondirDeuxDecimales(nbr_valeurVenaleLimeuble)" 
                                                             class="block w-64 rounded-md bg-white 
                                                             px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
                                                             outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
@@ -2050,11 +2150,12 @@ const submitForm = async () => {
                                                     <div> 
                                                         <label for="Valeur_locative" class="block text-sm/6 font-medium text-primary-txt">Valeur Locative</label>
                                                         <input type="number"        
-                                                            v-model="nbr_valeurLocative" 
+                                                            v-model="nbr_valeurLocative"
                                                             readonly
                                                             name="nbr_valeurLocative" 
                                                             id="Valeur_locative"  
-                                                            class="block w-64 rounded-md bg-white 
+                                                            step="0.01"
+                                                            @blur="nbr_valeurLocative = arrondirDeuxDecimales(nbr_valeurLocative)"                                                           class="block w-64 rounded-md bg-white 
                                                             px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
                                                             outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                             focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
@@ -2068,7 +2169,7 @@ const submitForm = async () => {
                                                             type="date" 
                                                             v-model="form.dt_dateEvaluation" 
                                                             required 
-                                                            name="dt_dateEvaluation" 
+                                                            name="dt_dateEvaluation"  
                                                             id="Date_devaluation" 
                                                             class="block w-64 rounded-md bg-white 
                                                                 px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 

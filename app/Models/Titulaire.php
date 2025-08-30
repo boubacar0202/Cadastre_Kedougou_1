@@ -26,11 +26,12 @@ class Titulaire extends Model
         'eml_email',
         'txt_representant',
         'tel_telRepresentant',
-        ];
+        'fichierPDF',
+    ];
 
-        public function terrains()
-        {
-            return $this->hasMany(Terrain::class);
-        }
+    public function terrains()
+    {
+        return $this->hasMany(Terrain::class);
+    }
 
 }

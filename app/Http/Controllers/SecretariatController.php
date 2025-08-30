@@ -17,7 +17,8 @@ use App\Models\Terrain;
 use App\Models\Titulaire;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Log; 
+ 
 class SecretariatController extends Controller
 {
 
@@ -110,7 +111,7 @@ class SecretariatController extends Controller
             'txt_nom' => 'required|string',
             'slt_piece' => 'required|string',
             'txt_numPiece' => 'required|string',
-            'dt_date_delivrance' => 'required|date',
+            'dt_date_delivrance' => 'required|date|after:dt_date_naissance',
             'dt_date_naissance' => 'required|date',
             'txt_lieu_naissance' => 'required|string',
             'txt_adresse' => 'required|string',
@@ -119,6 +120,7 @@ class SecretariatController extends Controller
             'eml_email' => 'nullable|string',
             'txt_representant' => 'nullable|string',
             'tel_telRepresentant' => 'nullable|string',
+            'fichierPDF' => 'nullable|file|mimes:pdf|max:120400',
           
             // table Terrain 
             'txt_lotissement' => 'nullable|string',
@@ -137,7 +139,7 @@ class SecretariatController extends Controller
             'slt_region' => 'required|exists:regions,id',
             'slt_departement' => 'required|exists:departements,id',
             'slt_arrondissement' => 'required|exists:arrondissements,id',
-            'slt_commune' => 'required|exists:communes,id',
+            'slt_commune' => 'required|exists:communes,id', 
 
 
         ], [
@@ -145,7 +147,8 @@ class SecretariatController extends Controller
             'slt_region.required' => 'Region est Obligatoire',
             'slt_departement.required' => 'Departement requis',
             'slt_arrondissement.required' => 'Arrondissement requis',
-            'slt_commune.required'=> 'Commune requis',
+            'slt_commune.required'=> 'Commune requis', 
+'dt_date_creation.required' => 'Date de creation est obligatoire',
             'txt_nicad.unique' => 'Ce NICAD existe déjà dans la base.',
             'slt_titulaire.required' => 'Titulaire est Obligatoire',
             'txt_nationalite.required' => 'Nationalite est Obligatoire',
@@ -160,18 +163,33 @@ class SecretariatController extends Controller
             'txt_adresse.required' => 'Adresse est Obligatoire',
             'tel_telephone.required' => 'Telephone est Obligatoire',
             'txt_ninea.required' => 'Ninea est Obligatoire',
-            'rd_immatriculation_terrain' => 'Immatriculation Terrain est obligatoire'  
+            'txt_ninea.unique' => 'Ce Ninea existe déjà',
+            'dt_date_delivrance.after' => 'La date de délivrance doit être postérieure à la date de naissance',
+            'dt_date_delivrance.max' => 'La date de délivrance doit être inférieure à la date actuelle',
+            'rd_immatriculation_terrain.required' => 'Immatriculation Terrain est obligatoire',
+
+            'fichierPDF.file' => 'Le fichier sélectionné est invalide.',
+            'fichierPDF.mimes' => 'Le fichier doit être au format PDF.',
+            'fichierPDF.max' => 'La taille du fichier ne doit pas dépasser 120 Mo.',
+
         ]);     
 
             $region = Region::find($request->slt_region);
             $departement = Departement::find($request->slt_departement);
             $arrondissement = Arrondissement::find($request->slt_arrondissement);
             $commune = Commune::find($request->slt_commune);
-        
+
+ 
             if (!$region || !$departement || !$arrondissement || !$commune) {
                 return back()->with('danger', 'Une des relations est introuvable.');
             }
-  
+            
+            // traitement fichier PDF
+            if ($request->hasFile('fichierPDF')) {
+                $validatedData['fichierPDF'] = $request->file('fichierPDF')->store('numerisation', 'public');
+            }
+
+ 
             $dossier = Dossier::create([
                 'txt_num_dossier' =>  $validatedData['txt_num_dossier'], 
                 'txt_num_dordre' => $validatedData['txt_num_dordre'],  // numero d/'incementer 
@@ -183,7 +201,7 @@ class SecretariatController extends Controller
   
             $referenceCadastrale = ReferenceCadastrale::create([   
                 'rd_immatriculation_terrain' => $validatedData['rd_immatriculation_terrain'],
-                'slt_dependant_domaine' => $validatedData['slt_dependant_domaine'] ?? null,
+                'slt_dependant_domaine' => $validatedData['slt_dependant_domaine'] ?? null, 
                 'ussu_bornage' => $validatedData['ussu_bornage'] ?? null, 
                 'slt_lf' => $validatedData['slt_lf'] ?? null,
                 'txt_num_requisition' => $validatedData['txt_num_requisition'] ?? null,
@@ -209,6 +227,7 @@ class SecretariatController extends Controller
                 'eml_email' => $validatedData['eml_email'] ?? null,
                 'txt_representant' => $validatedData['txt_representant'] ?? null,
                 'tel_telRepresentant' => $validatedData['tel_telRepresentant'] ?? null,
+                'fichierPDF'=> $validatedData['fichierPDF'] ?? null,
             ]);
         
             // table Terrain
@@ -251,7 +270,7 @@ class SecretariatController extends Controller
     public function update(Request $request, $id)
     {
 
-        // dd($request->all());
+   
         $terrain = Terrain::findOrFail($id); 
         // ✅ Mise à jour du terrain (champs directs)
         $terrain->update($request->only([
@@ -302,7 +321,8 @@ class SecretariatController extends Controller
 
         // ✅ Mise à jour de la relation Titulaire
         if ($terrain->titulaire) {
-            $terrain->titulaire->update($request->only([
+  
+            $titulaireData = $request->only([
                 'slt_titulaire',
                 'txt_nationalite',
                 'slt_civilite',
@@ -319,9 +339,14 @@ class SecretariatController extends Controller
                 'eml_email', 
                 'txt_representant',
                 'tel_telRepresentant',
-            ]));
+                "fichierPDF"
+            ]);
+ 
+            // ✅ MAJ ici
+            $terrain->titulaire->update($titulaireData);
+  
         }
-
+         
         // ✅ Mise à jour de la relation reference_usage
         if ($terrain->references_usages && $request->has('occupants')) {
             foreach ($request->input('occupants') as $occupantData) {
@@ -429,8 +454,6 @@ class SecretariatController extends Controller
 
             }
         }
-
-
  
         return redirect()->route('donnee.create')->with('success', 'Modification réussi !'); 
  

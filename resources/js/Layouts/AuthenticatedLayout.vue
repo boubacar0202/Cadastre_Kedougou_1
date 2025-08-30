@@ -2,6 +2,8 @@
 import { ref, onMounted, onUnmounted, watch  } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3'; 
 import NavLink from '@/Components/NavLink.vue';
+import { useToast } from 'maz-ui'
+// import Chat from '@/Components/Chat.vue'
   
 // Récupérer l'utilisateur depuis les props Inertia
 const page = usePage();
@@ -9,6 +11,17 @@ const user = page.props.auth?.user;
 const isMenuOpen = ref(false)
 const isDesktop = ref(false)
 const showingNavigationDropdown = ref(false)
+
+// Message alerte 
+const toast = useToast() 
+onMounted(() => {
+  if (page.props.flash.success) {
+    toast.success(page.props.flash.success)
+  }
+  if (page.props.flash.error) {
+    toast.error(page.props.flash.error)
+  }
+}) 
 
 // Surveille la largeur d'écran
 function checkScreenSize() {
@@ -39,6 +52,7 @@ watch(isMenuOpen, (val) => {
   window.__menuOpenTemp = val
 })
 
+
 // Liens du menu
 const menuItems = [
   { label: 'Dashboard', href: route('dashboard'), active: 'dashboard' },
@@ -48,10 +62,11 @@ const menuItems = [
   { label: 'Base de Données', href: route('donnee.create'), active: 'donnee.create' }
 ]
 
+
 </script>
 
 <template>
-    <div class="flex min-h-screen bg-gray-100">
+    <div class="flex min-h-screen bg-primary-layout">
         <!-- Sidebar -->
         <nav class="w-64 h-screen bg-white border-r border-primary-only fixed flex flex-col p-4">
             <!-- Logo -->
@@ -75,28 +90,32 @@ const menuItems = [
                             <div class="flex flex-col space-y-4">
                               
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')" 
-                                    class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('dashboard')}">
+                                    class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 
+                                    rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('dashboard')}">
                                     <svg class="w-5 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10z" />
                                     </svg>
                                     Dashboard
                                 </NavLink>
                                 <NavLink :href="route('secretariat.create')" :active="route().current('secretariat.create')" 
-                                    class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('secretariat.create')}">
+                                    class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 
+                                    rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('secretariat.create')}">
                                     <svg class="w-5 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M8 7V3m8 4V3m-9 14h10m-5-5a3 3 0 0 1-6 0m12 5V10a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
                                     </svg>
                                     Secretariat
                                 </NavLink>
                                 <NavLink :href="route('geometre.create')" :active="route().current('geometre.create')" 
-                                    class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('geometre.create')}">
+                                    class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 
+                                    rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('geometre.create')}">
                                     <svg class="w-5 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 3v18m9-9H3" />
                                     </svg>
                                     Enquête Cadastrale
                                 </NavLink>
                                 <NavLink :href="route('matriceCadastrale.create')" :active="route().current('matriceCadastrale.create')" 
-                                    class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('matriceCadastrale.create')}">
+                                    class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 
+                                    rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('matriceCadastrale.create')}">
                                     <svg class="w-5 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16m-7 6h7" />
                                     </svg>
@@ -154,8 +173,11 @@ const menuItems = [
 
             <!-- Contenu de la page -->
             <main class="p-6">
-                <slot />
+                <slot /> 
             </main>
+ 
+
+
 
         </div>
     </div>
