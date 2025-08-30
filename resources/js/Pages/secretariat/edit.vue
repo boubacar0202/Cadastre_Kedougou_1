@@ -38,51 +38,6 @@ const maxOccupantsCL = 3;
 const maxOccupantsAP = 3; 
 const currentCat = ref('');  
   
-const txt_nicad = computed(() => {
-    if (slt_commune.value === 1) {
-        return `13110100 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    } else if (slt_commune.value === 2) {
-        return `13120101 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    } else if (slt_commune.value === 3) {
-        return `13120102 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 4) {
-        return `14120103 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 5) {
-        return `13120104 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 6) {
-        return `13120201 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 7) {
-        return `13120202 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    } else if (slt_commune.value === 8) {
-        return `13210100 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    } else if (slt_commune.value === 9) {
-        return `13220101 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 10) {
-        return `13220102 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 11) {
-        return `13220201 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 12) {
-        return `13220202 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 13) {
-        return `13220103 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    } else if (slt_commune.value === 14) {
-        return `13310100 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    } else if (slt_commune.value === 15) {
-        return `13320101 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 16) {
-        return `13320102 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 17) {
-        return `13320201 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 18) {
-        return `13310202 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 19) {
-        return `13220203 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else {
-        return `${txt_num_section.value} ${txt_num_parcelle.value}  ${txt_appartement.value}`;
-    }
-});
-
-
 // Traitement Categorie 
 const categories = {
     'Maison individuelle': {
@@ -346,30 +301,6 @@ const form = useForm({
   nbr_valeur_totale_ap: terrain?.evaluations_amenagements?.nbr_valeur_totale_ap || '',
 })
 
-// Reference usage
-
-const showUB = ref(false);
-const handleSelectChange = () => {
-    showUB.value = form.ussu_bornage === "Morcellement de Copropriété";
-};
-watch(() => form.ussu_bornage, (newValue) => {
-    showUB.value = newValue === "Morcellement de Copropriété";
-});
-
-const errorMessage = ref("");
-const validateInput = () => {
-    const value = txt_appartement.value.toString();
-
-    if (value.length > 3) {
-        txt_appartement.value = value.slice(0, 3); // Coupe à 3 chiffres max
-    }
-
-    if (value.length < 3) {
-        errorMessage.value = "❌ 3 chiffres.";
-    } else {
-        errorMessage.value = "";
-    }
-};
 
 // Occupants
 function addBlock() {
