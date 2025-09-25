@@ -25,11 +25,30 @@ return new class extends Migration
             $table->string('txt_lieu_naissance');
             $table->string('txt_adresse');
             $table->string('tel_telephone');
-            $table->string('txt_ninea');
             $table->string('eml_email')->nullable();
             $table->string('txt_representant')->nullable();
             $table->string('tel_telRepresentant')->nullable();
+                // Personne physique
+            $table->string('slt_categoriePM')->nullable();
+            $table->string('txt_formJuridiquePM')->nullable();
+            $table->string('txt_denominationPM')->nullable(); 
+            $table->string('txt_nineaPM')->nullable(); 
+            $table->string('txt_perssonneRepresentantPM')->nullable(); 
+            $table->string('txt_fonctionPM')->nullable(); 
+            $table->string('txt_telephonePM')->nullable(); 
+            $table->string('txt_emailPM')->nullable(); 
+            $table->string('txt_adressePM')->nullable(); 
+                // Personne morale
+            $table->string('slt_etablissementPA')->nullable();
+            $table->string('txt_personneResponsablePA')->nullable();
+            $table->string('txt_fonctionResponsablePA')->nullable();
+            $table->string('txt_telephonePA')->nullable();
+            $table->string('txt_emailPA')->nullable();
+            $table->string('txt_ministèreTutelePA')->nullable();
+
             $table->string('fichierPDF')->nullable();
+
+            /* les champs ajouters */
 
             $table->timestamps();
 

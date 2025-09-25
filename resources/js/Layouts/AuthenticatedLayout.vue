@@ -28,10 +28,6 @@ function checkScreenSize() {
   isDesktop.value = window.innerWidth >= 768
 }
 
-// Toggle menu (mobile uniquement)
-function toggleMenu() {
-  isMenuOpen.value = !isMenuOpen.value
-}
 
 // Garde l’état du menu entre pages, mais pas après F5
 onMounted(() => {
@@ -52,7 +48,12 @@ watch(isMenuOpen, (val) => {
   window.__menuOpenTemp = val
 })
 
+// Toggle menu (mobile uniquement)
+function toggleMenu() {
+  isMenuOpen.value = !isMenuOpen.value
+}
 
+ 
 // Liens du menu
 const menuItems = [
   { label: 'Dashboard', href: route('dashboard'), active: 'dashboard' },
@@ -61,8 +62,7 @@ const menuItems = [
   { label: 'Matrice Cadastrale', href: route('matriceCadastrale.create'), active: 'matriceCadastrale.create' },
   { label: 'Base de Données', href: route('donnee.create'), active: 'donnee.create' }
 ]
-
-
+ 
 </script>
 
 <template>
@@ -95,7 +95,7 @@ const menuItems = [
                                     <svg class="w-5 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10z" />
                                     </svg>
-                                    Dashboard
+                                    Accueil
                                 </NavLink>
                                 <NavLink :href="route('secretariat.create')" :active="route().current('secretariat.create')" 
                                     class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 
@@ -127,9 +127,14 @@ const menuItems = [
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z" />
                                     </svg>
                                     Base de Données
-                                </NavLink>
-                                
-                            
+                                </NavLink> 
+                                <!-- <NavLink :href="route('donnee.create')" :active="route().current('donnee.create')" 
+                                    class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('donnee.create')}">
+                                    <svg class="w-5 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z" />
+                                    </svg>
+                                    Impôts
+                                </NavLink> -->
                             </div>
                         </nav> 
                 </transition>

@@ -21,11 +21,28 @@ class Titulaire extends Model
         'dt_date_naissance',
         'txt_lieu_naissance',
         'txt_adresse',
-        'tel_telephone',
-        'txt_ninea',
+        'tel_telephone', 
         'eml_email',
         'txt_representant',
         'tel_telRepresentant',
+            // Personne physique
+        'slt_categoriePM',
+        'txt_formJuridiquePM', 
+        'txt_denominationPM', 
+        'txt_nineaPM', 
+        'txt_perssonneRepresentantPM', 
+        'txt_fonctionPM', 
+        'txt_telephonePM', 
+        'txt_emailPM', 
+        'txt_adressePM', 
+            // Personne morale
+        'slt_etablissementPA',
+        'txt_personneResponsablePA',
+        'txt_fonctionResponsablePA',
+        'txt_telephonePA',
+        'txt_emailPA',
+        'txt_ministèreTutelePA',
+
         'fichierPDF',
     ];
 

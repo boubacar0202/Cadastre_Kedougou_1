@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Dossier;
-use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Request; 
+use App\Models\CodeAcces;
+
+ 
 
 class DossierController extends Controller
 {  
@@ -41,8 +44,8 @@ class DossierController extends Controller
             'num_dordre' => $nextOrdre,
         ]);
     }
-
-
-
-
+ 
+ 
 }
+ 
+ 

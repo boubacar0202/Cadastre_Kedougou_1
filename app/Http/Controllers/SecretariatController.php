@@ -105,21 +105,38 @@ class SecretariatController extends Controller
 
             // table Titulaire
             'slt_titulaire' => 'required|string',
-            'txt_nationalite' => 'required|string',
+            'txt_nationalite' => 'nullable|string',
             'slt_civilite' => 'nullable|string',
-            'txt_prenom' => 'required|string',
-            'txt_nom' => 'required|string',
-            'slt_piece' => 'required|string',
-            'txt_numPiece' => 'required|string',
-            'dt_date_delivrance' => 'required|date|after:dt_date_naissance',
-            'dt_date_naissance' => 'required|date',
-            'txt_lieu_naissance' => 'required|string',
-            'txt_adresse' => 'required|string',
-            'tel_telephone' => 'required|string',
-            'txt_ninea' => 'required|string',
+            'txt_prenom' => 'nullable|string',
+            'txt_nom' => 'nullable|string',
+            'slt_piece' => 'nullable|string',
+            'txt_numPiece' => 'nullable|string',
+            'dt_date_delivrance' => 'nullable|date|after:dt_date_naissance',
+            'dt_date_naissance' => 'nullable|date',
+            'txt_lieu_naissance' => 'nullable|string',
+            'txt_adresse' => 'nullable|string',
+            'tel_telephone' => 'nullable|string', 
             'eml_email' => 'nullable|string',
             'txt_representant' => 'nullable|string',
             'tel_telRepresentant' => 'nullable|string',
+                // Personne physique
+            'slt_categoriePM' => 'nullable|string',
+            'txt_formJuridiquePM' => 'nullable|string', 
+            'txt_denominationPM' => 'nullable|string', 
+            'txt_nineaPM' => 'nullable|string', 
+            'txt_perssonneRepresentantPM' => 'nullable|string', 
+            'txt_fonctionPM' => 'nullable|string', 
+            'txt_telephonePM' => 'nullable|string', 
+            'txt_emailPM' => 'nullable|string', 
+            'txt_adressePM' => 'nullable|string', 
+                // Personne morale
+            'slt_etablissementPA' => 'nullable|string',
+            'txt_personneResponsablePA' => 'nullable|string',
+            'txt_fonctionResponsablePA' => 'nullable|string',
+            'txt_telephonePA' => 'nullable|string',
+            'txt_emailPA' => 'nullable|string',
+            'txt_ministèreTutelePA' => 'nullable|string',
+
             'fichierPDF' => 'nullable|file|mimes:pdf|max:120400',
           
             // table Terrain 
@@ -148,24 +165,10 @@ class SecretariatController extends Controller
             'slt_departement.required' => 'Departement requis',
             'slt_arrondissement.required' => 'Arrondissement requis',
             'slt_commune.required'=> 'Commune requis', 
-'dt_date_creation.required' => 'Date de creation est obligatoire',
+            'dt_date_creation.required' => 'Date de creation est obligatoire',
+            'dt_date_delivrance.after' => 'La date de délivrance doit être postérieure à la date de naissance.',
             'txt_nicad.unique' => 'Ce NICAD existe déjà dans la base.',
-            'slt_titulaire.required' => 'Titulaire est Obligatoire',
-            'txt_nationalite.required' => 'Nationalite est Obligatoire',
-            'slt_civilite.required' => 'Civilite est Obligatoire',
-            'txt_prenom.required' => 'Prenom est Obligatoire',
-            'txt_nom.required' => 'Nom est Obligatoire',
-            'slt_piece.required' => 'Piece est Obligatoire',
-            'txt_numPiece.required' => 'Num Piece est Obligatoire',
-            'dt_date_delivrance.required' => 'Date Delivrance est Obligatoire',
-            'dt_date_naissance.required' => 'Date Naissance est Obligatoire',
-            'txt_lieu_naissance.required' => 'Lieu Naissance est Obligatoire',
-            'txt_adresse.required' => 'Adresse est Obligatoire',
-            'tel_telephone.required' => 'Telephone est Obligatoire',
-            'txt_ninea.required' => 'Ninea est Obligatoire',
-            'txt_ninea.unique' => 'Ce Ninea existe déjà',
-            'dt_date_delivrance.after' => 'La date de délivrance doit être postérieure à la date de naissance',
-            'dt_date_delivrance.max' => 'La date de délivrance doit être inférieure à la date actuelle',
+            'slt_titulaire.required' => 'Titulaire est Obligatoire', 
             'rd_immatriculation_terrain.required' => 'Immatriculation Terrain est obligatoire',
 
             'fichierPDF.file' => 'Le fichier sélectionné est invalide.',
@@ -223,10 +226,27 @@ class SecretariatController extends Controller
                 'txt_lieu_naissance' => $validatedData['txt_lieu_naissance'],
                 'txt_adresse' => $validatedData['txt_adresse'],
                 'tel_telephone' => $validatedData['tel_telephone'],
-                'txt_ninea' => $validatedData['txt_ninea'],
                 'eml_email' => $validatedData['eml_email'] ?? null,
                 'txt_representant' => $validatedData['txt_representant'] ?? null,
                 'tel_telRepresentant' => $validatedData['tel_telRepresentant'] ?? null,
+                    // Personne physique
+                'slt_categoriePM'   => $validatedData['slt_categoriePM'] ?? null,
+                'txt_formJuridiquePM' => $validatedData['txt_formJuridiquePM'] ?? null, 
+                'txt_denominationPM' => $validatedData['txt_denominationPM'] ?? null, 
+                'txt_nineaPM' => $validatedData['txt_nineaPM'] ?? null, 
+                'txt_perssonneRepresentantPM' => $validatedData['txt_perssonneRepresentantPM'] ?? null, 
+                'txt_fonctionPM' => $validatedData['txt_fonctionPM'] ?? null, 
+                'txt_telephonePM' => $validatedData['txt_telephonePM'] ?? null, 
+                'txt_emailPM' => $validatedData['txt_emailPM'] ?? null, 
+                'txt_adressePM' => $validatedData['txt_adressePM'] ?? null, 
+                    // Personne morale
+                'slt_etablissementPA' => $validatedData['slt_etablissementPA'] ?? null,
+                'txt_personneResponsablePA' => $validatedData['txt_personneResponsablePA'] ?? null,
+                'txt_fonctionResponsablePA' => $validatedData['txt_fonctionResponsablePA'] ?? null,
+                'txt_telephonePA' => $validatedData['txt_telephonePA'] ?? null,
+                'txt_emailPA' => $validatedData['txt_emailPA'] ?? null,
+                'txt_ministèreTutelePA' => $validatedData['txt_ministèreTutelePA'] ?? null,
+
                 'fichierPDF'=> $validatedData['fichierPDF'] ?? null,
             ]);
         
@@ -270,6 +290,7 @@ class SecretariatController extends Controller
     public function update(Request $request, $id)
     {
 
+ 
    
         $terrain = Terrain::findOrFail($id); 
         // ✅ Mise à jour du terrain (champs directs)

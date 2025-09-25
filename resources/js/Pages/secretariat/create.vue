@@ -153,11 +153,28 @@ const form = useForm({
     dt_date_naissance: "",
     txt_lieu_naissance: "",
     txt_adresse: "",
-    tel_telephone: "",
-    txt_ninea: "",
+    tel_telephone: "", 
     eml_email: "",
     txt_representant: "",
     tel_telRepresentant: "", 
+        // Personne physique
+    slt_categoriePM:"",
+    txt_formJuridiquePM:"", 
+    txt_denominationPM:"", 
+    txt_nineaPM:"", 
+    txt_perssonneRepresentantPM:"", 
+    txt_fonctionPM:"", 
+    txt_telephonePM: "", 
+    txt_emailPM:"", 
+    txt_adressePM:"", 
+        // Personne morale
+    slt_etablissementPA:"",
+    txt_personneResponsablePA:"",
+    txt_fonctionResponsablePA:"",
+    txt_telephonePA:"",
+    txt_emailPA:"",
+    txt_ministèreTutelePA:"",
+
     fichierPDF: "",
 });
  
@@ -252,13 +269,57 @@ onMounted(() => {
     // Vous pouvez ajouter une logique pour initialiser les données ici
 });
 
+
 const show = ref(false);
+const showSectionPP = ref(false); // Perssone Physique
+const showSectionPM = ref(false); // Personne Morale
+const showSectionPA = ref(false); // Etat
 const handleSelectChange = () => {
     show.value = form.ussu_bornage === "Morcellement de Copropriété";
 };
 watch(() => form.ussu_bornage, (newValue) => {
     show.value = newValue === "Morcellement de Copropriété";
 });
+
+// charge titulaire Etat Perssone Morale Personne Physique
+let hasShownError = false;
+const handleSelectChangeTitulaire = () => {
+    // Reset toutes les sections
+    showSectionPP.value = false;
+    showSectionPM.value = false;
+    showSectionPA.value = false;
+
+    switch (form.slt_titulaire) {
+        case "Personne Physique":
+            showSectionPP.value = true;
+            hasShownError = false;
+            break;
+        case "Personne Morale":
+            showSectionPM.value = true;
+            hasShownError = false;
+            break;
+        case "Etat":
+            showSectionPA.value = true;
+            hasShownError = false;
+            break;
+        default:
+            if (!hasShownError){
+                hasShownError = true
+                toast.error("Veuillez choisir un titulaire");
+            }  
+    }
+};
+    
+// Réagir automatiquement sans bouton
+watch(() => form.slt_titulaire, (newValue) => {
+
+    handleSelectChangeTitulaire(); 
+
+    if (!["Personne Physique", "Personne Morale", "Etat"].includes(newValue)) {
+            toast.error("Veuillez choisir un titulaire");
+        }
+    }
+);
 
 const errorMessage = ref("");
 const validateInput = () => {
@@ -401,7 +462,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         v-model="form.txt_num_dossier" 
                                                         required 
                                                         id="txt_num_dossier"
-                                                        class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                        class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
  
@@ -424,7 +485,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         min="1"
                                                         readonly
                                                         id="txt_num_dordre"
-                                                        class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                        class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
  
@@ -447,7 +508,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         "
                                                         id="slt_service_rendu"
                                                         autocomplete="address-level2"
-                                                        class="h-8  scrollbar-thin scrollbar-thumb-primary scrollbar-track-gray-300 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                        class="h-7  scrollbar-thin scrollbar-thumb-primary scrollbar-track-gray-300 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                         style="max-height: 200px;" 
@@ -524,7 +585,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         "
                                                         id="txt_etat_cession"
                                                         autocomplete="address-level2"
-                                                        class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                        class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                     />
@@ -547,7 +608,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         "
                                                         id="txt_cession_definitive"
                                                         autocomplete="address-level2"
-                                                        class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                        class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                     />
@@ -572,7 +633,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         required
                                                         id="dt_date_creation"
                                                         autocomplete="address-level2"
-                                                        class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                        class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                     />
@@ -605,7 +666,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     @change="
                                                         fetchDepartements()
                                                     "
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 >
@@ -634,7 +695,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     @change="
                                                         fetchArrondissements()
                                                     "
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 >
@@ -670,7 +731,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     v-model="slt_arrondissement"
                                                     required
                                                     @change="fetchCommunes()"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 >
@@ -707,7 +768,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     name="slt_commune  "
                                                     v-model="slt_commune"
                                                     required
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 >
@@ -744,7 +805,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         form.txt_lotissement
                                                     "
                                                     id="txt_lotissement"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
@@ -764,7 +825,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         form.txt_HorsLotissement
                                                     "
                                                     id="txt_HorsLotissement"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
@@ -784,7 +845,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         form.txt_num_lotissement
                                                     "
                                                     id="txt_num_lotissement"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
@@ -805,7 +866,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     v-model="form.nbr_surface"
                                                     id="surface"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
@@ -825,7 +886,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     "
                                                     id="Document_admin"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 >
@@ -887,7 +948,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     "
                                                     id="Num_deliberation"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
@@ -908,7 +969,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     "
                                                     id="Date_deliberation"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
@@ -928,7 +989,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         txt_num_section
                                                     "
                                                     id="Num_section"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                     @input="validateInputNumSection"
@@ -947,7 +1008,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     name="txt_num_parcelle"
                                                     v-model="txt_num_parcelle"
                                                     id="Num_parcelle"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                     @input="validateInputNumParcelle"
@@ -971,7 +1032,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         txt_nicad
                                                     "
                                                     id="txt_nicad"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                     readonly
@@ -1030,7 +1091,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             v-model="form.slt_dependant_domaine"
                                                             name="slt_dependant_domaine"
                                                             id="slt_dependant_domaine"
-                                                            class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                         >
@@ -1060,7 +1121,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             v-model="form.ussu_bornage"
                                                             name="issu_bornage"
                                                             id="Bornage"
-                                                            class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                             @change="handleSelectChange"
@@ -1084,7 +1145,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             name="txt_titre_mere"
                                                             id="Titre_mere"
                                                             autocomplete="address-level2"
-                                                            class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                         />
@@ -1103,7 +1164,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             v-model="form.txt_num_titre"
                                                             id="numTitre"
                                                             autocomplete="address-level2"
-                                                            class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                         />
@@ -1118,7 +1179,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             name="slt_lf"
                                                             id="LF"
                                                             autocomplete="address-level2"
-                                                            class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                         >
@@ -1140,7 +1201,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             name="txt_num_requisition"
                                                             id="Num_requisition"
                                                             autocomplete="address-level2"
-                                                            class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                         />
@@ -1156,7 +1217,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             name="txt_surface_bornage"
                                                             id="Surface_bornage"
                                                             autocomplete="address-level2"
-                                                            class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                         />
@@ -1172,7 +1233,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             name="dt_date_bornage"
                                                             id="Date_bornage"
                                                             autocomplete="address-level2"
-                                                            class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                         />
@@ -1190,7 +1251,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             v-model="txt_appartement"
                                                             id="txt_appartement"
                                                             autocomplete="off"
-                                                            class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                 outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                             @input="validateInput"
@@ -1210,7 +1271,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             name="txt_nom_geometre"
                                                             id="Nom_geometre"
                                                             autocomplete="address-level2"
-                                                            class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                         />
@@ -1230,7 +1291,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                     <div
                                         class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"
                                     >
-                                        <div class="sm:col-span-1">
+                                        <div class="sm:col-span-2">
                                             <label
                                                 for="Titulaire"
                                                 class="block text-sm font-medium text-primary-txt"
@@ -1245,6 +1306,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                    @change="handleSelectChangeTitulaire"
                                                 >
                                                     >
                                                     <option selected disabled>
@@ -1256,7 +1318,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         Personne Physique
                                                     </option>
                                                     <option
-                                                        value="Perssone Morale"
+                                                        value="Personne Morale"
                                                     >
                                                         Personne Morale
                                                     </option>
@@ -1266,7 +1328,12 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="sm:col-span-1">
+                                    </div>
+                                    <br>
+                                    <div
+                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"
+                                        >
+                                        <div v-if="showSectionPP" class="sm:col-span-1">
                                             <label
                                                 for="Nationalite"
                                                 class="block text-sm/6 font-medium text-primary-txt"
@@ -1282,13 +1349,13 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     required
                                                     id="Nationalite"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
                                         </div>
-                                        <div class="sm:col-span-1">
+                                        <div v-if="showSectionPP" class="sm:col-span-1">
                                             <label
                                                 for="Civilite"
                                                 class="block text-sm font-medium text-primary-txt"
@@ -1300,7 +1367,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     v-model="form.slt_civilite"
                                                     required
                                                     id="Civilite"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 >
@@ -1316,7 +1383,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="sm:col-span-1">
+                                        <div v-if="showSectionPP" class="sm:col-span-1">
                                             <label
                                                 for="Prenom"
                                                 class="block text-sm/6 font-medium text-primary-txt"
@@ -1330,13 +1397,13 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     required
                                                     id="Prenom"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
                                         </div>
-                                        <div class="sm:col-span-1">
+                                        <div v-if="showSectionPP" class="sm:col-span-1">
                                             <label
                                                 for="nom"
                                                 class="block text-sm/6 font-medium text-primary-txt"
@@ -1350,13 +1417,13 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     required
                                                     id="nom"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
                                         </div>
-                                        <div class="sm:col-span-1">
+                                        <div v-if="showSectionPP" class="sm:col-span-1">
                                             <label
                                                 for="selectePiece"
                                                 class="block text-sm font-medium text-primary-txt"
@@ -1368,7 +1435,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     v-model="form.slt_piece"
                                                     required
                                                     id="selectePiece"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 >
@@ -1384,7 +1451,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="sm:col-span-1">
+                                        <div v-if="showSectionPP" class="sm:col-span-1">
                                             <label
                                                 for="numPiece"
                                                 class="block text-sm/6 font-medium text-primary-txt"
@@ -1398,13 +1465,13 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     required
                                                     id="numPiece"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
                                         </div>
-                                        <div class="sm:col-span-1">
+                                        <div v-if="showSectionPP" class="sm:col-span-1">
                                             <label
                                                 for="dateDelivrance"
                                                 class="block text-sm/6 font-medium text-primary-txt"
@@ -1421,13 +1488,13 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     :max="new Date().toISOString().split('T')[0]"
                                                     id="dateDelivrance"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
                                         </div>
-                                        <div class="sm:col-span-1">
+                                        <div v-if="showSectionPP" class="sm:col-span-1">
                                             <label
                                                 for="dateNaissance"
                                                 class="block text-sm/6 font-medium text-primary-txt"
@@ -1444,13 +1511,13 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     required
                                                     id="dateNaissance"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
                                         </div>
-                                        <div class="sm:col-span-1">
+                                        <div v-if="showSectionPP" class="sm:col-span-1">
                                             <label
                                                 for="lieuNaissance"
                                                 class="block text-sm/6 font-medium text-primary-txt"
@@ -1466,13 +1533,13 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     required
                                                     id="lieuNaissance"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
                                         </div>
-                                        <div class="sm:col-span-1">
+                                        <div v-if="showSectionPP" class="sm:col-span-1">
                                             <label
                                                 for="adresse"
                                                 class="block text-sm/6 font-medium text-primary-txt"
@@ -1486,13 +1553,13 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     required
                                                     id="adresse"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
                                         </div>
-                                        <div class="sm:col-span-1">
+                                        <div v-if="showSectionPP" class="sm:col-span-1">
                                             <label
                                                 for="telephone"
                                                 class="block text-sm/6 font-medium text-primary-txt"
@@ -1506,32 +1573,13 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     required
                                                     id="telephone"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="ninea"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >NINEA</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_ninea"
-                                                    v-model="form.txt_ninea"
-                                                    id="ninea"
-                                                    autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
+                                        </div> 
+                                        <div v-if="showSectionPP" class="sm:col-span-1">
                                             <label
                                                 for="Email"
                                                 class="block text-sm/6 font-medium text-primary-txt"
@@ -1544,13 +1592,13 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     v-model="form.eml_email"
                                                     id="Email"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
                                         </div>
-                                        <div class="sm:col-span-1">
+                                        <div v-if="showSectionPP" class="sm:col-span-1">
                                             <label
                                                 for="txt_representant"
                                                 class="block text-sm/6 font-medium text-primary-txt"
@@ -1565,13 +1613,13 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     "
                                                     id="txt_representant"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
                                         </div>
-                                        <div class="sm:col-span-1">
+                                        <div v-if="showSectionPP" class="sm:col-span-1">
                                             <label
                                                 for="tel_telRepresentant"
                                                 class="block text-sm/6 font-medium text-primary-txt"
@@ -1586,13 +1634,400 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     "
                                                     id="tel_telRepresentant"
                                                     autocomplete="address-level2"
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
                                         </div>
-                                        
+
+                                        <!-- Perssonne Morale -->
+                                        <div v-if="showSectionPM" class="sm:col-span-1">
+                                            <label
+                                                for="slt_categoriePM"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Catégorie</label
+                                            >
+                                            <div class="mt-2">
+                                                <select
+                                                    name="slt_categoriePM"
+                                                    v-model="form.slt_categoriePM"
+                                                    required
+                                                    id="selectePiece"
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                >
+                                                    <option  value=""> 
+                                                         
+                                                    </option>
+                                                    <option value="Station">
+                                                        Station
+                                                    </option>
+                                                    <option value="Industrue">
+                                                        Industrue
+                                                    </option>
+                                                    <option value="Restaurant">
+                                                        Restaurant
+                                                    </option>
+                                                    <option value="Hotel">
+                                                        Hotel
+                                                    </option>
+                                                    <option value="Hoberge">
+                                                        Hoberge
+                                                    </option>
+                                                    <option value="Elevage">
+                                                        Elevage
+                                                    </option>
+                                                    <option value="Agrobusness">
+                                                        Agrobusness
+                                                    </option>
+                                                    <option value="Epicerie">
+                                                        Epicerie
+                                                    </option>
+                                                    <option value="Alimentation Générale">
+                                                        Alimentation Générale
+                                                    </option>
+                                                    <option value="Qincaillerie">
+                                                        Qincaillerie
+                                                    </option>
+                                                    <option value="Transport">
+                                                        Transport
+                                                    </option>
+                                                    <option value="Coopérative Habitat">
+                                                        Coopérative Habitat
+                                                    </option>
+                                                    <option value="BTP">
+                                                        BTP
+                                                    </option>
+                                                    <option value="Organisation Religieux">
+                                                        Organisation Religieux
+                                                    </option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div v-if="showSectionPM" class="sm:col-span-1">
+                                            <label
+                                                for="txt_formJuridiquePM"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Forme Juridique</label
+                                            >
+                                            <div class="mt-2">
+                                                <input
+                                                    type="text"
+                                                    name="txt_formJuridiquePM"
+                                                    v-model="
+                                                        form.txt_formJuridiquePM 
+                                                    "
+                                                    id="txt_formJuridiquePM"
+                                                    autocomplete="address-level2" 
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div v-if="showSectionPM" class="sm:col-span-1">
+                                            <label
+                                                for="txt_denominationPM"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Dénomination</label
+                                            >
+                                            <div class="mt-2">
+                                                <input
+                                                    type="text"
+                                                    name="txt_denominationPM"
+                                                    v-model="
+                                                        form.txt_denominationPM
+                                                    "
+                                                    id="txt_denominationPM"
+                                                    autocomplete="address-level2"
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div v-if="showSectionPM" class="sm:col-span-1">
+                                            <label
+                                                for="txt_nineaPM"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Ninea</label
+                                            >
+                                            <div class="mt-2">
+                                                <input
+                                                    type="text"
+                                                    name="txt_nineaPM"
+                                                    v-model="
+                                                        form.txt_nineaPM
+                                                    "
+                                                    id="txt_nineaPM"
+                                                    autocomplete="address-level2"
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div v-if="showSectionPM" class="sm:col-span-1">
+                                            <label
+                                                for="txt_perssonneRepresentantPM"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Nom.Personne Responsable</label
+                                            >
+                                            <div class="mt-2">
+                                                <input
+                                                    type="text"
+                                                    name="txt_perssonneRepresentantPM"
+                                                    v-model="
+                                                        form.txt_perssonneRepresentantPM
+                                                    "
+                                                    id="txt_perssonneRepresentantPM"
+                                                    autocomplete="address-level2"
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div v-if="showSectionPM" class="sm:col-span-1">
+                                            <label
+                                                for="txt_fonctionPM"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Fonction Responsable</label
+                                            >
+                                            <div class="mt-2">
+                                                <input
+                                                    type="text"
+                                                    name="txt_fonctionPM"
+                                                    v-model="
+                                                        form.txt_fonctionPM
+                                                    "
+                                                    id="txt_fonctionPM"
+                                                    autocomplete="address-level2"
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div v-if="showSectionPM" class="sm:col-span-1">
+                                            <label
+                                                for="txt_telephonePM"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Téléphone Responsable</label
+                                            >
+                                            <div class="mt-2">
+                                                <input
+                                                    type="text"
+                                                    name="txt_telephonePM"
+                                                    v-model="
+                                                        form.txt_telephonePM
+                                                    "
+                                                    id="txt_telephonePM"
+                                                    autocomplete="address-level2"
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div v-if="showSectionPM" class="sm:col-span-1">
+                                            <label
+                                                for="txt_emailPM"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Fonction Responsable</label
+                                            >
+                                            <div class="mt-2">
+                                                <input
+                                                    type="email"
+                                                    name="txt_emailPM"
+                                                    v-model="
+                                                        form.txt_emailPM
+                                                    "
+                                                    id="txt_emailPM"
+                                                    autocomplete="address-level2"
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div v-if="showSectionPM" class="sm:col-span-1">
+                                            <label
+                                                for="txt_adressePM"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Adresse Sciège </label
+                                            >
+                                            <div class="mt-2">
+                                                <input
+                                                    type="text"
+                                                    name="txt_adressePM"
+                                                    v-model="
+                                                        form.txt_adressePM
+                                                    "
+                                                    id="txt_adressePM"
+                                                    autocomplete="address-level2"
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div> 
+
+                                        <!-- Etat -->
+                                        <div v-if="showSectionPA" class="sm:col-span-1">
+                                            <label
+                                                for="slt_etablissementPA"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Etablissement</label
+                                            >
+                                            <div class="mt-2">
+                                                <select
+                                                    name="slt_etablissementPA"
+                                                    v-model="form.slt_etablissementPA"
+                                                    required
+                                                    id="selectePiece"
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                >
+                                                    <option  value=""> 
+                                                         
+                                                    </option>
+                                                    <option value="Sanitaire">
+                                                        Sanitaire
+                                                    </option>
+                                                    <option value="Scolaire">
+                                                        Scolaire
+                                                    </option>
+                                                    <option value="Millitaire">
+                                                        Millitaire
+                                                    </option>
+                                                    <option value="Administratif">
+                                                        Administratif
+                                                    </option>
+                                                    <option value="Aéroportuaire">
+                                                        Aéroportuaire
+                                                    </option>
+                                                    <option value="Sportif">
+                                                        Sportif
+                                                    </option>
+                                                    <option value="Universitaire">
+                                                        Universitaire
+                                                    </option>
+                                                    <option value="Autres">
+                                                        Autres
+                                                    </option> 
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div v-if="showSectionPA" class="sm:col-span-1">
+                                            <label
+                                                for="txt_personneResponsablePA"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Personne Responsable</label
+                                            >
+                                            <div class="mt-2">
+                                                <input
+                                                    type="text"
+                                                    name="txt_personneResponsablePA"
+                                                    v-model="
+                                                        form.txt_personneResponsablePA
+                                                    "
+                                                    id="txt_personneResponsablePA" 
+                                                    autocomplete="address-level2"
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div v-if="showSectionPA" class="sm:col-span-1">
+                                            <label
+                                                for="txt_fonctionResponsablePA"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Fonction Responsable</label
+                                            >
+                                            <div class="mt-2">
+                                                <input
+                                                    type="text"
+                                                    name="txt_fonctionResponsablePA"
+                                                    v-model="
+                                                        form.txt_fonctionResponsablePA
+                                                    "
+                                                    id="txt_fonctionResponsablePA"
+                                                    autocomplete="address-level2"
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div v-if="showSectionPA" class="sm:col-span-1">
+                                            <label
+                                                for="txt_telephonePA"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Téléphone</label
+                                            >
+                                            <div class="mt-2">
+                                                <input
+                                                    type="text"
+                                                    name="txt_telephonePA"
+                                                    v-model="
+                                                        form.txt_telephonePA
+                                                    "
+                                                    id="txt_telephonePA"
+                                                    autocomplete="address-level2"
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div v-if="showSectionPA" class="sm:col-span-1">
+                                            <label
+                                                for="txt_emailPA"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Email</label
+                                            >
+                                            <div class="mt-2">
+                                                <input
+                                                    type="email"
+                                                    name="txt_emailPA"
+                                                    v-model="
+                                                        form.txt_emailPA
+                                                    "
+                                                    id="txt_emailPA" 
+                                                    autocomplete="address-level2"
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div v-if="showSectionPA" class="sm:col-span-1">
+                                            <label
+                                                for="txt_ministèreTutelePA"
+                                                class="block text-sm/6 font-medium text-primary-txt"
+                                                >Ministère Tutele</label
+                                            >
+                                            <div class="mt-2">
+                                                <input
+                                                    type="text"
+                                                    name="txt_ministèreTutelePA"
+                                                    v-model="
+                                                        form.txt_ministèreTutelePA
+                                                    "
+                                                    id="txt_ministèreTutelePA"
+                                                    autocomplete="address-level2"
+                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                />
+                                            </div>
+                                        </div>
+                                          
                                         <div  class="sm:col-span-2"> 
                                             <label 
                                                 for="fichierPDF" 
@@ -1607,7 +2042,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                 @change="handleFileUpload" 
                                                 id="fichierPDF"
                                                 autocomplete="off"  
-                                                class="h-8 block w-full rounded-md bg-white 
+                                                class="h-7 block w-full rounded-md bg-white 
                                                     px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
                                                     outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                     focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">

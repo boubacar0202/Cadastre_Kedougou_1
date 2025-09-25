@@ -23,7 +23,7 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Welcome">
+    <Head title="Login - Cadastre Kedougou">
         <link rel="icon" sizes="512x512" href="/logo-01.png">
     </Head>
 
@@ -125,11 +125,11 @@ defineProps({
                     </div>
                 </main> 
             </div> 
+            <footer class="py-16 text-center text-sm text-primary-txt font-bold mt-8">
+                Programme de Gestion de Base de données v-1   
+            </footer>
         </div>
+
     </div>
-    <footer
-        class="py-16 text-center text-sm text-primary-txt font-bold mt-8"
-    >
-        Programme de Gestion de Base de données v-1    <!--{{ laravelVersion }} (PHP v{{ phpVersion }} ) -->
-    </footer>
+
 </template>

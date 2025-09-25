@@ -5,7 +5,8 @@ import { Head } from '@inertiajs/vue3';
 import { defineProps, onMounted } from 'vue';
 import { router, usePage  } from '@inertiajs/vue3'
 import { Link as InertiaLink } from '@inertiajs/vue3'
-// import { toast } from 'vue3-toastify'
+import axios from 'axios'
+import { useToast } from "maz-ui";
 
 const props = defineProps({
     terrain: Object,
@@ -15,6 +16,7 @@ const props = defineProps({
 const annee = ref('');
 const numero = ref('')
 const numeroRecherche = ref('')
+const toast = useToast()
 
 // Au clic sur "Rechercher"
 function searchDossier() {
@@ -54,20 +56,48 @@ const formatDate = (dateString) => {
     });
 };
  
+
+ 
+
 // Suppromer enregistrement
-function supprimerTerrain(terrain) {
-    if (confirm(`Voulez-vous vraiment supprimer ce terrain avec le NICAD : ${terrain.txt_nicad} ?`)) {
-        router.delete(route('terrains.destroy', terrain.id), {
-            preserveScroll: true,
-            onSuccess: () => {
-                console.log('Terrain supprimé avec succès');
-            },
-            onError: (errors) => {
-                console.error('Erreur lors de la suppression', errors);
-            }
+// function supprimerTerrain(terrain) {
+//     if (confirm(`Voulez-vous vraiment supprimer ce terrain avec le NICAD : ${terrain.txt_nicad} ?`)) {
+//         router.delete(route('terrains.destroy', terrain.id), {
+//             preserveScroll: true,
+//             onSuccess: () => {
+//                 console.log('Terrain supprimé avec succès');
+//             },
+//             onError: (errors) => {
+//                 console.error('Erreur lors de la suppression', errors);
+//             }
+//         });
+//     }
+// } 
+
+
+
+async function supprimerTerrain(terrain) {
+    if (!confirm(`Voulez-vous vraiment supprimer ce terrain NICAD : ${terrain.txt_nicad} ?`)) return;
+
+    const saisie = prompt('Entrez votre code de confirmation :');
+    if (!saisie) return;
+
+    try {
+        const res = await axios.post(route('terrain.verifier.supprimer'), {
+        code: saisie,
+        terrain_id: terrain.id
         });
+
+        if (res.data.success) {
+            toast.success(res.data.message);
+            Inertia.reload() // retirer localement l'item
+        }
+    } catch (err) {
+        toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
     }
-} 
+    }
+
+
 </script>
 
 <template>
@@ -310,7 +340,7 @@ function supprimerTerrain(terrain) {
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain?.dossier.slt_service_rendu || '-' }}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.dossier.txt_etat_cession || '-'}}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.dossier.txt_cession_definitive || '-'}}</td>
-                                                        <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ formatDate(terrain.dt_date_creation) || '-' }}</td>
+                                                        <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ formatDate(terrain.dossier.dt_date_creation) || '-' }}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_num_parcelle || '-'}}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_lotissement || '-'}}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_HorsLotissement || '-'}}</td>

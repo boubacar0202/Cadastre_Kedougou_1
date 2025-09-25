@@ -177,7 +177,7 @@ function addBlock() {
             dt_dateDelivranceTG: '',
         })
     }else {
-        toast.error('Impossible d\'ajouter plus de 20 occupants.');
+        toast.error('Impossible d\'ajouter plus de 25 occupants.');
     }
 }
 // bloc retirer 

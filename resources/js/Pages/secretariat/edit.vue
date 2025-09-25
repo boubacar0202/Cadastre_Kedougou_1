@@ -24,8 +24,7 @@ const { terrain } = defineProps({
     occupants: Array,
     occupantsBP: Array,
 })
-
-
+ 
 const toast = useToast()
 const page = usePage() 
 const code = ref('')
@@ -208,97 +207,108 @@ function formatOccupantAP(o = {}) {
   };
 }
 
+// Formater la date en français (jj/mm/aaaa)
+const formatDate = (dateString) => {
+    if (!dateString) return '-'; 
+    const date = new Date(dateString); 
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // +1 car janvier = 0
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+};
+ 
 const form = useForm({
-  txt_nicad: terrain?.txt_nicad || '', 
-  // Table Dossier
-  txt_num_dossier: terrain?.dossier?.txt_num_dossier  ?? 'Non disponible' ,
-  txt_num_dordre: terrain?.dossier?.txt_num_dordre || '',
-  slt_service_rendu: terrain?.dossier?.slt_service_rendu || '',
-  txt_etat_cession: terrain?.dossier?.txt_etat_cession || '',
-  txt_cession_definitive: terrain?.dossier?.txt_cession_definitive || '',
-  dt_date_creation: terrain?.dossier?.dt_date_creation || '',
-  // Table Terrain
-  slt_region: terrain?.region?.id || '',
-  slt_departement: terrain?.departement?.id || '',
-  slt_commune: terrain?.commune?.id || '',
-  slt_arrondissement: terrain?.arrondissement?.id || '',
-  txt_lotissement: terrain?.txt_lotissement || '',
-  txt_HorsLotissement: terrain?.txt_HorsLotissement || '',
-  txt_num_lotissement: terrain?.txt_num_lotissement || '',
-  txt_num_section:  terrain?.txt_num_section || '',
-  txt_num_parcelle: terrain?.txt_num_parcelle || '', 
-  nbr_surface: terrain?.nbr_surface || '',
-  slt_document_admin: terrain?.slt_document_admin || '',
-  txt_num_deliberation: terrain?.txt_num_deliberation || '',
-  dt_date_deliberation: terrain?.dt_date_deliberation || '',
-  // Table ReferenceCadastrale
-  rd_immatriculation_terrain: terrain?.references_cadastrales?.rd_immatriculation_terrain || '',
-  slt_dependant_domaine: terrain?.references_cadastrales?.slt_dependant_domaine || '', 
-  issu_bornage: terrain?.references_cadastrales?.ussu_bornage || '',
-  txt_num_titre:  terrain?.references_cadastrales?.txt_num_titre || '', 
-  txt_titre_mere: terrain?.references_cadastrales?.txt_titre_mere || '', 
-  txt_appartement: terrain?.references_cadastrales?.txt_appartement || '', 
-  slt_lf: terrain?.references_cadastrales?.slt_lf || '',
-  txt_num_requisition:  terrain?.references_cadastrales?.txt_num_requisition || '',
-  txt_surface_bornage:  terrain?.references_cadastrales?.txt_surface_bornage || '',
-  dt_date_bornage:  terrain?.references_cadastrales?.dt_date_bornage || '',
-  txt_nom_geometre: terrain?.references_cadastrales?.txt_nom_geometre || '',
-  // Table Titulaire
-  slt_titulaire:  terrain?.titulaire?.slt_titulaire || '',
-  txt_nationalite:  terrain?.titulaire?.txt_nationalite || '',
-  slt_civilite: terrain?.titulaire?.slt_civilite || '',
-  txt_prenom: terrain?.titulaire?.txt_prenom || '',
-  txt_nom:  terrain?.titulaire?.txt_nom || '',
-  slt_piece:  terrain?.titulaire?.slt_piece || '',
-  txt_numPiece: terrain?.titulaire?.txt_numPiece || '',
-  dt_date_delivrance: terrain?.titulaire?.dt_date_delivrance || '',
-  dt_date_naissance:  terrain?.titulaire?.dt_date_naissance || '',
-  txt_lieu_naissance: terrain?.titulaire?.txt_lieu_naissance || '',
-  txt_adresse:  terrain?.titulaire?.txt_adresse || '',
-  tel_telephone:  terrain?.titulaire?.tel_telephone || '',
-  txt_ninea:  terrain?.titulaire?.txt_ninea || '',
-  eml_email:  terrain?.titulaire?.eml_email || '',
-  txt_representant: terrain?.titulaire?.txt_representant || '',
-  tel_telRepresentant:  terrain?.titulaire?.tel_telRepresentant || '',
-  fichierPDF: terrain.titulaire?.fichierPDF || '',
-  // References Usage   
-  slt_usage: terrain?.references_usages?.[0]?.slt_usage || '',
-  slt_residence: terrain?.references_usages?.[0]?.slt_residence || '',
-  terrain_id: terrain?.terrain?.id || null,
-  occupants: formatOccupants(terrain?.references_usages), 
-  nbr_montantLoyerTotal: terrain?.references_usages?.nbr_montantLoyerTotal  ||  '',
-  nbr_TVATotal: terrain?.references_usages?.nbr_TVATotal  ||  '', 
-  // Evaluation Terrain  
-  txt_superficie_totale: terrain?.evaluations_terrains?.txt_superficie_totale || '',
-  txt_superficie_bati_sol: terrain?.evaluations_terrains?.txt_superficie_bati_sol || '',
-  slt_secteur: terrain?.evaluations_terrains?.slt_secteur || '',
-  nbr_prix_metre_carre: terrain?.evaluations_terrains?.nbr_prix_metre_carre || '',
-  nbr_valeur_terrain: terrain?.evaluations_terrains?.nbr_valeur_terrain || '',
-  nbr_valeurVenaleLimeuble: terrain?.evaluations_terrains?.nbr_valeurVenaleLimeuble ??  0, 
-  nbr_valeurLocative: terrain?.evaluations_terrains?.nbr_valeurLocative ||  0,
-  dt_dateEvaluation:  terrain?.evaluations_terrains?.dt_dateEvaluation  ||  '', 
-  //  Evaluation Bati 
-  txt_dependant_domainePR: terrain?.evaluations_batis?.txt_dependant_domainePR  || '',
-  slt_categoriePR:  terrain?.evaluations_batis?.slt_categoriePR ||  '',
-  nbr_prix_metre_carrePR: terrain?.evaluations_batis?.nbr_prix_metre_carrePR  || '',
-  nbr_surface_bati_solPR: terrain?.evaluations_batis?.nbr_surface_bati_solPR  ||  '',
-  nbr_niveauPR: terrain?.evaluations_batis?.nbr_niveauPR  ||'',
-  nbr_surface_utilePR:  terrain?.evaluations_batis?.nbr_surface_utilePR || '',
-  slt_coeffPR:  terrain?.evaluations_batis?.slt_coeffPR || '',
-  nbr_surface_corrigerPR: terrain?.evaluations_batis?.nbr_surface_corrigerPR  || '',
-  nbr_valeurPR: terrain?.evaluations_batis?.nbr_valeurPR  || '',
-  currentCat: terrain?.evaluations_batis?.currentCat  ||  '',
-  occupantsBP: formatOccupantsBP(terrain?.evaluations_batis), 
-  txt_valeur_terrain_bati:  terrain?.evaluations_batis?.txt_valeur_terrain_bati ||  '',
-  // Evaluation Cours Aménagé 
-  occupantsCA: formatOccupantsCA(terrain?.evaluations_cours_amenagees), 
-  nbr_valeur_total_ca: terrain?.evaluations_cours_amenagees?.nbr_valeur_total_ca || '',
-  // Clôtures
-  occupantsCL: formatOccupantsCL(terrain?.evaluations_clotures), 
-  nbr_valeur_total_clotur: terrain?.evaluations_clotures?.nbr_valeur_total_clotur || '',
-  // Aménagements particuliers
-  occupantsAP: formatOccupantsAP(terrain?.evaluations_amenagements), 
-  nbr_valeur_totale_ap: terrain?.evaluations_amenagements?.nbr_valeur_totale_ap || '',
+    txt_nicad: terrain?.txt_nicad || '', 
+    // Table Dossier
+    txt_num_dossier: terrain?.dossier?.txt_num_dossier  ?? 'Non disponible' ,
+    txt_num_dordre: terrain?.dossier?.txt_num_dordre || '',
+    slt_service_rendu: terrain?.dossier?.slt_service_rendu || '',
+    txt_etat_cession: terrain?.dossier?.txt_etat_cession || '',
+    txt_cession_definitive: terrain?.dossier?.txt_cession_definitive || '',
+    dt_date_creation: formatDate(terrain?.dossier?.dt_date_creation) || '',
+    // Table Terrain
+    slt_region: terrain?.region?.id || '',
+    slt_departement: terrain?.departement?.id || '',
+    slt_commune: terrain?.commune?.id || '',
+    slt_arrondissement: terrain?.arrondissement?.id || '',
+    txt_lotissement: terrain?.txt_lotissement || '',
+    txt_HorsLotissement: terrain?.txt_HorsLotissement || '',
+    txt_num_lotissement: terrain?.txt_num_lotissement || '',
+    txt_num_section:  terrain?.txt_num_section || '',
+    txt_num_parcelle: terrain?.txt_num_parcelle || '', 
+    nbr_surface: terrain?.nbr_surface || '',
+    slt_document_admin: terrain?.slt_document_admin || '',
+    txt_num_deliberation: terrain?.txt_num_deliberation || '',
+    dt_date_deliberation: terrain?.dt_date_deliberation || '',
+    // Table ReferenceCadastrale
+    rd_immatriculation_terrain: terrain?.references_cadastrales?.rd_immatriculation_terrain || '',
+    slt_dependant_domaine: terrain?.references_cadastrales?.slt_dependant_domaine || '', 
+    issu_bornage: terrain?.references_cadastrales?.ussu_bornage || '',
+    txt_num_titre:  terrain?.references_cadastrales?.txt_num_titre || '', 
+    txt_titre_mere: terrain?.references_cadastrales?.txt_titre_mere || '', 
+    txt_appartement: terrain?.references_cadastrales?.txt_appartement || '', 
+    slt_lf: terrain?.references_cadastrales?.slt_lf || '',
+    txt_num_requisition:  terrain?.references_cadastrales?.txt_num_requisition || '',
+    txt_surface_bornage:  terrain?.references_cadastrales?.txt_surface_bornage || '',
+    dt_date_bornage:  terrain?.references_cadastrales?.dt_date_bornage || '',
+    txt_nom_geometre: terrain?.references_cadastrales?.txt_nom_geometre || '',
+    // Table Titulaire
+    slt_titulaire:  terrain?.titulaire?.slt_titulaire || '',
+    txt_nationalite:  terrain?.titulaire?.txt_nationalite || '',
+    slt_civilite: terrain?.titulaire?.slt_civilite || '',
+    txt_prenom: terrain?.titulaire?.txt_prenom || '',
+    txt_nom:  terrain?.titulaire?.txt_nom || '',
+    slt_piece:  terrain?.titulaire?.slt_piece || '',
+    txt_numPiece: terrain?.titulaire?.txt_numPiece || '',
+    dt_date_delivrance: terrain?.titulaire?.dt_date_delivrance || '',
+    dt_date_naissance:  terrain?.titulaire?.dt_date_naissance || '',
+    txt_lieu_naissance: terrain?.titulaire?.txt_lieu_naissance || '',
+    txt_adresse:  terrain?.titulaire?.txt_adresse || '',
+    tel_telephone:  terrain?.titulaire?.tel_telephone || '',
+    txt_ninea:  terrain?.titulaire?.txt_ninea || '',
+    eml_email:  terrain?.titulaire?.eml_email || '',
+    txt_representant: terrain?.titulaire?.txt_representant || '',
+    tel_telRepresentant:  terrain?.titulaire?.tel_telRepresentant || '',
+    fichierPDF: terrain.titulaire?.fichierPDF || '',
+    // References Usage   
+    slt_usage: terrain?.references_usages?.[0]?.slt_usage || '',
+    slt_residence: terrain?.references_usages?.[0]?.slt_residence || '',
+    terrain_id: terrain?.terrain?.id || null,
+    occupants: formatOccupants(terrain?.references_usages), 
+    nbr_montantLoyerTotal: terrain?.references_usages?.nbr_montantLoyerTotal  ||  '',
+    nbr_TVATotal: terrain?.references_usages?.nbr_TVATotal  ||  '', 
+    // Evaluation Terrain  
+    txt_superficie_totale: terrain?.evaluations_terrains?.txt_superficie_totale || '',
+    txt_superficie_bati_sol: terrain?.evaluations_terrains?.txt_superficie_bati_sol || '',
+    slt_secteur: terrain?.evaluations_terrains?.slt_secteur || '',
+    nbr_prix_metre_carre: terrain?.evaluations_terrains?.nbr_prix_metre_carre || '',
+    nbr_valeur_terrain: terrain?.evaluations_terrains?.nbr_valeur_terrain || '',
+    nbr_valeurVenaleLimeuble: terrain?.evaluations_terrains?.nbr_valeurVenaleLimeuble ??  0, 
+    nbr_valeurLocative: terrain?.evaluations_terrains?.nbr_valeurLocative ||  0,
+    dt_dateEvaluation:  terrain?.evaluations_terrains?.dt_dateEvaluation  ||  '', 
+    //  Evaluation Bati 
+    txt_dependant_domainePR: terrain?.evaluations_batis?.txt_dependant_domainePR  || '',
+    slt_categoriePR:  terrain?.evaluations_batis?.slt_categoriePR ||  '',
+    nbr_prix_metre_carrePR: terrain?.evaluations_batis?.nbr_prix_metre_carrePR  || '',
+    nbr_surface_bati_solPR: terrain?.evaluations_batis?.nbr_surface_bati_solPR  ||  '',
+    nbr_niveauPR: terrain?.evaluations_batis?.nbr_niveauPR  ||'',
+    nbr_surface_utilePR:  terrain?.evaluations_batis?.nbr_surface_utilePR || '',
+    slt_coeffPR:  terrain?.evaluations_batis?.slt_coeffPR || '',
+    nbr_surface_corrigerPR: terrain?.evaluations_batis?.nbr_surface_corrigerPR  || '',
+    nbr_valeurPR: terrain?.evaluations_batis?.nbr_valeurPR  || '',
+    currentCat: terrain?.evaluations_batis?.currentCat  ||  '',
+    occupantsBP: formatOccupantsBP(terrain?.evaluations_batis), 
+    txt_valeur_terrain_bati:  terrain?.evaluations_batis?.txt_valeur_terrain_bati ||  '',
+    // Evaluation Cours Aménagé 
+    occupantsCA: formatOccupantsCA(terrain?.evaluations_cours_amenagees), 
+    nbr_valeur_total_ca: terrain?.evaluations_cours_amenagees?.nbr_valeur_total_ca || '',
+    // Clôtures
+    occupantsCL: formatOccupantsCL(terrain?.evaluations_clotures), 
+    nbr_valeur_total_clotur: terrain?.evaluations_clotures?.nbr_valeur_total_clotur || '',
+    // Aménagements particuliers
+    occupantsAP: formatOccupantsAP(terrain?.evaluations_amenagements), 
+    nbr_valeur_totale_ap: terrain?.evaluations_amenagements?.nbr_valeur_totale_ap || '',
 })
 
 
@@ -446,7 +456,7 @@ const nbr_TVATotal = computed(() => {
 watchEffect(() => {
   form.nbr_TVATotal = nbr_TVATotal.value.toFixed(2) // 2 décimales
 })
-
+ 
 // Verification saisis txt_superficie_bati_sol 
 watchEffect(() => {
     const bati = Number(form.txt_superficie_bati_sol);
@@ -934,18 +944,18 @@ function submit() {
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
                                         <div v-if="form.errors.txt_cession_definitive" class="text-red-500">{{ form.errors.txt_cession_definitive }}</div>
-                                      </div>
+                                      </div> 
                                                                       
                                       <div>
                                         <label for="dt_date_creation" class="block font-medium text-primary-txt">Date creation</label> 
-                                        <input v-model="form.dt_date_creation" id="dt_date_creation" type="date" 
+                                        <input v-model="form.dt_date_creation" id="dt_date_creation" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
                                         <div v-if="form.errors.dt_date_creation" class="text-red-500">{{ form.errors.dt_date_creation }}</div>
                                       </div>
                                     </div><br>
-                  
+                            
                                     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
 
                                       <div>
@@ -1069,7 +1079,7 @@ function submit() {
                             
                                       <div>
                                         <label for="dt_date_deliberation" class="block font-medium text-primary-txt">Date Déliberation</label>
-                                        <input v-model="form.dt_date_deliberation" id="dt_date_deliberation" type="date" 
+                                        <input v-model="form.dt_date_deliberation" id="dt_date_deliberation" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1395,7 +1405,7 @@ function submit() {
                                                                     
                                       <div>
                                         <label for="dt_date_delivrance" class="block font-medium text-primary-txt">Date Délivrance</label>
-                                        <input v-model="form.dt_date_delivrance" id="dt_date_delivrance" type="date" 
+                                        <input v-model="form.dt_date_delivrance" id="dt_date_delivrance" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1404,7 +1414,7 @@ function submit() {
                                                                     
                                       <div>
                                         <label for="dt_date_naissance" class="block font-medium text-primary-txt">Date Naissance</label>
-                                        <input v-model="form.dt_date_naissance" id="dt_date_naissance" type="date" 
+                                        <input v-model="form.dt_date_naissance" id="dt_date_naissance" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -2740,7 +2750,7 @@ function submit() {
                                                       <div> 
                                                           <label for="dt_dateEvaluation" class="block font-medium text-primary-txt">Date d'évaluation</label>
                                                           <input 
-                                                              type="date" 
+                                                              type="text" 
                                                               v-model="form.dt_dateEvaluation"   
                                                               id="dt_dateEvaluation" 
                                                               class="block w-64 rounded-md bg-white 

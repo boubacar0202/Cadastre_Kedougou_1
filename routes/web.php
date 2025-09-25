@@ -88,7 +88,12 @@ Route::put('/secretariat/update/{id}', [SecretariatController::class, 'update'])
 Route::get('/secretariat/edit/{id}', [SecretariatController::class, 'edit'])->name('secretariat.edit'); 
 Route::delete('/terrains/{terrain}', [TerrainController::class, 'destroy'])->name('terrains.destroy');
 
+// verifier code suppression
 
+Route::post('/terrain/verifier-supprimer', [DonneeController::class, 'verifierEtSupprimer'])->name('terrain.verifier.supprimer');
  
+ 
+
+
 
 require __DIR__ . '/auth.php';
