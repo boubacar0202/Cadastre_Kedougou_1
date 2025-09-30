@@ -321,46 +321,8 @@ watchEffect(() => {
 watch(currentCat, (newVal) => {
   form.currentCat = newVal
 })
- 
-// const rechercherDossier = async () => {
-//     try {
-//         const { data } = await axios.post('/dossier/verify', {
-//             txt_num_dossier: txt_num_dossier.value
-//         });
-
-//         if (data.exists) {
-//         // ✅ Afficher le formulaire
-//         formVisible.value = true;
-
-//         // ✅ Affecter les données récupérées du dossier
-//         form.txt_num_dossier = txt_num_dossier.value;
-
-//         // ✅ Affecter les données du terrain s'il existe
-//         const terrain = data.terrain;
-
-//         form.txt_nicad = terrain?.txt_nicad ?? '';
-//         form.nbr_surface = terrain?.nbr_surface ?? 0;
-
-//         // ✅ Message de confirmation
-//         toast.success(data.success);
-
-//         console.log("✅ Terrain chargé :", terrain);
-//         } else {
-//             formVisible.value = false;
-//             toast.error(date.error || "Dossier introuvable.");
-//         }
-//     } catch (err) {
-//         formVisible.value = false;
-//         console.error("❌ Erreur complète :", err);
-
-//         if (err.response?.status === 422 && err.response.data.errors) {
-//             Object.values(err.response.data.errors).forEach(msg => toast.error(msg));
-//         } else {
-//             toast.error("Une erreur est survenue lors de la vérification.");
-//         }
-//     }
-// };
-
+  
+// Rechercher le dossier
 const rechercherDossier = async () => {
     try {
         const { data } = await axios.post('/dossier/verify', {
@@ -408,12 +370,8 @@ const rechercherDossier = async () => {
         }
     }
 };
-
-
-  
-//  Calculer Montant Total Loyer 
  
-
+//  Calculer Montant Total Loyer  
 const nbr_montantLoyerTotal = computed(() => {
     return form.occupants.reduce((total, occupant) => {
         const montant = parseFloat(occupant.nbr_montantLoyerTG) || 0;

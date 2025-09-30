@@ -188,8 +188,7 @@ const fetchNextDossier = async () => {
     }
 };
 onMounted(fetchNextDossier);
- 
-
+  
 // Mettez à jour les watchers pour utiliser form.selectedRegion, etc.
 watch(
     () => form.slt_region,
@@ -1345,8 +1344,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     name="txt_nationalite"
                                                     v-model="
                                                         form.txt_nationalite
-                                                    "
-                                                    required
+                                                    " 
                                                     id="Nationalite"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1364,8 +1362,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                             <div class="mt-2">
                                                 <select
                                                     name="slt_civilite"
-                                                    v-model="form.slt_civilite"
-                                                    required
+                                                    v-model="form.slt_civilite" 
                                                     id="Civilite"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
@@ -1393,8 +1390,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                 <input
                                                     type="text"
                                                     name="txt_prenom"
-                                                    v-model="form.txt_prenom"
-                                                    required
+                                                    v-model="form.txt_prenom" 
                                                     id="Prenom"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1413,8 +1409,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                 <input
                                                     type="text"
                                                     name="txt_nom"
-                                                    v-model="form.txt_nom"
-                                                    required
+                                                    v-model="form.txt_nom" 
                                                     id="nom"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1432,8 +1427,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                             <div class="mt-2">
                                                 <select
                                                     name="slt_piece"
-                                                    v-model="form.slt_piece"
-                                                    required
+                                                    v-model="form.slt_piece" 
                                                     id="selectePiece"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
@@ -1461,8 +1455,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                 <input
                                                     type="text"
                                                     name="txt_num_piece"
-                                                    v-model="form.txt_numPiece"
-                                                    required
+                                                    v-model="form.txt_numPiece" 
                                                     id="numPiece"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1483,8 +1476,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     name="dt_date_delivrance"
                                                     v-model="
                                                         form.dt_date_delivrance
-                                                    "
-                                                    required
+                                                    " 
                                                     :max="new Date().toISOString().split('T')[0]"
                                                     id="dateDelivrance"
                                                     autocomplete="address-level2"
@@ -1507,8 +1499,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     v-model="
                                                         form.dt_date_naissance
                                                     "
-                                                    :max="new Date().toISOString().split('T')[0]"
-                                                    required
+                                                    :max="new Date().toISOString().split('T')[0]" 
                                                     id="dateNaissance"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1529,8 +1520,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     name="txt_lieu_naissance"
                                                     v-model="
                                                         form.txt_lieu_naissance
-                                                    "
-                                                    required
+                                                    " 
                                                     id="lieuNaissance"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1549,8 +1539,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                 <input
                                                     type="text"
                                                     name="txt_adresse"
-                                                    v-model="form.txt_adresse"
-                                                    required
+                                                    v-model="form.txt_adresse" 
                                                     id="adresse"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1569,8 +1558,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                 <input
                                                     type="tel"
                                                     name="tel_telephone"
-                                                    v-model="form.tel_telephone"
-                                                    required
+                                                    v-model="form.tel_telephone" 
                                                     id="telephone"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1651,8 +1639,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                             <div class="mt-2">
                                                 <select
                                                     name="slt_categoriePM"
-                                                    v-model="form.slt_categoriePM"
-                                                    required
+                                                    v-model="form.slt_categoriePM" 
                                                     id="selectePiece"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
@@ -1836,7 +1823,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                             <label
                                                 for="txt_emailPM"
                                                 class="block text-sm/6 font-medium text-primary-txt"
-                                                >Fonction Responsable</label
+                                                >Email</label
                                             >
                                             <div class="mt-2">
                                                 <input
@@ -1885,8 +1872,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                             <div class="mt-2">
                                                 <select
                                                     name="slt_etablissementPA"
-                                                    v-model="form.slt_etablissementPA"
-                                                    required
+                                                    v-model="form.slt_etablissementPA" 
                                                     id="selectePiece"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
@@ -2010,7 +1996,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                             <label
                                                 for="txt_ministèreTutelePA"
                                                 class="block text-sm/6 font-medium text-primary-txt"
-                                                >Ministère Tutele</label
+                                                >Ministère Tutelle</label
                                             >
                                             <div class="mt-2">
                                                 <input

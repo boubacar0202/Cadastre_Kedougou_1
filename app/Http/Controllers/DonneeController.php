@@ -48,7 +48,7 @@ class DonneeController extends Controller
         ]);
     }
  
-  
+    
     public function verifierEtSupprimer(Request $request)
     {
         $request->validate([
@@ -58,37 +58,63 @@ class DonneeController extends Controller
 
         try {
             DB::transaction(function () use ($request) {
+                // Vérifier si le code existe et n’est pas encore utilisé
                 $code = \App\Models\CodeAcces::where('code', $request->code)
-                    ->where('utilise', false)
                     ->lockForUpdate()
+                    ->where('utilise', false)
                     ->first();
 
                 if (!$code) {
-                    // lancer une exception pour sortir de la transaction
-                    throw new \Exception('❌ Votre Code est invalide !');
+                    throw new \InvalidArgumentException('❌ Code invalide ou déjà utilisé.');
                 }
 
+                // Récupérer le terrain
                 $terrain = \App\Models\Terrain::findOrFail($request->terrain_id);
 
-                // supprime définitivement
-                $terrain->forceDelete();
+                // Suppression (choisis delete() si SoftDeletes, sinon forceDelete())
+                $terrain->delete();
 
-                // marquer le code comme utilisé
-                $code->update(['utilise' => true]);
+
+                // Marquer le code comme utilisé
+                // $code->update(['utilise' => true]);
             });
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Terrain supprimé avec succès',
-            ]);
+                'message' => '✅ Terrain supprimé avec succès.',
+            ], 200);
 
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Erreur de validation (Laravel le gère déjà, mais par sécurité)
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur de validation',
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            // Terrain introuvable
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
-            ], 422);
+            ], 404);
+
+        } catch (\InvalidArgumentException $e) {
+            // Code invalide
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+
+        } catch (\Exception $e) {
+            // Autres erreurs (base de données, transaction, etc.)
+            return response()->json([
+                'success' => false,
+                'message' => '⚠️ Une erreur est survenue : ' . $e->getMessage(),
+            ], 500);
         }
     }
+
 
 
 

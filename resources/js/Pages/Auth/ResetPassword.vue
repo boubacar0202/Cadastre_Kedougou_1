@@ -5,6 +5,13 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue'
+
+const showPasswordNew = ref(false) 
+ 
+const togglePasswordNew = () => { 
+    showPasswordNew.value = !showPasswordNew.value;
+};
 
 const props = defineProps({
     email: {
@@ -78,16 +85,26 @@ const submit = () => {
                     class="text-primary"
                 />
 
-                <TextInput
-                    id="password_confirmation"
-                    type="password"
-                    class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-gray-900 
-                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
-                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
-                    v-model="form.password_confirmation"
-                    required
-                    autocomplete="new-password"
-                />
+                <div class="flex items-center mt-1 relative">   
+                    <TextInput
+                        id="password_confirmation"
+                        :type="showPasswordNew ? 'text' : 'password'"
+                        class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-gray-900 
+                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
+                        v-model="form.password_confirmation"
+                        required
+                        autocomplete="new-password"
+                    />
+                    <button
+                        type="button"
+                        @click="togglePasswordNew"
+                        class="absolute right-3 text-primary-txt"
+                        >
+                        <span v-if="showPasswordNew">👁️</span>
+                        <span v-else>👁️‍🗨️</span>
+                    </button> 
+                </div>
 
                 <InputError
                     class="mt-2"

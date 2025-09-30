@@ -7,9 +7,15 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { Inertia } from '@inertiajs/inertia';
+import { Inertia } from '@inertiajs/inertia'; 
+import { ref } from 'vue'
 
+const showPassword = ref(false)
 
+const togglePassword = () => {
+  showPassword.value = !showPassword.value
+}
+ 
 defineProps({
     canResetPassword: {
         type: Boolean,
@@ -62,18 +68,30 @@ const submit = () => {
             <div class="mt-4">
                 <InputLabel for="password" value="Mot de Passe" class="text-primary-txt font-bold" />
 
-                <TextInput
-                    id="password"
-                    type="password"
-                    class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-primary-txt 
-                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
-                    v-model="form.password"
-                    required
-                    autocomplete="current-password"
-                />
+                <div class="flex items-center mt-1 relative">
+                    <TextInput
+                        id="password"
+                        :type="showPassword ? 'text' : 'password'"
+                        class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-primary-txt 
+                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
+                        v-model="form.password"
+                        required
+                        autocomplete="current-password"
+                        
+                    />
 
-                <InputError class="mt-2" :message="form.errors.password" />
+                    <button
+                        type="button"
+                        @click="togglePassword"
+                        class="absolute right-3 text-primary-txt"
+                        >
+                        <span v-if="showPassword">👁️</span>
+                        <span v-else>👁️‍🗨️</span>
+                    </button> 
+                </div>
+
+                    <InputError class="mt-2" :message="form.errors.password" />
             </div>
 
             <div class="mt-4 block">

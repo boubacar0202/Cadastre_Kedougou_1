@@ -14,17 +14,17 @@ return new class extends Migration
         Schema::create('titulaires', function (Blueprint $table) {
             $table->id();
             $table->string('slt_titulaire');
-            $table->string('txt_nationalite');
-            $table->string('slt_civilite');
-            $table->string('txt_prenom');
-            $table->string('txt_nom');
-            $table->string('slt_piece');
-            $table->string('txt_numPiece');
-            $table->date('dt_date_delivrance');
-            $table->date('dt_date_naissance');
-            $table->string('txt_lieu_naissance');
-            $table->string('txt_adresse');
-            $table->string('tel_telephone');
+            $table->string('txt_nationalite')->nullable();
+            $table->string('slt_civilite')->nullable();
+            $table->string('txt_prenom')->nullable();
+            $table->string('txt_nom')->nullable();
+            $table->string('slt_piece')->nullable();
+            $table->string('txt_numPiece')->nullable();
+            $table->date('dt_date_delivrance')->nullable();
+            $table->date('dt_date_naissance')->nullable();
+            $table->string('txt_lieu_naissance')->nullable();
+            $table->string('txt_adresse')->nullable();
+            $table->string('tel_telephone')->nullable();
             $table->string('eml_email')->nullable();
             $table->string('txt_representant')->nullable();
             $table->string('tel_telRepresentant')->nullable();

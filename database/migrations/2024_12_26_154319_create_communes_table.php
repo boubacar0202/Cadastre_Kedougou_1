@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('slt_commune');
             $table->foreignId('arrondissement_id')->constrained('arrondissements')->onDelete('cascade');
+            $table->string('txt_codeCommune');
             $table->timestamps();
         });
     }
@@ -22,8 +23,10 @@ return new class extends Migration
     /**
      * Reverse the migrations.
      */
+
     public function down(): void
     {
         Schema::dropIfExists('communes');
     }
+    
 };

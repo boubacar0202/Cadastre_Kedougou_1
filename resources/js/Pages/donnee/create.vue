@@ -375,8 +375,7 @@ async function supprimerTerrain(terrain) {
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{formatDate(terrain.titulaire?.dt_date_naissance) || '-'}}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_lieu_naissance || '-'}}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_adresse || '-'}}</td>
-                                                        <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.tel_telephone || '-'}}</td>
-                                                        <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_ninea || '-'}}</td>
+                                                        <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.tel_telephone || '-'}}</td> 
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.eml_email || '-'}}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_representant || '-'}}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.tel_telRepresentant || '-'}}</td>

@@ -161,6 +161,8 @@ class SecretariatController extends Controller
 
         ], [
           
+            'txt_num_dossier.required' => 'Numéro dossier est obligatoire',
+            'txt_num_dordre.required' => 'Numéro d\'ordre est obligatoire',
             'slt_region.required' => 'Region est Obligatoire',
             'slt_departement.required' => 'Departement requis',
             'slt_arrondissement.required' => 'Arrondissement requis',
@@ -169,8 +171,7 @@ class SecretariatController extends Controller
             'dt_date_delivrance.after' => 'La date de délivrance doit être postérieure à la date de naissance.',
             'txt_nicad.unique' => 'Ce NICAD existe déjà dans la base.',
             'slt_titulaire.required' => 'Titulaire est Obligatoire', 
-            'rd_immatriculation_terrain.required' => 'Immatriculation Terrain est obligatoire',
-
+            'rd_immatriculation_terrain.required' => 'Immatriculation Terrain est obligatoire', 
             'fichierPDF.file' => 'Le fichier sélectionné est invalide.',
             'fichierPDF.mimes' => 'Le fichier doit être au format PDF.',
             'fichierPDF.max' => 'La taille du fichier ne doit pas dépasser 120 Mo.',
@@ -215,17 +216,17 @@ class SecretariatController extends Controller
     
             $titulaire = Titulaire::create([
                 'slt_titulaire' => $validatedData['slt_titulaire'],
-                'txt_nationalite' => $validatedData['txt_nationalite'],
-                'slt_civilite' => $validatedData['slt_civilite'],
-                'txt_prenom' => $validatedData['txt_prenom'],
-                'txt_nom' => $validatedData['txt_nom'],
-                'slt_piece' => $validatedData['slt_piece'],
-                'txt_numPiece' => $validatedData['txt_numPiece'],
-                'dt_date_delivrance' => $validatedData ['dt_date_delivrance'],
-                'dt_date_naissance' => $validatedData ['dt_date_naissance'],
-                'txt_lieu_naissance' => $validatedData['txt_lieu_naissance'],
-                'txt_adresse' => $validatedData['txt_adresse'],
-                'tel_telephone' => $validatedData['tel_telephone'],
+                'txt_nationalite' => $validatedData['txt_nationalite'] ?? null,
+                'slt_civilite' => $validatedData['slt_civilite'] ?? null,
+                'txt_prenom' => $validatedData['txt_prenom'] ?? null,
+                'txt_nom' => $validatedData['txt_nom'] ?? null,
+                'slt_piece' => $validatedData['slt_piece'] ?? null,
+                'txt_numPiece' => $validatedData['txt_numPiece'] ?? null,
+                'dt_date_delivrance' => $validatedData ['dt_date_delivrance'] ?? null,
+                'dt_date_naissance' => $validatedData ['dt_date_naissance'] ?? null,
+                'txt_lieu_naissance' => $validatedData['txt_lieu_naissance'] ?? null,
+                'txt_adresse' => $validatedData['txt_adresse'] ?? null,
+                'tel_telephone' => $validatedData['tel_telephone'] ?? null,
                 'eml_email' => $validatedData['eml_email'] ?? null,
                 'txt_representant' => $validatedData['txt_representant'] ?? null,
                 'tel_telRepresentant' => $validatedData['tel_telRepresentant'] ?? null,
