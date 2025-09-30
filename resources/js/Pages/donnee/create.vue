@@ -379,6 +379,7 @@ async function supprimerTerrain(terrain) {
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.eml_email || '-'}}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_representant || '-'}}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.tel_telRepresentant || '-'}}</td>
+                                                        
 
                                                         <template v-if="terrain.references_usages && terrain.references_usages.length > 0">
                                                             <tr v-for="usage in terrain.references_usages" :key="usage.id"  class="border-b border-primary text-sm">
