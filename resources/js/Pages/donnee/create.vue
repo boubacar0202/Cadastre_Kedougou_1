@@ -34,18 +34,31 @@ const terrains = computed(() => {
     const searchNumero = normalize(numero.value || '')
     const searchAnnee = normalize(annee.value || '')
 
-    return props.terrains.filter(terrain => {
+    const filtered = props.terrains.filter(terrain => {
         const dossierNum = normalize(terrain.dossier?.txt_num_dossier)
-        const dossierAnnee = normalize(terrain.dossier?.dt_date_creation)
+        const dossierAnnee = normalize(terrain.dossier?.txt_num_dossier)
 
         const matchNumero = !searchNumero || dossierNum?.includes(searchNumero)
         const matchAnnee = !searchAnnee || dossierAnnee?.includes(searchAnnee)
 
         return matchNumero && matchAnnee
     })
-})
+    // Tri croissant par numéro de dossier
+    const sorted = filtered.sort((a, b) => {
+        const [numA, yearA] = (a.dossier?.txt_num_dossier || "0,0").split("/")
+        const [numB, yearB] = (b.dossier?.txt_num_dossier || "0.0").split("/")
+        
+        // comparer par année d'abord
+        if (yearA !== yearB) {
+            return parseInt(yearA, 10) - parseInt(yearB, 10)
+        }
+        
+        return parseInt(numA, 10) - parseInt(numB, 10)
+    })
 
- 
+    return sorted 
+})
+  
 // Fonction pour formater la date
 const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -55,47 +68,54 @@ const formatDate = (dateString) => {
         year: 'numeric',
     });
 };
+    
+// Compter le nombre total de courrier
+const totalEnregistrement = computed(() => terrains.value.length)
  
-
- 
-
-// Suppromer enregistrement
-// function supprimerTerrain(terrain) {
-//     if (confirm(`Voulez-vous vraiment supprimer ce terrain avec le NICAD : ${terrain.txt_nicad} ?`)) {
-//         router.delete(route('terrains.destroy', terrain.id), {
-//             preserveScroll: true,
-//             onSuccess: () => {
-//                 console.log('Terrain supprimé avec succès');
-//             },
-//             onError: (errors) => {
-//                 console.error('Erreur lors de la suppression', errors);
-//             }
-//         });
-//     }
-// } 
-
-
-
+// // Fonction pour supprimer un terrain
 async function supprimerTerrain(terrain) {
-    if (!confirm(`Voulez-vous vraiment supprimer ce terrain NICAD : ${terrain.txt_nicad} ?`)) return;
+   if (!confirm(`Voulez-vous vraiment supprimer ce terrain NICAD : ${terrain.txt_nicad} ?`)) return;
 
-    const saisie = prompt('Entrez votre code de confirmation :');
+     const saisie = prompt('Entrez votre code de confirmation :');
     if (!saisie) return;
 
-    try {
-        const res = await axios.post(route('terrain.verifier.supprimer'), {
-        code: saisie,
-        terrain_id: terrain.id
-        });
+     try {
+         const res = await axios.post(route('terrain.verifier.supprimer'), {
+         code: saisie,
+         terrain_id: terrain.id
+         });
+         if (res.data.success) {
+             toast.success(res.data.message);
+             Inertia.reload() // retirer localement l'item
+         }
+     } catch (err) {
+         toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
+     }
+ }
 
-        if (res.data.success) {
-            toast.success(res.data.message);
-            Inertia.reload() // retirer localement l'item
-        }
-    } catch (err) {
-        toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
-    }
-    }
+// Fonction pour supprimer un terrain
+// async function supprimerTerrain(terrain) {
+//     if (!confirm(`Voulez-vous vraiment supprimer ce terrain de NICAD : ${terrain.txt_nicad} ?`)) return;
+
+//     const saisie = prompt('Entrez votre code de confirmation :');
+//     if (!saisie) return;
+
+//     try {
+//         const res = await axios.post(route('terrain.verifier.supprimer'), {
+//             code: saisie,
+//             terrain_id: terrain.id
+//         });
+
+//         if (res.data.success) {
+//             toast.success(res.data.message);
+//             Inertia.reload(); // recharge la liste
+//         } else {
+//             toast.error(res.data.message);
+//         }
+//     } catch (err) {
+//         toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
+//     }
+// }
 
 
 </script>
@@ -142,52 +162,65 @@ async function supprimerTerrain(terrain) {
                     <div class="bg-white shadow-md rounded-lg "><br> 
                         <div class="mx-auto max-w-7xl sm:px-8 lg:px-12 mt-4 mb-4">  
                             <div class="card-header"> 
-                                <form @submit.prevent="searchDossier" class="max-w-md mx-auto">
-                             
-                                        <label for="default-search"
-                                            class="text-xl text-primary-txt font-bold">
-                                            <b>Recherche Dossier</b>
-                                        </label>
-                                        <div class="flex w-full items-start space-x-4">  
-                                            <div>
-                                                <input 
-                                                    v-model="numero"
-                                                    type="search"
-                                                    id="default-search"
-                                                    aria-label="Rechercher"
-                                                    class="h-9 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-menu placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                    placeholder="Entrez le numéro du dossier"
-                                                    required
-                                                />  
+                                <div class="relative overflow-x-auto p-4 border-b bg-primary-form mt-8">
+                                    <div class="flex justify-between items-center">  
+                                        <h1 class="text-xl font-bold text-primary-txt">
+                                            Enregistrements : 
+                                            <span v-if="totalEnregistrement>0" class="text-gray-600">
+                                                ({{ totalEnregistrement }})
+                                            </span>
+                                            <span v-else class="text-red-600">
+                                                Aucun enregistrement
+                                            </span> 
+                                        </h1> 
+                                        <form @submit.prevent="searchDossier" class="flex items-center space-x-4">
+                                            <div  class="flex items-start space-x-4">   
+                                                <label for="default-search"
+                                                    class="text-xl text-primary-txt font-bold">
+                                                    <b>Recherche</b>
+                                                </label>
+                                                <div class="flex w-full items-start space-x-4">  
+                                                    <div>
+                                                        <input 
+                                                            v-model="numero"
+                                                            type="search"
+                                                            id="default-search"
+                                                            aria-label="Rechercher"
+                                                            class="h-9 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                outline outline-1 -outline-offset-1 outline-primary-menu placeholder:text-gray-400 
+                                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                            placeholder="Entrez le numéro du dossier"
+                                                            required
+                                                        />  
+                                                    </div>
+                                                    <div>
+                                                        <input 
+                                                            v-model="annee"
+                                                            type="search"
+                                                            maxlength="4"
+                                                            id="default-search"
+                                                            aria-label="Rechercher"
+                                                            class="h-9 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                border border-primary-menu  placeholder:text-gray-400 
+                                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                            placeholder="année"
+                                                        /> 
+                                                    </div>
+                                                </div> 
                                             </div>
-                                            <div>
-                                                <input 
-                                                    v-model="annee"
-                                                    type="search"
-                                                    maxlength="4"
-                                                    id="default-search"
-                                                    aria-label="Rechercher"
-                                                    class="h-9 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        border border-primary-menu  placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                    placeholder="année"
-                                                /> 
-                                            </div>
-                                        </div> 
-                                  
-                                </form>
+                                        </form>
+                                    </div>
+                                </div>
                                 
                             </div>
                                 
-                            <div class="relative overflow-x-auto shadow-md sm:rounded-lg mt-8">
+                            <div class="max-h-[500px] overflow-x-auto shadow-md sm:rounded-lg mt-8">
                                 <div class="container">
                                     <div class="card">    
                                         <div class="card-body">
-                                            <table class="table table-sm table-strictped table-bordered">
-                                                <thead >
-                                                    <tr>
+                                            <table class="table table-sm table-strictped table-bordered bg-primary text-white">
+                                                <thead class="sticky top-0 z-10">
+                                                    <tr class="h-20">
                                                         <th scope="col" class="px-6 py-3 text-white text-center border-r bg-primary font-bold whitespace-nowrap">N°</th>
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">N° dossier</th>
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Region</th>
@@ -231,9 +264,9 @@ async function supprimerTerrain(terrain) {
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Lieu naissance</th>
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Adresse</th>
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Télephone</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Ninea</th>
+                                                        <!-- <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Ninea</th> -->
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Email</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">epresentant</th>
+                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Representant</th>
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Telephone Répresentant</th> 
                                                         <!-- <h3 class="text-lg text-white text-center border-b  bg-primary font-bold whitespace-nowrap text-center">Références Usages</h3> -->
                                                         <table class="border-b border-primary text-sm">
@@ -328,10 +361,10 @@ async function supprimerTerrain(terrain) {
                                                 </thead>
                                                 <tbody>
             
-                                                    <tr v-for="terrain in terrains" :key="terrain.id"  
+                                                    <tr v-for="(terrain , index) in terrains" :key="terrain.id ?? index"
                                                     class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                             
-                                                        <th class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.dossier.txt_num_dordre || '-' }}</th>
+                                                        <th class="sticky left-0 z-0 border bg-white px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ index + 1 || '-' }}</th>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.dossier.txt_num_dossier || '-' }} </td> 
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.region ? terrain.region.slt_region : '-' }}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.departement ? terrain.departement.slt_departement : '-' }}</td>
@@ -466,7 +499,7 @@ async function supprimerTerrain(terrain) {
                                                                     Voir PDF
                                                                 </a>
                                                             </div>
-                                                            <div v-else class="text-primary-txt italic">Aucun fichier PDF</div>
+                                                            <div v-else class="text-gray-400 italic">Aucun fichier PDF</div>
                                                         </td>
                                                         <td class="flex items px-6 py-6 border-b border-primary-only">
                                                             <div class="mt-2 ml-4">
@@ -487,7 +520,7 @@ async function supprimerTerrain(terrain) {
                                                             <div class="mt-2 ml-4">
                                                                 <MazBtn 
                                                                     color="danger" size="sm"   
-                                                                    @click="() => supprimerTerrain(terrain)"
+                                                                    @click="supprimerTerrain(terrain)"
                                                                     class="h-8 w-28 text-white bg-gradient-to-r from-danger-500 via-danger-600 
                                                                     to-danger-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
                                                                     focus:ring-danger-300 dark:focus:ring-danger-800 shadow-lg shadow-danger-500/50 

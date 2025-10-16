@@ -26,8 +26,13 @@ const txt_num_section = ref('');
 const txt_num_parcelle = ref('');
 const txt_appartement = ref('');
 const today = new Date().toISOString().split('T')[0];
-const fichierPDF = ref(null);
-
+const fichierPDF = ref(null); 
+const activeTab = ref("");   
+const show = ref(false);
+const showSectionPP = ref(false); // Perssone Physique
+const showSectionPM = ref(false); // Personne Morale
+const showSectionPA = ref(false); // Etat
+  
 // Récuperer le fichier PDF 
 function handleFileUpload(event) {
     const file = event.target.files[0];
@@ -50,50 +55,41 @@ function handleFileUpload(event) {
     form.fichierPDF = file;
 
     console.log("Fichier PDF sélectionné :", fichierPDF.value);
-}
+} 
 
 const txt_nicad = computed(() => {
-    if (slt_commune.value === 1) {
-        return `13110100 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    } else if (slt_commune.value === 2) {
-        return `13120101 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    } else if (slt_commune.value === 3) {
-        return `13120102 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 4) {
-        return `14120103 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 5) {
-        return `13120104 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 6) {
-        return `13120201 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 7) {
-        return `13120202 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    } else if (slt_commune.value === 8) {
-        return `13210100 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    } else if (slt_commune.value === 9) {
-        return `13220101 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 10) {
-        return `13220102 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 11) {
-        return `13220201 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 12) {
-        return `13220202 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 13) {
-        return `13220103 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    } else if (slt_commune.value === 14) {
-        return `13310100 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    } else if (slt_commune.value === 15) {
-        return `13320101 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 16) {
-        return `13320102 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 17) {
-        return `13320201 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 18) {
-        return `13310202 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else if (slt_commune.value === 19) {
-        return `13220203 ${txt_num_section.value} ${txt_num_parcelle.value} ${txt_appartement.value}`;
-    }else {
-        return `${txt_num_section.value} ${txt_num_parcelle.value}  ${txt_appartement.value}`;
+ 
+    const codes = {
+        1: "13110100",
+        2: "13120101",
+        3: "13120102",
+        4: "14120103",
+        5: "13120104",
+        6: "13120201",
+        7: "13120202",
+        8: "13210100",
+        9: "13220101",
+        10: "13220102",
+        11: "13220201",
+        12: "13220202",
+        13: "13220103",
+        14: "13310100",
+        15: "13320101",
+        16: "13320102",
+        17: "13320201",
+        18: "13310202",
+        19: "13220203"
     }
+
+    const prefix = codes[slt_commune.value] || ''
+    const value = `${prefix}${txt_num_section.value}${txt_num_parcelle.value}${txt_appartement.value}`.trim()
+ 
+    // 🔎 Vérification longueur totale
+    if (value.replace(/\s/g, "").length <= 8) {
+        return null;
+    }
+
+    return value;
 });
 
 const props = defineProps({
@@ -102,10 +98,7 @@ const props = defineProps({
         default: () => [],
     },
 });
-
-// const activeTab = ref(1);
-const activeTab = ref(""); // Valeur de la tab active
-
+ 
 const form = useForm({
     //  Dossier
     txt_num_dossier: "",
@@ -268,11 +261,7 @@ onMounted(() => {
     // Vous pouvez ajouter une logique pour initialiser les données ici
 });
 
-
-const show = ref(false);
-const showSectionPP = ref(false); // Perssone Physique
-const showSectionPM = ref(false); // Personne Morale
-const showSectionPA = ref(false); // Etat
+// morcellement
 const handleSelectChange = () => {
     show.value = form.ussu_bornage === "Morcellement de Copropriété";
 };
@@ -370,15 +359,8 @@ const validateInputNumParcelle = () => {
         errorMessageNumParcelle.value = "";
     }
 };
-const mazTabs = [
-    { label: "Terrain Non Immatriculé", disabled: false },
-    {
-        label: "Terrain Immatriculé",
-        disabled: false,
-    },
-];
 
- 
+// Submit du formulaire
 const submitForm = function () {  // Ajoutez `async` ici
     console.log("📤 Envoi du formulaire :", form);
     console.log("✅ Données finales envoyées à Laravel :", form.data());
@@ -401,9 +383,11 @@ const submitForm = function () {  // Ajoutez `async` ici
         },
         onError: (errors) => {
             console.error("❌ Erreurs de validation :", errors);
-            Object.entries(errors).forEach(([key, msg]) => {
-                toast.error(`${key} : ${msg}`);
-        });
+            Object.entries(errors).forEach(([key, messages]) => {
+                messages.forEach(msg => {
+                    toast.error(`${key} : ${msg}`);
+                });
+            });
         },
         onFinish: () => {
             console.log("🟡 Requête terminée");
@@ -481,8 +465,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         type="text"
                                                         name="txt_num_dordre"
                                                         v-model.number="form.txt_num_dordre" 
-                                                        min="1"
-                                                        readonly
+                                                        min="1" 
                                                         id="txt_num_dordre"
                                                         class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 

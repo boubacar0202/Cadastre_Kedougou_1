@@ -9,7 +9,7 @@ class EvaluationAmenagement extends Model
 {
     //
     use HasFactory;
-        protected $table = 'evaluations_amenagements';
+    protected $table = 'evaluations_amenagements';
     protected $fillable = [
         'txt_num_dossier',
         'txt_nicad',

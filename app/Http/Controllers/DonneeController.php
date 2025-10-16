@@ -49,71 +49,101 @@ class DonneeController extends Controller
     }
  
     
-    public function verifierEtSupprimer(Request $request)
-    {
-        $request->validate([
-            'code' => 'required|string',
-            'terrain_id' => 'required|integer|exists:terrains,id',
-        ]);
+    // public function verifierEtSupprimer(Request $request)
+    // {
+    //     $request->validate([
+    //         'code' => 'required|string',
+    //         'terrain_id' => 'required|integer|exists:terrains,id',
+    //     ]);
 
-        try {
-            DB::transaction(function () use ($request) {
-                // Vérifier si le code existe et n’est pas encore utilisé
-                $code = \App\Models\CodeAcces::where('code', $request->code)
-                    ->lockForUpdate()
-                    ->where('utilise', false)
-                    ->first();
+    //     try {
+    //         DB::transaction(function () use ($request) {
+    //             // Vérifier si le code existe et n’est pas encore utilisé
+    //             $code = \App\Models\CodeAcces::where('id', 2)
+    //                 ->where('code', $request->code)
+    //                 ->where('utilise', false)
+    //                 ->first();
 
-                if (!$code) {
-                    throw new \InvalidArgumentException('❌ Code invalide ou déjà utilisé.');
-                }
+    //             if (!$code) {
+    //                 throw new \InvalidArgumentException('❌ Code invalide ou déjà utilisé.');
+    //             }
 
-                // Récupérer le terrain
-                $terrain = \App\Models\Terrain::findOrFail($request->terrain_id);
+    //             // Récupérer le terrain
+    //             $terrain = \App\Models\Terrain::findOrFail($request->terrain_id);
 
-                // Suppression (choisis delete() si SoftDeletes, sinon forceDelete())
-                $terrain->delete();
+    //             // Suppression (choisis delete() si SoftDeletes, sinon forceDelete())
+    //             $terrain->delete();
 
 
-                // Marquer le code comme utilisé
-                // $code->update(['utilise' => true]);
-            });
+    //             // Marquer le code comme utilisé
+    //             // $code->update(['utilise' => true]);
+    //         });
 
-            return response()->json([
-                'success' => true,
-                'message' => '✅ Terrain supprimé avec succès.',
-            ], 200);
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => '✅ Terrain supprimé avec succès.',
+    //         ], 200);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            // Erreur de validation (Laravel le gère déjà, mais par sécurité)
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation',
-                'errors' => $e->errors(),
-            ], 422);
+    //     } catch (\Illuminate\Validation\ValidationException $e) {
+    //         // Erreur de validation (Laravel le gère déjà, mais par sécurité)
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Erreur de validation',
+    //             'errors' => $e->errors(),
+    //         ], 422);
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            // Terrain introuvable
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 404);
+    //     } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+    //         // Terrain introuvable
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => $e->getMessage(),
+    //         ], 404);
 
-        } catch (\InvalidArgumentException $e) {
-            // Code invalide
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
+    //     } catch (\InvalidArgumentException $e) {
+    //         // Code invalide
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => $e->getMessage(),
+    //         ], 400);
 
-        } catch (\Exception $e) {
-            // Autres erreurs (base de données, transaction, etc.)
-            return response()->json([
-                'success' => false,
-                'message' => '⚠️ Une erreur est survenue : ' . $e->getMessage(),
-            ], 500);
-        }
-    }
+    //     } catch (\Exception $e) {
+    //         // Autres erreurs (base de données, transaction, etc.)
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => '⚠️ Une erreur est survenue : ' . $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+
+
+    // public function verifierEtSupprimer(Request $request)
+    // {
+    //     $request->validate([
+    //         'code' => 'required|string',
+    //         'terrain_id' => 'required|integer|exists:terrains,id',
+    //     ]);
+
+    //     try {
+    //         DB::transaction(function () use ($request) {
+    //             $code = \App\Models\CodeAcces::where('code', $request->code)->first();
+
+    //             if (!$code) {
+    //                 throw new \InvalidArgumentException('❌ Code invalide.');
+    //             }
+
+    //             $terrain = \App\Models\Terrain::findOrFail($request->terrain_id);
+    //             $terrain->delete();
+    //         });
+
+    //         return back()->with('success', '✅ Terrain supprimé avec succès.');
+
+    //     } catch (\InvalidArgumentException $e) {
+    //         return back()->withErrors(['code' => $e->getMessage()]);
+    //     } catch (\Exception $e) {
+    //         return back()->withErrors(['code' => '⚠️ Une erreur est survenue : ' . $e->getMessage()]);
+    //     }
+
+    // }
 
 
 

@@ -9,7 +9,9 @@ import axios from "axios";
 import { useToast } from "maz-ui";
 import MazTabs from 'maz-ui/components/MazTabs';
 import MazRadio from 'maz-ui/components/MazRadio';
-import DefaultLayout from "@/Layouts/DefaultLayout.vue"; 
+import DefaultLayout from "@/Layouts/DefaultLayout.vue";  
+
+ 
 
 defineOptions({ layout: DefaultLayout }); 
 const fichierPDF = ref(null);
@@ -36,6 +38,10 @@ const maxOccupantsCA = 3;
 const maxOccupantsCL = 3;
 const maxOccupantsAP = 3; 
 const currentCat = ref('');  
+const showSectionPP = ref(false); // Perssone Physique
+const showSectionPM = ref(false); // Personne Morale
+const showSectionPA = ref(false); // Etat
+const activeTabMazcheck = ref("");   
   
 // Traitement Categorie 
 const categories = {
@@ -50,8 +56,7 @@ const categories = {
         'I': 53793, 'J': 25000, 'K': 22000, 'L': 20000, 'M': 8000,
     }
 }
- 
-
+  
 let show = ref(true);
     show.value = show;
 
@@ -93,7 +98,8 @@ function formatOccupants(references_usages) {
 
   return [formatOccupant()];
 } 
-
+ 
+// Evaluation Terrain
 function formatOccupant(o = {}) {
   return {
     txt_nomOccupantTG: o.txt_nomOccupantTG || '',
@@ -221,7 +227,7 @@ const formatDate = (dateString) => {
 const form = useForm({
     txt_nicad: terrain?.txt_nicad || '', 
     // Table Dossier
-    txt_num_dossier: terrain?.dossier?.txt_num_dossier  ?? 'Non disponible' ,
+    txt_num_dossier: terrain?.dossier?.txt_num_dossier  ?? '' ,
     txt_num_dordre: terrain?.dossier?.txt_num_dordre || '',
     slt_service_rendu: terrain?.dossier?.slt_service_rendu || '',
     txt_etat_cession: terrain?.dossier?.txt_etat_cession || '',
@@ -244,7 +250,7 @@ const form = useForm({
     // Table ReferenceCadastrale
     rd_immatriculation_terrain: terrain?.references_cadastrales?.rd_immatriculation_terrain || '',
     slt_dependant_domaine: terrain?.references_cadastrales?.slt_dependant_domaine || '', 
-    issu_bornage: terrain?.references_cadastrales?.ussu_bornage || '',
+    ussu_bornage: terrain?.references_cadastrales?.ussu_bornage || '',
     txt_num_titre:  terrain?.references_cadastrales?.txt_num_titre || '', 
     txt_titre_mere: terrain?.references_cadastrales?.txt_titre_mere || '', 
     txt_appartement: terrain?.references_cadastrales?.txt_appartement || '', 
@@ -270,7 +276,24 @@ const form = useForm({
     eml_email:  terrain?.titulaire?.eml_email || '',
     txt_representant: terrain?.titulaire?.txt_representant || '',
     tel_telRepresentant:  terrain?.titulaire?.tel_telRepresentant || '',
-    fichierPDF: terrain.titulaire?.fichierPDF || '',
+        // Personne physique
+    slt_categoriePM: terrain?.titulaire?.slt_categoriePM || '',
+    txt_formJuridiquePM: terrain?.titulaire?.txt_formJuridiquePM || '', 
+    txt_denominationPM: terrain?.titulaire?.txt_denominationPM || '', 
+    txt_nineaPM: terrain?.titulaire?.txt_nineaPM || '', 
+    txt_perssonneRepresentantPM: terrain?.titulaire?.txt_perssonneRepresentantPM || '', 
+    txt_fonctionPM: terrain?.titulaire?.txt_fonctionPM || '', 
+    txt_telephonePM: terrain?.titulaire?.txt_telephonePM || '', 
+    txt_emailPM: terrain?.titulaire?.txt_emailPM || '', 
+    txt_adressePM: terrain?.titulaire?.txt_adressePM || '', 
+        // Personne morale
+    slt_etablissementPA: terrain?.titulaire?.slt_etablissementPA || '',
+    txt_personneResponsablePA: terrain?.titulaire?.txt_personneResponsablePA || '',
+    txt_fonctionResponsablePA: terrain?.titulaire?.txt_fonctionResponsablePA || '',
+    txt_telephonePA: terrain?.titulaire?.txt_telephonePA || '',
+    txt_emailPA: terrain?.titulaire?.txt_emailPA || '',
+    txt_ministèreTutelePA: terrain?.titulaire?.txt_ministèreTutelePA || '',
+    fichierPDF: terrain.titulaire?.fichierPDF || null,
     // References Usage   
     slt_usage: terrain?.references_usages?.[0]?.slt_usage || '',
     slt_residence: terrain?.references_usages?.[0]?.slt_residence || '',
@@ -311,7 +334,91 @@ const form = useForm({
     nbr_valeur_totale_ap: terrain?.evaluations_amenagements?.nbr_valeur_totale_ap || '',
 })
 
+// fichierPDF
+// ✅ Méthode pour gérer le fichier
+function handleFileChangePDF(event) {
+    const file = event.target.files[0];
+    console.log('Fichier sélectionné:', file);
+    
+    if (file && file.type === "application/pdf") {
+        form.fichierPDF = file; // ✅ Assigner directement le File object
+    } else {
+        form.fichierPDF = null;
+        toast.error("❌ Veuillez sélectionner un fichier PDF valide.");
 
+    }
+}
+
+// MazTabs
+// pour afficher la section Terrain Immatriculé
+const showTerrainImmatricule = ref(false);
+const showNonImmatricule = ref(false);
+
+const handleCheckboxChange = () => {
+    showTerrainImmatricule.value = activeTab.value.includes("Terrain Immatriculé");
+    showNonImmatricule.value = activeTab.value.includes("Terrain Non Immatriculé"); 
+}; 
+// Réagir automatiquement quand la valeur change
+watch(activeTab, () => {
+    handleCheckboxChange();
+}, { deep: true }); 
+// ⚡ Initialiser  
+onMounted(() => {
+    handleCheckboxChange();
+});
+
+// Ussu Bornage
+const showMorcellement = ref(false);
+const handleSelectChange = () => {
+    showMorcellement.value = form.ussu_bornage === "Morcellement de Copropriété";
+};
+// Réagir automatiquement quand l’utilisateur change
+watch(() => form.ussu_bornage, () => {
+    handleSelectChange();
+});
+// ⚡ Initialiser dès le chargement (update)
+onMounted(() => {
+    handleSelectChange();
+});
+
+// charge titulaire Etat Perssone Morale Personne Physique
+let hasShownError = false;
+const handleSelectChangeTitulaire = () => {
+    // Reset toutes les sections
+    showSectionPP.value = false;
+    showSectionPM.value = false;
+    showSectionPA.value = false;
+
+    switch (form.slt_titulaire) {
+        case "Personne Physique":
+            showSectionPP.value = true;
+            hasShownError = false;
+            break;
+        case "Personne Morale":
+            showSectionPM.value = true;
+            hasShownError = false;
+            break;
+        case "Etat":
+            showSectionPA.value = true;
+            hasShownError = false;
+            break;
+        default:
+            if (!hasShownError){
+                hasShownError = true
+                toast.error("Veuillez choisir un titulaire");
+            }  
+    }
+};
+    
+// Réagir automatiquement sans bouton
+watch(() => form.slt_titulaire, () => { 
+    handleSelectChangeTitulaire();  
+});
+// ⚡ Initialiser dès le chargement de la page (update)
+onMounted(() => {
+    handleSelectChangeTitulaire();
+});
+ 
 // Occupants
 function addBlock() {
   if (form.occupants.length < maxOccupants) {
@@ -499,8 +606,8 @@ const prixParSecteur = {
     3: 1000,
 } 
 watchEffect(() => {
-  const secteur = Number(form.slt_secteur);
-  form.nbr_prix_metre_carre = prixParSecteur[secteur] || 0;
+    const secteur = Number(form.slt_secteur);
+    form.nbr_prix_metre_carre = prixParSecteur[secteur] || 0;
 }); 
 const nbr_valeur_terrain = computed(() => {
     const prix = parseFloat(form.nbr_prix_metre_carre) || 0;
@@ -516,20 +623,20 @@ watchEffect(() => {
 
 // 🔁 Mettre à jour le prix du mètre carré selon la catégorie principale
 watch(() => [form.currentCat, form.slt_categoriePR], ([type, cat]) => {
-  if (type && cat && categories[type]?.[cat]) {
-    form.nbr_prix_metre_carrePR = categories[type][cat] 
-  } else {
-    form.nbr_prix_metre_carrePR = null
-  }
+    if (type && cat && categories[type]?.[cat]) {
+        form.nbr_prix_metre_carrePR = categories[type][cat] 
+    } else {
+        form.nbr_prix_metre_carrePR = null
+    }
 }) 
 
 // 🔁 Mettre à jour les prix pour tous les occupants selon leur catégorie
 watchEffect(() => {
-  const type = form.currentCat
-  form.occupantsBP.forEach((occupant) => {
-    const cat = occupant.slt_categorieTG
-    occupant.nbr_prix_metre_carreTG = (categories[type] && categories[type][cat]) || null
-  })
+    const type = form.currentCat
+    form.occupantsBP.forEach((occupant) => {
+        const cat = occupant.slt_categorieTG
+        occupant.nbr_prix_metre_carreTG = (categories[type] && categories[type][cat]) || null
+    })
 })  
 // Calcule Batiment : Princile  
 // Prix m² PR
@@ -557,27 +664,27 @@ watchEffect(() => {
 
 // Calcule Surface Utule
 watchEffect(() => {
-  form.occupantsBP.forEach((occupant) => {
-    const surfaceBS = parseFloat(occupant.nbr_surface_bati_solTG) || 0;
-    const nbrNiveau = parseFloat(occupant.nbr_niveauTG) || 0;
-    occupant.nbr_surface_utileTG = (surfaceBS * nbrNiveau * 0.78).toFixed(2);
-  });
+    form.occupantsBP.forEach((occupant) => {
+        const surfaceBS = parseFloat(occupant.nbr_surface_bati_solTG) || 0;
+        const nbrNiveau = parseFloat(occupant.nbr_niveauTG) || 0;
+        occupant.nbr_surface_utileTG = (surfaceBS * nbrNiveau * 0.78).toFixed(2);
+    });
 });
 // Calcule Surface corrige 
 watchEffect(() => {
-  form.occupantsBP.forEach((occupant) => {
-    const utile = parseFloat(occupant.nbr_surface_utileTG) || 0;
-    const coeff = parseFloat(occupant.slt_coeffTG) || 0;
-    occupant.nbr_surface_corrigerTG = (utile * coeff).toFixed(2);
-  });
+    form.occupantsBP.forEach((occupant) => {
+        const utile = parseFloat(occupant.nbr_surface_utileTG) || 0;
+        const coeff = parseFloat(occupant.slt_coeffTG) || 0;
+        occupant.nbr_surface_corrigerTG = (utile * coeff).toFixed(2);
+    });
 });
 //  Calcule valeur TG : nbr_valeurTG
 watchEffect(() => {
-  form.occupantsBP.forEach((occupant) => {
-    const prixmetrecarre = parseFloat(occupant.nbr_prix_metre_carreTG) || 0; 
-    const surfaceCorrige = parseFloat(occupant.nbr_surface_corrigerTG) || 0;
-    occupant.nbr_valeurTG = ( prixmetrecarre * surfaceCorrige).toFixed(2);
-  });
+    form.occupantsBP.forEach((occupant) => {
+        const prixmetrecarre = parseFloat(occupant.nbr_prix_metre_carreTG) || 0; 
+        const surfaceCorrige = parseFloat(occupant.nbr_surface_corrigerTG) || 0;
+        occupant.nbr_valeurTG = ( prixmetrecarre * surfaceCorrige).toFixed(2);
+    });
 });
 //  Calculer montant valeur batiment  
 const txt_valeur_terrain_bati = computed(() => {
@@ -736,92 +843,86 @@ watchEffect(() => {
 // rechercher
 const rechercherDossier = async () => {
     if (!code.value) {
-      toast.error("Veuillez entrer un code d'accès.")
-      return
+        toast.error("Veuillez entrer un code d'accès.")
+        return
     }
 
     isLoading.value = true
 
     try {
-      const { data } = await axios.post(route('code.verify'), {
-        code: code.value
-      })
+        const { data } = await axios.post(route('code.verify'), {
+            code: code.value
+        })
 
-      if (data.exists) {
-        formVisible.value = true
-        toast.success("Modification autorisée !")
-        code.value = ''
-      } else {
-        toast.error("Vérifie ton code d'accès !")
-        formVisible.value = false
-        code.value = ''
-      }
+        if (data.exists) {
+            formVisible.value = true
+            toast.success("Modification autorisée !")
+            code.value = ''
+        } else {
+            toast.error("Vérifie ton code d'accès !")
+            formVisible.value = false
+            code.value = ''
+        }
 
     } catch (err) {
-      formVisible.value = false
+        formVisible.value = false
 
-      if (err.response?.status === 422 && err.response.data.errors) {
-        Object.values(err.response.data.errors).forEach(msg => toast.error(msg))
-      } else {
-        toast.error("Une erreur est survenue lors de la vérification.")
-      }
+        if (err.response?.status === 422 && err.response.data.errors) {
+                Object.values(err.response.data.errors).forEach(msg => toast.error(msg))
+        } else {
+                toast.error("Une erreur est survenue lors de la vérification.")
+        }
 
     } finally {
-      isLoading.value = false
+        isLoading.value = false
     }
 }
  
 // Récuperation des fichier PDF 
-function handleFileUpload(event) {
-    const file = event.target.files[0];
-
-    if (!file) return;
-
-    if (file.type !== "application/pdf") {
-        toast.error("Veuillez sélectionner un fichier PDF valide.");
-        event.target.value = ""; // reset input
-        return;
-    }
-
-    if (file.size > 100 * 1024 * 1024) { // 100 Mo
-        toast.error("Le fichier dépasse 100 Mo !");
-        event.target.value = ""; // reset input
-        return;
-    }
-
-    form.fichierPDF = file;
-
-    console.log("✅ Fichier PDF sélectionné :", file);
-}
-
-
-function submit() {
-  console.log('Data envoyée :', form);
-  
-  form.put(route('secretariat.update', terrain.id), {
-    onSuccess: () => {
-      toast.success("✅ Modification réussie !");
-        console.log("✅ Succès Laravel :", page);
-
-        const message = page.props.flash?.success || "Modification réussie !"; 
-
-        // ✅ Réaffecter le fichierPDF depuis le backend
-        if (page.props.flash?.fichierPDF) {
-          form.fichierPDF = page.props.flash.fichierPDF;
-        }
-    },
-    onError: (errors) => {
-      Object.values(errors).forEach(msg => toast.error(msg));
-    }
-  });
-}
-
    
+// function submit() {
+//     console.log("📤 Données envoyées :", form);
+//     form.put(route('secretariat.update', terrain.id), form.data(), {
+//         forceFormData: true,   // needed for files
+//         preserveScroll: true, 
+//         onSuccess: () => toast.success("✅ Modification réussie !"),
+//         onError: (errors) => console.error(errors),
+//     }); 
+    
+
+// }
+
+async function submit() {
+    try {
+        // 1️⃣ Envoyer tout le formulaire (JSON si pas de fichier)
+        await  form.put(route('secretariat.update', terrain.id), form.data(),  {
+            forceFormData: true,  
+            preserveScroll: true,
+            onSuccess: () => console.log("✅ Update réussi !"),
+            onError: (errors) => console.error(errors),
+        });
+
+        // 2️⃣ Envoyer le fichier PDF si présent
+        if (form.fichierPDF instanceof File) {
+            const pdfForm = new FormData();
+            pdfForm.append('fichierPDF', form.fichierPDF);
+
+            await axios.post(route('secretariat.uploadPDF', terrain.id), pdfForm, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+        }
+
+         
+    } catch (error) {
+        console.error("❌ Erreur submit :", error);
+        toast.error("❌ Erreur lors de la modification");
+    }
+}
+ 
 </script>
 
 <template>
-  <Head title="Modifier Terrain" >
-
+  <Head title="Modifier Terrain" > 
       <meta name="csrf-token" content="{{ csrf_token() }}">
   </Head>
 
@@ -1139,176 +1240,180 @@ function submit() {
                                             label="Terrain Immatriculé"
                                         />
                                         <div v-if="form.errors.rd_immatriculation_terrain" class="text-red-500">{{ form.errors.rd_immatriculation_terrain }}</div>
-
+                                       
                                     </div>
                                       
                                     <!-- Contenu du Tab 1 ici -->
-                                    <br/> 
-                                    <div class="sm:col-span-12">
-                                        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                                            <div class="sm:col-span-2">
-                                                <label for="slt_dependant_domaine" class="block font-medium text-primary-txt" >
-                                                    Dépendant du domaine
-                                                </label> 
-                                                <select 
-                                                  name="slt_dependant_domaine"
-                                                  v-model="form.slt_dependant_domaine" 
-                                                  id="slt_dependant_domaine"
-                                                  class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-pripary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                >
-                                                  <option disabled value=""></option>
-                                                  <option value="Domaine National">Domaine National</option>
-                                                  <option value="Domaine Public">Domaine Public</option>
-                                                  <option value="Domaine Fluvial">Domaine Fluvial</option>
-                                                  <option value="Domaine Maritime">Domaine Maritime</option>
-                                                </select> 
-                                            </div> 
-                                        </div>
+                                    <div v-if="form.rd_immatriculation_terrain === 'Terrain Non Immatriculé'" class="maz-py-4">
+                                        <div>
+                                      <br/> 
+                                      <div class="sm:col-span-12">
+                                          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                                              <div class="sm:col-span-2">
+                                                  <label for="slt_dependant_domaine" class="block font-medium text-primary-txt" >
+                                                      Dépendant du domaine
+                                                  </label> 
+                                                  <select 
+                                                    name="slt_dependant_domaine"
+                                                    v-model="form.slt_dependant_domaine" 
+                                                    id="slt_dependant_domaine"
+                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-pripary-txt 
+                                                          outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                          focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                  >
+                                                    <option disabled value=""></option>
+                                                    <option value="Domaine National">Domaine National</option>
+                                                    <option value="Domaine Public">Domaine Public</option>
+                                                    <option value="Domaine Fluvial">Domaine Fluvial</option>
+                                                    <option value="Domaine Maritime">Domaine Maritime</option>
+                                                  </select> 
+                                              </div> 
+                                          </div>
+                                      </div>
                                     </div>
-                                  
-                                    <br/>
-
+                                   
                                     <!-- Contenu du Tab 2 ici -->
-                              
-                                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-
-                                        <div>
-                                            <label for="ussu_bornage" class="block font-medium text-primary-txt">Ussu de bornage</label> 
-                                            <select
-                                                v-model="form.ussu_bornage" 
-                                                id="ussu_bornage"
-                                                class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                @change="handleSelectChange"
-                                            >
-                                                <option selected disabled>choisir ici</option>
-                                                <option value="Immatriculation">Immatriculation</option>
-                                                <option value="Morcellement">Morcellement</option>
-                                                <option value="Rectificatif de Limite">Rectificatif de Limite</option>
-                                                <option value="Fusion">Fusion</option>
-                                                <option value="Morcellement de Copropriété">Morcellement de Copropriété</option>
-                                            </select> 
-                                        </div>
-
-                                        <div>
-                                            <label for="Titre_mere"  class="block font-medium text-primary-txt">Titre Mere</label> 
-                                            <input
-                                                v-model="form.txt_titre_mere"
-                                                type="text" 
-                                                id="Titre_mere" 
-                                                class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                            /> 
-                                        </div>
-
-                                        <div>
-                                            <label
-                                                for="numTitre"
-                                                class="block font-medium text-primary-txt"
-                                                >N° Titre</label
-                                            > 
-                                            <input
-                                                type="text" 
-                                                v-model="form.txt_num_titre"
-                                                id="numTitre" 
-                                                class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                            /> 
-                                        </div>
-                                        
-                                        <div>
-                                            <label for="slt_lf" class="block font-medium text-primary-txt">LF</label> 
-                                            <select
-                                                v-model="form.slt_lf" 
-                                                id="slt_lf" 
-                                                class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                            >
-                                                <option selected desabled></option>
-                                                <option value="NO">NO</option>
-                                                <option value="KG">KG</option>
-                                                <option value="SM">SM</option>
-                                                <option value="SR">SR</option>
-                                            </select> 
-                                        </div>
-
-                                        <div>
-                                            <label for="Num_requisition" class="block font-medium text-primary-txt">N° Requisition</label> 
-                                            <input
-                                                v-model="form.txt_num_requisition"
-                                                type="text" 
-                                                id="Num_requisition" 
-                                                class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                            /> 
-                                        </div>
-
-                                        <div>
-                                            <label for="Surface_bornage" class="block font-medium text-primary-txt">Surfacce au bornage</label> 
-                                            <input
-                                                v-model="form.txt_surface_bornage"
-                                                type="text" 
-                                                id="Surface_bornage" 
-                                                class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                            /> 
-                                        </div>
-
-                                        <div>
-                                            <label for="Date_bornage" class="block font-medium text-primary-txt">Date Bornage</label> 
-                                            <input
-                                                v-model="form.dt_date_bornage"
-                                                type="date" 
-                                                id="Date_bornage"
-                                                autocomplete="address-level2"
-                                                class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                            /> 
-                                        </div>
-                                        
-                                        <div v-if="show">
-                                            <label for="txt_appartement" class="block  font-medium font-medium text-primary-txt">
-                                                Appartement
-                                            </label> 
-                                            <input
-                                                type="text" 
-                                                v-model="txt_appartement"
-                                                id="txt_appartement"
-                                                autocomplete="off"
-                                                class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                    <div v-if="form.rd_immatriculation_terrain === 'Terrain Immatriculé'" class="maz-py-4">
+                                        <!-- Contenu du Tab 2 ici -->
+                                        <br>
+                                        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                                  
+                                                <label for="ussu_bornage" class="block font-medium text-primary-txt">Ussu de bornage</label> 
+                                                <select
+                                                    v-model="form.ussu_bornage" 
+                                                    id="ussu_bornage"
+                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                @input="validateInput"
-                                                maxlength="3"
-                                                minlength="3"
-                                            />
-                                            <p v-if="errorMessage" class="text-red-500 text-sm mt-1 font-medium text-gray-900">{{ errorMessage }}</p>
-                                        </div>
+                                                    @change="handleSelectChange"
+                                                >
+                                                    <option selected disabled>choisir ici</option>
+                                                    <option value="Immatriculation">Immatriculation</option>
+                                                    <option value="Morcellement">Morcellement</option>
+                                                    <option value="Rectificatif de Limite">Rectificatif de Limite</option>
+                                                    <option value="Fusion">Fusion</option>
+                                                    <option value="Morcellement de Copropriété">Morcellement de Copropriété</option>
+                                                </select> 
+                                            </div>
+                                       
+                                            <div>
+                                                <label for="Titre_mere"  class="block font-medium text-primary-txt">Titre Mere</label> 
+                                                <input
+                                                    v-model="form.txt_titre_mere"
+                                                    type="text" 
+                                                    id="Titre_mere" 
+                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                /> 
+                                            </div>
 
-                                        <div>
-                                            <label for="Nom_geometre" class="block font-medium text-primary-txt">Nom Geometre</label> 
-                                            <input
-                                                v-model="form.txt_nom_geometre"
-                                                type="text" 
-                                                id="Nom_geometre"
-                                                autocomplete="address-level2"
-                                                class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                            /> 
-                                        </div>
+                                            <div>
+                                                <label
+                                                    for="numTitre"
+                                                    class="block font-medium text-primary-txt"
+                                                    >N° Titre</label
+                                                > 
+                                                <input
+                                                    type="text" 
+                                                    v-model="form.txt_num_titre"
+                                                    id="numTitre" 
+                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                /> 
+                                            </div>
+                                            
+                                            <div>
+                                                <label for="slt_lf" class="block font-medium text-primary-txt">LF</label> 
+                                                <select
+                                                    v-model="form.slt_lf" 
+                                                    id="slt_lf" 
+                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                >
+                                                    <option selected desabled></option>
+                                                    <option value="NO">NO</option>
+                                                    <option value="KG">KG</option>
+                                                    <option value="SM">SM</option>
+                                                    <option value="SR">SR</option>
+                                                </select> 
+                                            </div>
 
-                                  
-                                    </div><br>
+                                            <div>
+                                                <label for="Num_requisition" class="block font-medium text-primary-txt">N° Requisition</label> 
+                                                <input
+                                                    v-model="form.txt_num_requisition"
+                                                    type="text" 
+                                                    id="Num_requisition" 
+                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                /> 
+                                            </div>
+
+                                            <div>
+                                                <label for="Surface_bornage" class="block font-medium text-primary-txt">Surfacce au bornage</label> 
+                                                <input
+                                                    v-model="form.txt_surface_bornage"
+                                                    type="text" 
+                                                    id="Surface_bornage" 
+                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                /> 
+                                            </div>
+
+                                            <div>
+                                                <label for="Date_bornage" class="block font-medium text-primary-txt">Date Bornage</label> 
+                                                <input
+                                                    v-model="form.dt_date_bornage"
+                                                    type="date" 
+                                                    id="Date_bornage"
+                                                    autocomplete="address-level2"
+                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                /> 
+                                            </div>
+                                            
+                                            <div v-if="showMorcellement">
+                                                <label for="txt_appartement" class="block  font-medium font-medium text-primary-txt">
+                                                    Appartement
+                                                </label> 
+                                                <input
+                                                    type="text" 
+                                                    v-model="txt_appartement"
+                                                    id="txt_appartement"
+                                                    autocomplete="off"
+                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                    @input="validateInput"
+                                                    maxlength="3"
+                                                    minlength="3"
+                                                />
+                                                <p v-if="errorMessage" class="text-red-500 text-sm mt-1 font-medium text-gray-900">{{ errorMessage }}</p>
+                                            </div>
+
+                                            <div>
+                                                <label for="Nom_geometre" class="block font-medium text-primary-txt">Nom Geometre</label> 
+                                                <input
+                                                    v-model="form.txt_nom_geometre"
+                                                    type="text" 
+                                                    id="Nom_geometre"
+                                                    autocomplete="address-level2"
+                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                /> 
+                                            </div>
+    
+                                        </div>
+                                    </div>
+                                    
+                                    <br>
                                   
                                     <h5 class="text-lg font-bold">
                                         Identité Titulaire de droit
@@ -1323,16 +1428,17 @@ function submit() {
                                             class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                            @change="handleSelectChangeTitulaire"
                                         >
                                             <option selected desabled></option>
                                             <option value="Personne Physique">Personne Physique</option>
                                             <option value="Personne Morale">Personne Morale</option>
-                                            <option value="Etat">Etat</option> 
+                                            <option value="Etat">Etat</option>  
                                         </select> 
                                         <div v-if="form.errors.slt_titulaire" class="text-red-500">{{ form.errors.slt_titulaire }}</div>
                                       </div>
                                       
-                                      <div>
+                                      <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="txt_nationalite" class="block font-medium text-primary-txt">Nationalite</label>
                                         <input v-model="form.txt_nationalite" id="txt_nationalite" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
@@ -1341,7 +1447,7 @@ function submit() {
                                         <div v-if="form.errors.txt_nationalite" class="text-red-500">{{ form.errors.txt_nationalite }}</div>
                                       </div>
                                       
-                                      <div>
+                                      <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="slt_civilite" class="block font-medium text-peimary-txt">Civilite</label>
                                         <input v-model="form.slt_civilite" id="slt_civilite" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
@@ -1350,7 +1456,7 @@ function submit() {
                                         <div v-if="form.errors.slt_civilite" class="text-red-500">{{ form.errors.slt_civilite }}</div>
                                       </div>
                                       
-                                      <div>
+                                      <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="txt_prenom" class="block font-medium text-primary-txt">Prénom</label>
                                         <input v-model="form.txt_prenom" id="txt_prenom" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
@@ -1359,25 +1465,16 @@ function submit() {
                                         <div v-if="form.errors.txt_prenom" class="text-red-500">{{ form.errors.txt_prenom }}</div>
                                       </div>
                                                                     
-                                      <div>
+                                      <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="txt_nom" class="block font-medium text-primary-txt">Nom</label>
                                         <input v-model="form.txt_nom" id="txt_nom" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
                                         <div v-if="form.errors.txt_nom" class="text-red-500">{{ form.errors.txt_nom }}</div>
-                                      </div>
+                                      </div> 
                                                                     
-                                      <div>
-                                        <label for="txt_prenom" class="block font-medium text-primary-txt">Prénom</label>
-                                        <input v-model="form.txt_prenom" id="txt_prenom" type="text" 
-                                          class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                          outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                          focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
-                                        <div v-if="form.errors.txt_prenom" class="text-red-500">{{ form.errors.txt_prenom }}</div>
-                                      </div>
-                                                                    
-                                      <div>
+                                      <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="slt_piece" class="block font-medium text-primary-txt">Pièce</label> 
                                         <select
                                             v-model="form.slt_piece" 
@@ -1394,7 +1491,7 @@ function submit() {
                                         <div v-if="form.errors.slt_piece" class="text-red-500">{{ form.errors.slt_piece }}</div>
                                       </div>
                                                                     
-                                      <div>
+                                      <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="txt_numPiece" class="block font-medium text-primary-txt">N° Pièce</label>
                                         <input v-model="form.txt_numPiece" id="txt_numPiece" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
@@ -1403,7 +1500,7 @@ function submit() {
                                         <div v-if="form.errors.txt_numPiece" class="text-red-500">{{ form.errors.txt_numPiece }}</div>
                                       </div>
                                                                     
-                                      <div>
+                                      <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="dt_date_delivrance" class="block font-medium text-primary-txt">Date Délivrance</label>
                                         <input v-model="form.dt_date_delivrance" id="dt_date_delivrance" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
@@ -1412,7 +1509,7 @@ function submit() {
                                         <div v-if="form.errors.dt_date_delivrance" class="text-red-500">{{ form.errors.dt_date_delivrance }}</div>
                                       </div>
                                                                     
-                                      <div>
+                                      <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="dt_date_naissance" class="block font-medium text-primary-txt">Date Naissance</label>
                                         <input v-model="form.dt_date_naissance" id="dt_date_naissance" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
@@ -1421,16 +1518,16 @@ function submit() {
                                         <div v-if="form.errors.dt_date_naissance" class="text-red-500">{{ form.errors.dt_date_naissance }}</div>
                                       </div>
                                                                     
-                                      <div>
+                                      <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="txt_lieu_naissance" class="block font-medium text-primary-txt">Lieu Naissance</label>
-                                        <input v-model="form.txt_prenom" id="txt_lieu_naissance" type="text" 
+                                        <input v-model="form.txt_lieu_naissance" id="txt_lieu_naissance" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
                                         <div v-if="form.errors.txt_lieu_naissance" class="text-red-500">{{ form.errors.txt_lieu_naissance }}</div>
                                       </div>
                                                                     
-                                      <div>
+                                      <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="txt_adresse" class="block font-medium text-primary-txt">Adresse</label>
                                         <input v-model="form.txt_adresse" id="txt_adresse" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
@@ -1439,25 +1536,16 @@ function submit() {
                                         <div v-if="form.errors.txt_adresse" class="text-red-500">{{ form.errors.txt_adresse }}</div>
                                       </div>
                                                                                                   
-                                      <div>
+                                      <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="tel_telephone" class="block font-medium text-primary-txt">Telephone</label>
                                         <input v-model="form.tel_telephone" id="tel_telephone" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
                                         <div v-if="form.errors.tel_telephone" class="text-red-500">{{ form.errors.tel_telephone }}</div>
-                                      </div>
+                                      </div> 
                                                                                                   
-                                      <div>
-                                        <label for="txt_ninea" class="block font-medium text-primary-txt">Ninea</label>
-                                        <input v-model="form.txt_ninea" id="txt_ninea" type="text" 
-                                          class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                          outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                          focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
-                                        <div v-if="form.errors.txt_ninea" class="text-red-500">{{ form.errors.txt_ninea }}</div>
-                                      </div>
-                                                                                                  
-                                      <div>
+                                      <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="eml_email" class="block font-medium text-primary-txt">Email</label>
                                         <input v-model="form.eml_email" id="eml_email" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
@@ -1466,7 +1554,7 @@ function submit() {
                                         <div v-if="form.errors.eml_email" class="text-red-500">{{ form.errors.eml_email }}</div>
                                       </div>
                                                                                                   
-                                      <div>
+                                      <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="txt_representant" class="block font-medium text-primary-txt">Representant</label>
                                         <input v-model="form.txt_representant" id="txt_representant" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
@@ -1475,7 +1563,7 @@ function submit() {
                                         <div v-if="form.errors.txt_representant" class="text-red-500">{{ form.errors.txt_representant }}</div>
                                       </div>
                                                                                                   
-                                      <div>
+                                      <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="tel_telRepresentant" class="block font-medium text-primary-txt">Tel Representant</label>
                                         <input v-model="form.tel_telRepresentant" id="tel_telRepresentant" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
@@ -1483,7 +1571,251 @@ function submit() {
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
                                         <div v-if="form.errors.tel_telRepresentant" class="text-red-500">{{ form.errors.tel_telRepresentant }}</div>
                                       </div>
-                                    </div>
+                                    
+                                      <!-- Personne Morale -->
+                                            <div v-if="showSectionPM">
+                                              <label for="slt_categoriePM" class="block font-medium text-primary-txt" >Catégorie</label>
+                                              <select name="slt_categoriePM" v-model="form.slt_categoriePM" id="selectePiece"
+                                                class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                                  outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                  focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                              >
+                                                <option  value=""> </option>
+                                                <option value="Station">Station</option>
+                                                <option value="Industrue">Industrue</option>
+                                                <option value="Restaurant">Restaurant</option>
+                                                <option value="Hotel">Hotel</option>
+                                                <option value="Hoberge">Hoberge</option>
+                                                <option value="Elevage">Elevage</option>
+                                                <option value="Agrobusness">Agrobusness</option>
+                                                <option value="Epicerie">Epicerie</option>
+                                                <option value="Alimentation Générale">Alimentation Générale</option>
+                                                <option value="Qincaillerie">Qincaillerie</option>
+                                                <option value="Transport">Transport</option>
+                                                <option value="Coopérative Habitat">Coopérative Habitat</option>
+                                                <option value="BTP">BTP</option>
+                                                <option value="Organisation Religieux">Organisation Religieux</option>
+                                              </select>
+                                          </div>
+                                          <div v-if="showSectionPM" class="sm:col-span-1">
+                                              <label for="txt_formJuridiquePM" class="block text-sm/6 font-medium text-primary-txt">Forme Juridique</label> 
+                                              <input type="text" name="txt_formJuridiquePM"
+                                                  v-model="form.txt_formJuridiquePM" id="txt_formJuridiquePM" autocomplete="address-level2" 
+                                                  class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                              /> 
+                                          </div>
+                                          <div v-if="showSectionPM" class="sm:col-span-1">
+                                              <label for="txt_denominationPM" class="block text-sm/6 font-medium text-primary-txt">Dénomination</label>
+                                              <input type="text" name="txt_denominationPM" v-model="form.txt_denominationPM"id="txt_denominationPM"
+                                                  autocomplete="address-level2" class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                              /> 
+                                          </div>
+                                          <div v-if="showSectionPM" class="sm:col-span-1">
+                                              <label for="txt_nineaPM" class="block text-sm/6 font-medium text-primary-txt" >Ninea</label>
+                                              <input type="text" name="txt_nineaPM"
+                                                  v-model="form.txt_nineaPM" id="txt_nineaPM" autocomplete="address-level2"
+                                                  class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                              /> 
+                                          </div>
+                                          <div v-if="showSectionPM" class="sm:col-span-1">
+                                              <label for="txt_perssonneRepresentantPM" class="block text-sm/6 font-medium text-primary-txt">Nom.Personne Responsable</label> 
+                                              <input type="text" name="txt_perssonneRepresentantPM" v-model="form.txt_perssonneRepresentantPM "
+                                                  id="txt_perssonneRepresentantPM" autocomplete="address-level2"
+                                                  class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                              /> 
+                                          </div>
+                                          <div v-if="showSectionPM" class="sm:col-span-1">
+                                              <label for="txt_fonctionPM" class="block text-sm/6 font-medium text-primary-txt">Fonction Responsable</label> 
+                                              <input type="text" name="txt_fonctionPM" v-model=" form.txt_fonctionPM"
+                                                  id="txt_fonctionPM" autocomplete="address-level2"
+                                                  class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                              /> 
+                                          </div>
+                                          <div v-if="showSectionPM" class="sm:col-span-1">
+                                              <label for="txt_telephonePM" class="block text-sm/6 font-medium text-primary-txt">Téléphone Responsable</label> 
+                                              <input type="text" name="txt_telephonePM"
+                                                  v-model="form.txt_telephonePM" id="txt_telephonePM" autocomplete="address-level2"
+                                                  class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                              /> 
+                                          </div>
+                                          <div v-if="showSectionPM" class="sm:col-span-1">
+                                                <label for="txt_emailPM" class="block text-sm/6 font-medium text-primary-txt">Email</label>
+                                                <div class="mt-2">
+                                                    <input type="email" name="txt_emailPM" v-model="form.txt_emailPM" id="txt_emailPM"
+                                                        autocomplete="address-level2" class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                    />
+                                                </div>
+                                          </div>
+                                          <div v-if="showSectionPM" class="sm:col-span-1">
+                                              <label for="txt_adressePM" class="block text-sm/6 font-medium text-primary-txt" >Adresse Sciège </label>
+                                              <div class="mt-2">
+                                                  <input type="text" name="txt_adressePM" v-model="form.txt_adressePM" id="txt_adressePM" 
+                                                  autocomplete="address-level2" class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                  />
+                                              </div>
+                                          </div> 
+
+                                          <!-- Etat -->
+                                          <div v-if="showSectionPA" class="sm:col-span-1">
+                                                <label for="slt_etablissementPA"
+                                                  class="block text-sm/6 font-medium text-primary-txt">Etablissement</label> 
+                                                <select name="slt_etablissementPA" v-model="form.slt_etablissementPA" 
+                                                    id="selectePiece" class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                >
+                                                    <option  value=""> 
+                                                        
+                                                    </option>
+                                                    <option value="Sanitaire">
+                                                        Sanitaire
+                                                    </option>
+                                                    <option value="Scolaire">
+                                                        Scolaire
+                                                    </option>
+                                                    <option value="Millitaire">
+                                                        Millitaire
+                                                    </option>
+                                                    <option value="Administratif">
+                                                        Administratif
+                                                    </option>
+                                                    <option value="Aéroportuaire">
+                                                        Aéroportuaire
+                                                    </option>
+                                                    <option value="Sportif">
+                                                        Sportif
+                                                    </option>
+                                                    <option value="Universitaire">
+                                                        Universitaire
+                                                    </option>
+                                                    <option value="Autres">
+                                                        Autres
+                                                    </option> 
+                                                </select> 
+                                          </div>
+                                          <div v-if="showSectionPA" class="sm:col-span-1">
+                                              <label
+                                                  for="txt_personneResponsablePA"
+                                                  class="block text-sm/6 font-medium text-primary-txt"
+                                                  >Personne Responsable</label
+                                              >
+                                              <div class="mt-2">
+                                                  <input
+                                                      type="text"
+                                                      name="txt_personneResponsablePA"
+                                                      v-model="
+                                                          form.txt_personneResponsablePA
+                                                      "
+                                                      id="txt_personneResponsablePA" 
+                                                      autocomplete="address-level2"
+                                                      class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                              outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                              focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                  />
+                                              </div>
+                                          </div>
+                                          <div v-if="showSectionPA" class="sm:col-span-1">
+                                              <label
+                                                  for="txt_fonctionResponsablePA"
+                                                  class="block text-sm/6 font-medium text-primary-txt"
+                                                  >Fonction Responsable</label
+                                              >
+                                              <div class="mt-2">
+                                                  <input
+                                                      type="text"
+                                                      name="txt_fonctionResponsablePA"
+                                                      v-model="
+                                                          form.txt_fonctionResponsablePA
+                                                      "
+                                                      id="txt_fonctionResponsablePA"
+                                                      autocomplete="address-level2"
+                                                      class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                              outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                              focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                  />
+                                              </div>
+                                          </div>
+                                          <div v-if="showSectionPA" class="sm:col-span-1">
+                                              <label
+                                                  for="txt_telephonePA"
+                                                  class="block text-sm/6 font-medium text-primary-txt"
+                                                  >Téléphone</label
+                                              >
+                                              <div class="mt-2">
+                                                  <input
+                                                      type="text"
+                                                      name="txt_telephonePA"
+                                                      v-model="
+                                                          form.txt_telephonePA
+                                                      "
+                                                      id="txt_telephonePA"
+                                                      autocomplete="address-level2"
+                                                      class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                              outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                              focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                  />
+                                              </div>
+                                          </div>
+                                          <div v-if="showSectionPA" class="sm:col-span-1">
+                                              <label
+                                                  for="txt_emailPA"
+                                                  class="block text-sm/6 font-medium text-primary-txt"
+                                                  >Email</label
+                                              >
+                                              <div class="mt-2">
+                                                  <input
+                                                      type="email"
+                                                      name="txt_emailPA"
+                                                      v-model="
+                                                          form.txt_emailPA
+                                                      "
+                                                      id="txt_emailPA" 
+                                                      autocomplete="address-level2"
+                                                      class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                              outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                              focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                  />
+                                              </div>
+                                          </div>
+                                          <div v-if="showSectionPA" class="sm:col-span-1">
+                                              <label
+                                                  for="txt_ministèreTutelePA"
+                                                  class="block text-sm/6 font-medium text-primary-txt"
+                                                  >Ministère Tutelle</label
+                                              >
+                                              <div class="mt-2">
+                                                  <input
+                                                      type="text"
+                                                      name="txt_ministèreTutelePA"
+                                                      v-model="
+                                                          form.txt_ministèreTutelePA
+                                                      "
+                                                      id="txt_ministèreTutelePA"
+                                                      autocomplete="address-level2"
+                                                      class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                              outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                              focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                                  />
+                                              </div>
+                                          </div>
+                                        </div>
+
                                       <!--    References usages -->
                                       
                                     <h5 class="text-lg font-bold mt-8">
@@ -2765,9 +3097,9 @@ function submit() {
                                                           <input
                                                               type="file"
                                                               name="fichierPDF"
-                                                              accept="application/pdf"  
+                                                              accept=".pdf"  
                                                               id="fichierPDF" 
-                                                              @change="handleFileUpload"
+                                                              @change="handleFileChangePDF"
                                                               class="block w-64 rounded-md bg-white 
                                                                   px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 
                                                                   outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 

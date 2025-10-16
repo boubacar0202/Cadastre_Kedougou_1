@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Terrain;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Models\CodeAcces;
 
 class TerrainController extends Controller
 {
@@ -34,4 +36,7 @@ class TerrainController extends Controller
         return redirect()->back()->with('success', 'Terrain supprimé...');
     }
 
+ 
+
 }
+ 

@@ -8,9 +8,10 @@ import { useToast } from 'maz-ui'
 // Récupérer l'utilisateur depuis les props Inertia
 const page = usePage();
 const user = page.props.auth?.user;
-const isMenuOpen = ref(false)
-const isDesktop = ref(false)
-const showingNavigationDropdown = ref(false)
+const isMenuOpen = ref(false);
+const isDesktop = ref(false);
+const showingNavigationDropdown = ref(false);
+const unreadTotal = ref(0);
 
 // Message alerte 
 const toast = useToast() 
@@ -53,6 +54,15 @@ function toggleMenu() {
   isMenuOpen.value = !isMenuOpen.value
 }
 
+// Charger le total des messages non lus au montage
+onMounted(async () => {
+  try {
+    const res = await axios.get("/messages/unread-total");
+    unreadTotal.value = res.data.total;
+  } catch (e) {
+    console.error("Erreur fetch unread:", e);
+  }
+});
  
 // Liens du menu
 const menuItems = [
@@ -103,7 +113,7 @@ const menuItems = [
                                     <svg class="w-5 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M8 7V3m8 4V3m-9 14h10m-5-5a3 3 0 0 1-6 0m12 5V10a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
                                     </svg>
-                                    Secretariat
+                                    Enregistrer Dossier
                                 </NavLink>
                                 <NavLink :href="route('geometre.create')" :active="route().current('geometre.create')" 
                                     class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 
@@ -135,6 +145,19 @@ const menuItems = [
                                     </svg>
                                     Impôts
                                 </NavLink> -->
+                                <NavLink :href="route('message.create')" 
+                                        :active="route().current('message.create')" 
+                                        class="relative hover:bg-primary-menu hover:border hover:text-white hover:font-bold hover:text-1xl p-3 rounded font-bold text-primary-txt border border-l-8 flex items-center" 
+                                        :class="{'border-primary-menu': route().current('message.create')}">
+                                    <svg class="w-5 h-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z"/>
+                                    </svg> 
+                                    Discussion
+                                    <span v-if="unreadTotal > 0"
+                                            class="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-green-500 text-white rounded-full">
+                                        {{ unreadTotal }}
+                                    </span>
+                                </NavLink> 
                             </div>
                         </nav> 
                 </transition>
