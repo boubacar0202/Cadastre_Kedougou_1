@@ -91,31 +91,7 @@ async function supprimerTerrain(terrain) {
      } catch (err) {
          toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
      }
- }
-
-// Fonction pour supprimer un terrain
-// async function supprimerTerrain(terrain) {
-//     if (!confirm(`Voulez-vous vraiment supprimer ce terrain de NICAD : ${terrain.txt_nicad} ?`)) return;
-
-//     const saisie = prompt('Entrez votre code de confirmation :');
-//     if (!saisie) return;
-
-//     try {
-//         const res = await axios.post(route('terrain.verifier.supprimer'), {
-//             code: saisie,
-//             terrain_id: terrain.id
-//         });
-
-//         if (res.data.success) {
-//             toast.success(res.data.message);
-//             Inertia.reload(); // recharge la liste
-//         } else {
-//             toast.error(res.data.message);
-//         }
-//     } catch (err) {
-//         toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
-//     }
-// }
+} 
 
 
 </script>

@@ -3,6 +3,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head } from '@inertiajs/vue3';
 import { defineProps, onMounted } from 'vue';
 import DefaultLayout from "@/Layouts/DefaultLayout.vue";
+import { computed } from 'vue'
 
 defineOptions({ layout: DefaultLayout });
 
@@ -10,39 +11,61 @@ const props = defineProps({
     terrain: Object,
     terrains: Array,  
 });
+ 
+const sortedTerrains = computed(() => {
+    return [...(props.terrains ?? [])].sort((a, b) => {
+        // Récupération du texte complet du numéro de dossier
+        const dossierA = String(a.dossier?.txt_num_dossier || '0/0')
+        const dossierB = String(b.dossier?.txt_num_dossier || '0/0')
 
-onMounted(() => {
-  console.log(props.terrains); // Vérifie la structure des données
-});
+        // Découper numéro et année
+        const [numA, yearA] = dossierA.split('/')
+        const [numB, yearB] = dossierB.split('/')
 
+        // Convertir les valeurs
+        const anA = parseInt(yearA, 10) || 0
+        const anB = parseInt(yearB, 10) || 0
+        const nA = parseInt(numA, 10) || 0
+        const nB = parseInt(numB, 10) || 0
+
+        // Comparer d’abord l’année, ensuite le numéro
+        if (anA !== anB) {
+        return anA - anB // années croissantes (2023 avant 2024)
+        }
+        return nA - nB // numéros croissants (00015 avant 00407)
+    })
+})
+
+
+ 
 function splitNomPrenom(fullName) {
-  if (!fullName) return { nom: '-', prenom: '-' }
+    if (!fullName) return { nom: '-', prenom: '-' }
 
-  const parts = fullName.trim().split(' ')
-  const prenom = parts[0] || '-'
-  const nom = parts.slice(1).join(' ') || '-'
+    const parts = fullName.trim().split(' ')
+    const prenom = parts[0] || '-'
+    const nom = parts.slice(1).join(' ') || '-'
 
-  return { nom, prenom }
+    return { nom, prenom }
 }
 
 function splitDateLieunaissance(fullDateLieu) {
-  if (!fullDateLieu) return { date: '-', lieunaissance: '-' }
+    if (!fullDateLieu) return { date: '-', lieunaissance: '-' }
 
-  const parts = fullDateLieu.trim().split(' à ' || ' a ')
-  const date = parts[0] || '-'
-  const lieunaissance = parts.slice(1).join(' ') || '-'
+    const parts = fullDateLieu.trim().split(' à ' || ' a ')
+    const date = parts[0] || '-'
+    const lieunaissance = parts.slice(1).join(' ') || '-'
 
-  return { date, lieunaissance }
+    return { date, lieunaissance }
 }
 
 // Fonction pour formater la date
 const formatDate = (dateString) => {
-  if (!dateString) return 'Date inconnue';
-  return new Date(dateString).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+    if (!dateString) return 'Date inconnue';
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    });
 };
 
 </script>
@@ -75,15 +98,16 @@ const formatDate = (dateString) => {
                                 </div>
                             </div>
  
-                            <div class="relative overflow-x-auto shadow-md sm:rounded-lg mt-8">
+                            <div class="max-h-[500px] overflow-x-auto shadow-md sm:rounded-lg mt-8">
                                 <div class="container"> 
                                     <div class="card"> 
                                         <div class="card-body"> 
                                             <table class="table table-sm table-strictped table-bordered">
                                                 
-                                                <thead >
-                                                    <tr>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center whitespace-nowrap">N°</th>
+                                                <thead class="sticky top-0 z-10">
+                                                    <tr> 
+                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center whitespace-nowrap">Numéro dordre</th>
+                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Numéro dossier</th>
                                                         <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Region</th>
                                                         <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Departement</th>
                                                         <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Commune</th>
@@ -133,13 +157,14 @@ const formatDate = (dateString) => {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr v-for="terrain in terrains" :key="terrain.id" 
+                                                    <tr v-for="terrain in sortedTerrains" :key="terrain.id ?? index" 
                                                         class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-
-                                                        <th class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.dossier ? terrain.dossier.txt_num_dordre : 'Dossier Inconnue' }}</th>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.region?.slt_region || 'Region inconnue' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.departement?.slt_departement || 'Departement inconnue' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.commune?.slt_commune || 'Commune inconnue' }}</td>
+ 
+                                                        <th class="sticky left-0 z-0 border bg-white px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.dossier.txt_num_dordre || '-' }}</th>
+                                                        <th class="sticky left-0 z-0 border bg-white px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.dossier.txt_num_dossier || '-' }}</th>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.region?.slt_region || '-' }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.departement?.slt_departement || '-' }}</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.commune?.slt_commune || '-' }}</td>
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.txt_lotissement || '-' }}</td>
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Rue</td>
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.txt_num_section || '-' }}</td>

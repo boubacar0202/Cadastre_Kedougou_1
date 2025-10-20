@@ -14,7 +14,7 @@ import DefaultLayout from "@/Layouts/DefaultLayout.vue";
  
 
 defineOptions({ layout: DefaultLayout }); 
-const fichierPDF = ref(null);
+// const fichierPDF = ref(null);
 
 const { terrain } = defineProps({
     terrain: Object,
@@ -37,11 +37,13 @@ const maxOccupantsBP = 4;
 const maxOccupantsCA = 3;
 const maxOccupantsCL = 3;
 const maxOccupantsAP = 3; 
-const currentCat = ref('');  
+// const currentCat = ref('');  
 const showSectionPP = ref(false); // Perssone Physique
 const showSectionPM = ref(false); // Personne Morale
 const showSectionPA = ref(false); // Etat
-const activeTabMazcheck = ref("");   
+// const activeTabMazcheck = ref("");   
+const txt_num_section = ref('');
+const txt_num_parcelle = ref(''); 
   
 // Traitement Categorie 
 const categories = {
@@ -71,11 +73,46 @@ let showCloture = ref(true);
         
 let showAmenagement = ref(true);
     showAmenagement.value = !showAmenagement;
-
+ 
 const activeTab = ref('terrain');
 const setActiveTab = (tab) => {
     activeTab.value = tab;
 };
+ 
+const txt_nicad = computed(() => {
+ 
+    const codes = {
+        1: "13110100",
+        2: "13120101",
+        3: "13120102",
+        4: "14120103",
+        5: "13120104",
+        6: "13120201",
+        7: "13120202",
+        8: "13210100",
+        9: "13220101",
+        10: "13220102",
+        11: "13220201",
+        12: "13220202",
+        13: "13220103",
+        14: "13310100",
+        15: "13320101",
+        16: "13320102",
+        17: "13320201",
+        18: "13310202",
+        19: "13220203"
+    }
+
+    const prefix = codes[slt_commune.value] || ''
+    const value = `${prefix}${txt_num_section.value}${txt_num_parcelle.value}${txt_appartement.value}`.trim()
+ 
+    // 🔎 Vérification longueur totale
+    if (value.replace(/\s/g, "").length <= 8) {
+        return null;
+    }
+
+    return value;
+});
  
 const nbr_valeurPR = ref('');
 const nbr_valeurTG = ref(''); 
@@ -942,41 +979,41 @@ async function submit() {
                     <h1 class="text-2xl text-center text-white font-semibold">Veillez entrer votre code d'accès !</h1>
                 </div>
                 <div class="py-6">  
-                  <div class="flex justify-center"> 
-                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full max-w-2xl">
-                      <div class="sm:col-span-4">
-                        <input 
-                          autocomplete="off"
-                          autocorrect="off"
-                          spellcheck="false"
-                          v-model="code" 
-                          type="text"
-                          name="code"
-                          aria-label="Code d'accès"
-                          class="h-10 block w-full rounded-md bg-white px-2 py-1.5 text-base text-primary-txt 
-                                outline outline-1 outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                focus:outline-2 focus:outline-primary sm:text-sm/6"
-                          placeholder="Entrez votre code d'accès"
-                          required
-                        />
-                      </div>
+                    <div class="flex justify-center"> 
+                        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full max-w-2xl">
+                            <div class="sm:col-span-4 px-5">
+                                <input 
+                                    autocomplete="off"
+                                    autocorrect="off"
+                                    spellcheck="false"
+                                    v-model="code" 
+                                    type="text"
+                                    name="code"
+                                    aria-label="Code d'accès"
+                                    class="h-10 block w-full rounded-md bg-white px-2 py-1.5 text-base text-primary-txt 
+                                            outline outline-1 outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                            focus:outline-2 focus:outline-primary sm:text-sm/6"
+                                    placeholder="Entrez votre code d'accès"
+                                    required
+                                />
+                            </div>
 
-                      <MazBtn 
-                        :loading="isLoading"
-                        type="button"
-                        title="Confirmer"
-                        @click="rechercherDossier"
-                        class="h-6 text-white bg-gradient-to-r from-primary via-primary-dark 
-                        to-primary hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
-                        focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 
-                        dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-5 
-                        py-2.5 text-center me-2 mb-2"
-
-                        >
-                        Confirmer
-                      </MazBtn>
-                    </div> 
-                  </div>  
+                            <MazBtn 
+                                :loading="isLoading"
+                                type="button"
+                                title="Confirmer"
+                                @click="rechercherDossier"
+                                class="w-36 h-10 text-white bg-gradient-to-r from-primary via-primary-dark 
+                                to-primary hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
+                                focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 
+                                dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-5 
+                                py-2.5 text-center me-2 mb-2"
+                                size="large"
+                            >
+                                Confirmer
+                            </MazBtn>
+                        </div> 
+                    </div>  
                 </div> 
               </div>
             </div> 

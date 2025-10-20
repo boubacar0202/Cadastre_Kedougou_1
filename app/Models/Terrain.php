@@ -37,22 +37,27 @@ class Terrain extends Model
     {
         return $this->hasOne(EvaluationCoursAmenagee::class, 'txt_nicad', 'txt_nicad');
     }
+
     public function evaluations_amenagements()
     {
         return $this->hasOne(EvaluationAmenagement::class, 'txt_nicad', 'txt_nicad');
     }
+
     public function evaluations_clotures()
     {
         return $this->hasOne(EvaluationCloture::class, 'txt_nicad', 'txt_nicad');
     }
+
     public function evaluations_batis()
     {
         return $this->hasOne(EvaluationBati::class, 'txt_nicad', 'txt_nicad');
     }
+
     public function evaluations_terrains()
     {
         return $this->hasOne(EvaluationTerrain::class, 'txt_nicad', 'txt_nicad');
     } 
+
     public function references_usages()
     {
         return $this->hasMany(ReferenceUsage::class, 'txt_nicad', 'txt_nicad');
@@ -78,18 +83,22 @@ class Terrain extends Model
     public function commune() {
         return $this->belongsTo(Commune::class, 'slt_commune', 'id');
     }
-
-    
+ 
     public function titulaire()
     {
         return $this->belongsTo(Titulaire::class, 'titulaire_id');
-    }
-
+    } 
 
     public function references_cadastrales()
     {
         return $this->belongsTo(ReferenceCadastrale::class, 'reference_cadastrale_id');
     }
+
+    public function mutations()
+    {
+        return $this->hasMany(Mutation::class);
+    }
+
 
  
 }

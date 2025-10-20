@@ -33,4 +33,9 @@ class Dossier extends Model
         return $this->hasMany(Terrain::class);
     }
  
+    public function mutations()
+    {
+        return $this->hasMany(Mutation::class);
+    }
+
 }

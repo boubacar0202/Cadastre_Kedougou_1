@@ -65,20 +65,23 @@ onMounted(async () => {
 });
  
 // Liens du menu
-const menuItems = [
-  { label: 'Dashboard', href: route('dashboard'), active: 'dashboard' },
-  { label: 'Secretariat', href: route('secretariat.create'), active: 'secretariat.create' },
-  { label: 'Enquête Cadastrale', href: route('geometre.create'), active: 'geometre.create' },
-  { label: 'Matrice Cadastrale', href: route('matriceCadastrale.create'), active: 'matriceCadastrale.create' },
-  { label: 'Base de Données', href: route('donnee.create'), active: 'donnee.create' }
-]
+// const menuItems = [
+//     { label: 'Dashboard', href: route('dashboard'), active: 'dashboard' },
+//     { label: 'Secretariat', href: route('secretariat.create'), active: 'secretariat.create' },
+//     { label: 'Enquête Cadastrale', href: route('geometre.create'), active: 'geometre.create' },
+//     { label: 'Matrice Cadastrale', href: route('matriceCadastrale.create'), active: 'matriceCadastrale.create' },
+//     { label: 'Base de Données', href: route('donnee.create'), active: 'donnee.create' },
+//     { label: 'Mutations', href: route('mutation.create'), active: 'mutation.create' },
+//     { label: 'Discussion', href: route('discussion.create'), active: 'discussion.create' }
+
+// ]
  
 </script>
 
 <template>
     <div class="flex min-h-screen bg-primary-layout">
         <!-- Sidebar -->
-        <nav class="w-64 h-screen bg-white border-r border-primary-only fixed flex flex-col p-4">
+        <nav class="w-64 h-screen bg-white border-r border-primary-only fixed flex flex-col p-4 overflow-y-auto">
             <!-- Logo -->
             <div class="flex items-center justify-center mb-6">
                 <Link :href="route('dashboard')">
@@ -132,22 +135,25 @@ const menuItems = [
                                     Matrice Cadastrale
                                 </NavLink>
                                 <NavLink :href="route('donnee.create')" :active="route().current('donnee.create')" 
-                                    class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('donnee.create')}">
+                                    class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 
+                                    rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('donnee.create')}">
                                     <svg class="w-5 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z" />
                                     </svg>
                                     Base de Données
                                 </NavLink> 
-                                <!-- <NavLink :href="route('donnee.create')" :active="route().current('donnee.create')" 
-                                    class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('donnee.create')}">
+                                <NavLink :href="route('mutation.create')" :active="route().current('mutation.create')" 
+                                    class="hover:bg-primary-menu hover:text-primary hover:text-lg hover:font-bold p-3 
+                                    rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('mutation.create')}">
                                     <svg class="w-5 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-6z" />
                                     </svg>
-                                    Impôts
-                                </NavLink> -->
+                                    Mutations
+                                </NavLink>
                                 <NavLink :href="route('message.create')" 
                                         :active="route().current('message.create')" 
-                                        class="relative hover:bg-primary-menu hover:border hover:text-white hover:font-bold hover:text-1xl p-3 rounded font-bold text-primary-txt border border-l-8 flex items-center" 
+                                        class="relative hover:bg-primary-menu hover:border hover:text-white hover:font-bold hover:text-1xl p-3 
+                                        rounded font-bold text-primary-txt border border-l-8 flex items-center" 
                                         :class="{'border-primary-menu': route().current('message.create')}">
                                     <svg class="w-5 h-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z"/>
@@ -169,7 +175,7 @@ const menuItems = [
         </nav>
 
         <!-- Page Content -->
-        <div class="ml-64 flex-1">
+        <div class="flex-1 md:ml-64 overflow-x-auto">
             <header class="bg-white shadow flex justify-between items-center p-4 relative">
                 <!-- Titre ou Header (si présent) -->
                 <div>
@@ -200,13 +206,10 @@ const menuItems = [
             </header>
 
             <!-- Contenu de la page -->
-            <main class="p-6">
+            <main class="p-6 overflow-x-auto">
                 <slot /> 
             </main>
- 
-
-
-
+  
         </div>
     </div>
 </template>

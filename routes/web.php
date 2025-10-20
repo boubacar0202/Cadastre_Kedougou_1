@@ -13,6 +13,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SecretariatController;
 use App\Http\Controllers\TerrainController; 
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\MutationController;
 use GuzzleHttp\Psr7\Request;
 use Illuminate\Container\Attributes\Auth; 
 use Illuminate\Foundation\Application;
@@ -61,6 +62,7 @@ Route::resource('geometre', GeometreController::class);
 Route::resource('donnee', DonneeController::class);
 Route::resource('matriceCadastrale', MatriceCadastraleController::class);
 Route::resource('/message', MessageController::class);
+Route::resource('/mutation', MutationController::class);
 Route::get('/secretariat/create', [SecretariatController::class, 'create'])->name('secretariat.create');
 Route::get('/donnee/create', [DonneeController::class, 'create'])->name('donnee.create'); 
 Route::get('/secretariat/dernier-ordre/{annee}', [SecretariatController::class, 'dernierOrdre']);
@@ -125,32 +127,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/messages/{receiverId}', [MessageController::class, 'messages']);
 });
 
-
-// Route::get('/message/create', [MessageController::class, 'create'])->name('message.create');
-
-// Route::get('/message', [MessageController::class, 'index']);
-// Route::post('/message', [MessageController::class, 'store']);
-
-// Route::get('/message', [MessageController::class, 'index'])->middleware('auth');
-// Route::post('/message', [MessageController::class, 'store'])->middleware('auth');
  
-// Route::get('/api/messages/{withUserId}', [MessageController::class, 'apiIndex'])->middleware('auth');
-// Route::get('/message/{id}', [MessageController::class, 'show'])->name('message.show');
-
-// Route::middleware('auth')->group(function () {
-//     Route::get('/messages/unread-total', [MessageController::class, 'unreadTotal']);
-//     Route::get('/messages/unread-by-user', [MessageController::class, 'unreadByUser']);
-// });
- 
-// Route::post('/message/markRead/{senderId}', [MessageController::class, 'markRead'])->name('messages.markRead');
- 
-// Route::get('/api/messages/{id}', [MessageController::class, 'fetchMessages']); 
-// Route::post('/message', [MessageController::class, 'store']);
-// Route::post('/message/markReceived/{senderId}', [MessageController::class, 'markReceived']);
-// Route::middleware('auth:sanctum')->get('/messages/{receiverId}', [MessageController::class, 'messages']);
-// Route::get('/messages/unread-per-user', [MessageController::class, 'unreadPerUser'])->middleware('auth:sanctum');
-// Route::delete('/message/{id}', [MessageController::class, 'destroy'])->middleware('auth');
-// Route::put('/message/{id}', [MessageController::class, 'update'])->middleware('auth');
   
  
 
