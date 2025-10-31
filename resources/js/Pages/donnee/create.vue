@@ -118,11 +118,11 @@ async function supprimerTerrain(terrain) {
 
         <div class="py-12">
             <div class="flex justify-center">   
-                <div class="w-full max-w-7xl">  
+                <div class="w-full max-w-8xl">  
                     <div class="bg-white shadow-md rounded-lg "> <br> 
                         <div class="mx-auto   sm:px-8 lg:px-12 mt-4 mb-4">  
                             <div class="card-header">
-                                <div class="p-4 border-b bg-primary-only">
+                                <div class="p-4 border-b bg-primary-only sm:rounded-lg">
                                     <h1 class="text-4xl text-primary-txt font-bold">Base de données</h1>
                                 </div> 
                             </div><br>
@@ -134,11 +134,11 @@ async function supprimerTerrain(terrain) {
 
         <div class="py-12">
             <div class="flex justify-center">   
-                <div class="w-full max-w-7xl">    
+                <div class="w-full max-w-8xl">    
                     <div class="bg-white shadow-md rounded-lg "><br> 
-                        <div class="mx-auto max-w-7xl sm:px-8 lg:px-12 mt-4 mb-4">  
+                        <div class="mx-auto max-w-8xl sm:px-8 lg:px-12 mt-4">  
                             <div class="card-header"> 
-                                <div class="relative overflow-x-auto p-4 border-b bg-primary-form mt-8">
+                                <div class="relative overflow-x-auto p-4 border-b bg-primary-form sm:rounded-lg">
                                     <div class="flex justify-between items-center">  
                                         <h1 class="text-xl font-bold text-primary-txt">
                                             Enregistrements : 
@@ -186,16 +186,17 @@ async function supprimerTerrain(terrain) {
                                             </div>
                                         </form>
                                     </div>
-                                </div>
-                                
+                                </div> 
                             </div>
                                 
-                            <div class="max-h-[500px] overflow-x-auto shadow-md sm:rounded-lg mt-8">
+                            <div class="max-h-[600px] overflow-x-auto shadow-md sm:rounded-lg mt-4">
                                 <div class="container">
                                     <div class="card">    
                                         <div class="card-body">
-                                            <table class="table table-sm table-strictped table-bordered bg-primary text-white">
-                                                <thead class="sticky top-0 z-10">
+                                            <table 
+                                                class="table table-auto w-full text-base text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                                                <thead class="sticky top-0 z-10 text-primary-txt text-center border-l border-primary-only uppercase 
+                                                    bg-primary-form bg-gray-50 dark:bg-gray-700 dark:text-gray-400 whitespace-nowrap">
                                                     <tr class="h-20">
                                                         <th scope="col" class="px-6 py-3 text-white text-center border-r bg-primary font-bold whitespace-nowrap">N°</th>
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">N° dossier</th>
@@ -327,18 +328,15 @@ async function supprimerTerrain(terrain) {
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur venale de l'imeuble</th>
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur locative</th>
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Date d'évaluation</th>
-
                                                         <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Voir le PDF</th>
-
                                                         <th scope="col" class="px-6 py-3 text-lg text-primary-txt text-center border-b bg-primary-only font-bold whitespace-nowrap">
                                                             ACTIONS
                                                         </th>
                                                     </tr>
                                                 </thead>
-                                                <tbody>
-            
+                                                <tbody> 
                                                     <tr v-for="(terrain , index) in terrains" :key="terrain.id ?? index"
-                                                    class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                                    class="h-20 bg-white text-primary-txt text-center font-bold whitespace-nowrap hover:bg-primary-form dark:hover:bg-primary-form">
                             
                                                         <th class="sticky left-0 z-0 border bg-white px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ index + 1 || '-' }}</th>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.dossier.txt_num_dossier || '-' }} </td> 
@@ -522,5 +520,18 @@ async function supprimerTerrain(terrain) {
         </div>
     </AuthenticatedLayout>
 </template>
+
+<style scoped>
+ 
+
+table tr td {
+  padding-top: 0.25rem; /* équivaut à py-1 */
+  padding-bottom: 0.25rem;
+  line-height: 1rem; /* équivaut à leading-3 */
+  font-size: 0.80rem; /* équivaut à text-xs */
+}
+
+
+</style>
 
  

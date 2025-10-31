@@ -89,7 +89,7 @@ class SecretariatController extends Controller
 
         $validatedData = $request->validate([
             'txt_num_dossier' => 'required|string|unique:dossiers,txt_num_dossier',
-            'txt_num_dordre' => 'required|numeric',
+            // 'txt_num_dordre' => 'required|numeric',
             'slt_service_rendu' => 'nullable|string',
             'txt_etat_cession' => 'nullable|string',
             'txt_cession_definitive' => 'nullable|string',
@@ -165,9 +165,9 @@ class SecretariatController extends Controller
         
             'txt_num_dossier.unique' => 'Le numéro de dossier existe déjà.',
             'txt_num_dossier.required' => 'Numéro dossier est obligatoire',
-            'txt_num_dordre.required' => 'Numéro d\'ordre est obligatoire',
-            'txt_num_dordre.unique' => 'Le numero dordre existe deja',
-            'txt_num_dordre.numeric' => 'Le numero dordre dois etre en entier',
+            // 'txt_num_dordre.required' => 'Numéro d\'ordre est obligatoire',
+            // 'txt_num_dordre.unique' => 'Le numero dordre existe deja',
+            // 'txt_num_dordre.numeric' => 'Le numero dordre dois etre en entier',
             'slt_region.required' => 'Region est Obligatoire',
             'slt_departement.required' => 'Departement requis',
             'slt_arrondissement.required' => 'Arrondissement requis',
@@ -199,10 +199,14 @@ class SecretariatController extends Controller
             $validatedData['fichierPDF'] = $request->file('fichierPDF')->store('numerisation', 'public');
         }
 
+        $lastNumOrdre = Dossier::max('txt_num_dordre');
 
+        // Si aucun dossier n'existe encore, on commence à 1
+        $numeroDordre = $lastNumOrdre ? $lastNumOrdre + 1 : 1;
+ 
         $dossier = Dossier::create([
             'txt_num_dossier' =>  $validatedData['txt_num_dossier'], 
-            'txt_num_dordre' => $validatedData['txt_num_dordre'],  // numero d/'incementer 
+            'txt_num_dordre' => $numeroDordre,  // numero d/'incementer 
             'slt_service_rendu' => $validatedData['slt_service_rendu'] ?? null,
             'txt_etat_cession' => $validatedData['txt_etat_cession'] ?? null,
             'txt_cession_definitive' => $validatedData['txt_cession_definitive'] ?? null,

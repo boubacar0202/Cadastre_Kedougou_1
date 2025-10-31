@@ -383,11 +383,7 @@ const submitForm = function () {  // Ajoutez `async` ici
         },
         onError: (errors) => {
             console.error("❌ Erreurs de validation :", errors);
-            Object.entries(errors).forEach(([key, messages]) => {
-                messages.forEach(msg => {
-                    toast.error(`${key} : ${msg}`);
-                });
-            });
+            Object.values(errors).forEach(msg => toast.error(msg)); 
         },
         onFinish: () => {
             console.log("🟡 Requête terminée");
@@ -442,8 +438,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     <input
                                                         type="text"
                                                         name="txt_num_dossier"
-                                                        v-model="form.txt_num_dossier" 
-                                                        required 
+                                                        v-model="form.txt_num_dossier"
                                                         id="txt_num_dossier"
                                                         class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
@@ -827,6 +822,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         form.txt_num_lotissement
                                                     "
                                                     id="txt_num_lotissement"
+                                                    autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -847,7 +843,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     name="nbr_surface"
                                                     v-model="form.nbr_surface"
                                                     id="surface"
-                                                    autocomplete="address-level2"
+                                                    autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -929,7 +925,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         form.txt_num_deliberation
                                                     "
                                                     id="Num_deliberation"
-                                                    autocomplete="address-level2"
+                                                    autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -950,7 +946,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         form.dt_date_deliberation
                                                     "
                                                     id="Date_deliberation"
-                                                    autocomplete="address-level2"
+                                                    autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -970,6 +966,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     v-model="
                                                         txt_num_section
                                                     "
+                                                    autocomplete="off"
                                                     id="Num_section"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
@@ -989,7 +986,8 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     type="text"
                                                     name="txt_num_parcelle"
                                                     v-model="txt_num_parcelle"
-                                                    id="Num_parcelle"
+                                                    id="Num_parcelle" 
+                                                    autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1102,7 +1100,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         <select
                                                             v-model="form.ussu_bornage"
                                                             name="issu_bornage"
-                                                            id="Bornage"
+                                                            id="Bornage"     autocomplete="off"
                                                             class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1126,7 +1124,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             type="text"
                                                             name="txt_titre_mere"
                                                             id="Titre_mere"
-                                                            autocomplete="address-level2"
+                                                            autocomplete="off"
                                                             class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1145,7 +1143,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             name="txt_num_titre"
                                                             v-model="form.txt_num_titre"
                                                             id="numTitre"
-                                                            autocomplete="address-level2"
+                                                            autocomplete="off"
                                                             class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1160,7 +1158,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             v-model="form.slt_lf"
                                                             name="slt_lf"
                                                             id="LF"
-                                                            autocomplete="address-level2"
+                                                            autocomplete="off"
                                                             class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1182,7 +1180,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             type="text"
                                                             name="txt_num_requisition"
                                                             id="Num_requisition"
-                                                            autocomplete="address-level2"
+                                                            autocomplete="off"
                                                             class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1198,7 +1196,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             type="text"
                                                             name="txt_surface_bornage"
                                                             id="Surface_bornage"
-                                                            autocomplete="address-level2"
+                                                            autocomplete="off"
                                                             class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1214,7 +1212,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             type="date"
                                                             name="dt_date_bornage"
                                                             id="Date_bornage"
-                                                            autocomplete="address-level2"
+                                                            autocomplete="off"
                                                             class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1252,7 +1250,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                             type="text"
                                                             name="txt_nom_geometre"
                                                             id="Nom_geometre"
-                                                            autocomplete="address-level2"
+                                                            autocomplete="off"
                                                             class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1329,7 +1327,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         form.txt_nationalite
                                                     " 
                                                     id="Nationalite"
-                                                    autocomplete="address-level2"
+                                                    autocomplete="on"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1346,7 +1344,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                 <select
                                                     name="slt_civilite"
                                                     v-model="form.slt_civilite" 
-                                                    id="Civilite"
+                                                    id="Civilite" autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1375,7 +1373,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     name="txt_prenom"
                                                     v-model="form.txt_prenom" 
                                                     id="Prenom"
-                                                    autocomplete="address-level2"
+                                                    autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1394,7 +1392,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     name="txt_nom"
                                                     v-model="form.txt_nom" 
                                                     id="nom"
-                                                    autocomplete="address-level2"
+                                                    autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1411,7 +1409,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                 <select
                                                     name="slt_piece"
                                                     v-model="form.slt_piece" 
-                                                    id="selectePiece"
+                                                    id="selectePiece" autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1440,7 +1438,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     name="txt_num_piece"
                                                     v-model="form.txt_numPiece" 
                                                     id="numPiece"
-                                                    autocomplete="address-level2"
+                                                    autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1462,7 +1460,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     " 
                                                     :max="new Date().toISOString().split('T')[0]"
                                                     id="dateDelivrance"
-                                                    autocomplete="address-level2"
+                                                    autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1484,7 +1482,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     "
                                                     :max="new Date().toISOString().split('T')[0]" 
                                                     id="dateNaissance"
-                                                    autocomplete="address-level2"
+                                                    autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1524,7 +1522,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     name="txt_adresse"
                                                     v-model="form.txt_adresse" 
                                                     id="adresse"
-                                                    autocomplete="address-level2"
+                                                    autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1543,7 +1541,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     name="tel_telephone"
                                                     v-model="form.tel_telephone" 
                                                     id="telephone"
-                                                    autocomplete="address-level2"
+                                                    autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1583,7 +1581,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         form.txt_representant
                                                     "
                                                     id="txt_representant"
-                                                    autocomplete="address-level2"
+                                                    autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -1604,7 +1602,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                         form.tel_telRepresentant
                                                     "
                                                     id="tel_telRepresentant"
-                                                    autocomplete="address-level2"
+                                                    autocomplete="off"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
@@ -2026,11 +2024,12 @@ const submitForm = function () {  // Ajoutez `async` ici
 
                                 <div class="sm:col-span-6 flex justify-center">
                                     <MazBtn type="submit" no-shadow no-hover-effect
-                                            class="bg-gradient-to-r from-primary via-primary-light to-primary-dark 
-                                                hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-primary 
-                                                dark:focus:ring-primary-dark shadow-lg shadow-primary/50 
-                                                dark:shadow-lg dark:shadow-primary-dark font-medium rounded-lg text-sm 
-                                                px-5 py-2.5 text-center">
+                                            class="w-64 h-10 text-white bg-gradient-to-r from-primary via-primary-dark to-primary
+                                                hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                                                dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg
+                                                dark:shadow-blue-800/80 font-medium rounded-lg text-xs px-3 py-1 text-center me-2 mb-2"
+                                                size="medium"
+                                            >
                                         Enregistrer
                                     </MazBtn>
                                 </div>

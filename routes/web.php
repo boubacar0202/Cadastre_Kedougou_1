@@ -66,8 +66,7 @@ Route::resource('/mutation', MutationController::class);
 Route::get('/secretariat/create', [SecretariatController::class, 'create'])->name('secretariat.create');
 Route::get('/donnee/create', [DonneeController::class, 'create'])->name('donnee.create'); 
 Route::get('/secretariat/dernier-ordre/{annee}', [SecretariatController::class, 'dernierOrdre']);
-
-  
+ 
 Route::post('dossier/verify', [GeometreController::class, 'verify'])->name('dossier.verify');
  
 Route::get('/secretariat', [SecretariatController::class, 'create'])->name('secretariat.create');
@@ -127,10 +126,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/messages/{receiverId}', [MessageController::class, 'messages']);
 });
 
- 
-  
- 
-
+// mutation 
+Route::post('dossier/verify', [MutationController::class, 'verify'])->name('dossier.verify');
+Route::post('/fetch-references-arrivee', [MutationController::class, 'fetchReferencesLotissement']); 
 
 
 require __DIR__ . '/auth.php';

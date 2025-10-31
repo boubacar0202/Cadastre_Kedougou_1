@@ -32,18 +32,18 @@ const page = usePage()
 const code = ref('')
 const formVisible = ref(false)
 const isLoading = ref(false) 
+// const activeTab = ref("");   
 const maxOccupants = 25;
 const maxOccupantsBP = 4;
 const maxOccupantsCA = 3;
 const maxOccupantsCL = 3;
-const maxOccupantsAP = 3; 
-// const currentCat = ref('');  
+const maxOccupantsAP = 3;  
 const showSectionPP = ref(false); // Perssone Physique
 const showSectionPM = ref(false); // Personne Morale
 const showSectionPA = ref(false); // Etat
-// const activeTabMazcheck = ref("");   
-const txt_num_section = ref('');
-const txt_num_parcelle = ref(''); 
+const errorMessage = ref("");
+const errorMessageNumSection = ref("");
+const errorMessageNumParcelle = ref("");
   
 // Traitement Categorie 
 const categories = {
@@ -74,45 +74,12 @@ let showCloture = ref(true);
 let showAmenagement = ref(true);
     showAmenagement.value = !showAmenagement;
  
-const activeTab = ref('terrain');
-const setActiveTab = (tab) => {
-    activeTab.value = tab;
-};
+// const activeTab = ref('terrain');
+// const setActiveTab = (tab) => {
+//     activeTab.value = tab;
+// };
  
-const txt_nicad = computed(() => {
- 
-    const codes = {
-        1: "13110100",
-        2: "13120101",
-        3: "13120102",
-        4: "14120103",
-        5: "13120104",
-        6: "13120201",
-        7: "13120202",
-        8: "13210100",
-        9: "13220101",
-        10: "13220102",
-        11: "13220201",
-        12: "13220202",
-        13: "13220103",
-        14: "13310100",
-        15: "13320101",
-        16: "13320102",
-        17: "13320201",
-        18: "13310202",
-        19: "13220203"
-    }
 
-    const prefix = codes[slt_commune.value] || ''
-    const value = `${prefix}${txt_num_section.value}${txt_num_parcelle.value}${txt_appartement.value}`.trim()
- 
-    // 🔎 Vérification longueur totale
-    if (value.replace(/\s/g, "").length <= 8) {
-        return null;
-    }
-
-    return value;
-});
  
 const nbr_valeurPR = ref('');
 const nbr_valeurTG = ref(''); 
@@ -371,8 +338,74 @@ const form = useForm({
     nbr_valeur_totale_ap: terrain?.evaluations_amenagements?.nbr_valeur_totale_ap || '',
 })
 
-// fichierPDF
-// ✅ Méthode pour gérer le fichier
+// Syncroniser nicad avec les autres champs
+const txt_nicad_calcule = computed(() => { 
+    const codes = {
+        1: "13110100",
+        2: "13120101",
+        3: "13120102",
+        4: "14120103",
+        5: "13120104",
+        6: "13120201",
+        7: "13120202",
+        8: "13210100",
+        9: "13220101",
+        10: "13220102",
+        11: "13220201",
+        12: "13220202",
+        13: "13220103",
+        14: "13310100",
+        15: "13320101",
+        16: "13320102",
+        17: "13320201",
+        18: "13310202",
+        19: "13220203"
+    } 
+    const prefix = codes[form.slt_commune] || ''  
+    const value = `${prefix}${form.txt_num_section}${form.txt_num_parcelle}${form.txt_appartement}`.trim() 
+    // 🔎 Vérification longueur totale
+    if (value.replace(/\s/g, "").length <= 8) {
+        return '';
+    }
+
+    return value;
+}); 
+watchEffect(() => {
+    form.txt_nicad = txt_nicad_calcule.value;
+})
+
+// Fonction utilitaire pour nettoyer et valider un champ numérique
+const validateNumericField = (field, maxLength, errorRef, label) => {
+    let value = (form[field] ?? "").toString().replace(/\D/g, ""); // Supprimer les non-chiffres
+
+    if (value.length > maxLength) {
+        value = value.slice(0, maxLength); // Tronquer si dépasse
+    }
+
+    form[field] = value; // Mettre à jour le champ
+
+    // Vérifier longueur exacte
+    if (value.length < maxLength) {
+        errorRef.value = `❌ ${maxLength} chiffres MAX.`;
+    } else {
+        errorRef.value = "";
+    }
+};
+
+// 🏢 Validation pour chaque champ
+const validateInputApartement = () => {
+    validateNumericField("txt_appartement", 3, errorMessage, "Appartement");
+};
+
+const validateInputNumSection = () => {
+    validateNumericField("txt_num_section", 3, errorMessageNumSection, "Section");
+}; 
+
+const validateInputNumParcelle = () => {
+    validateNumericField("txt_num_parcelle", 5, errorMessageNumParcelle, "Parcelle");
+};
+
+// fichierPDF 
 function handleFileChangePDF(event) {
     const file = event.target.files[0];
     console.log('Fichier sélectionné:', file);
@@ -386,24 +419,39 @@ function handleFileChangePDF(event) {
     }
 }
 
-// MazTabs
-// pour afficher la section Terrain Immatriculé
-const showTerrainImmatricule = ref(false);
-const showNonImmatricule = ref(false);
+// const showImmatricule = ref(false);
+// const showNonImmatricule = ref(false);
 
-const handleCheckboxChange = () => {
-    showTerrainImmatricule.value = activeTab.value.includes("Terrain Immatriculé");
-    showNonImmatricule.value = activeTab.value.includes("Terrain Non Immatriculé"); 
-}; 
-// Réagir automatiquement quand la valeur change
-watch(activeTab, () => {
-    handleCheckboxChange();
-}, { deep: true }); 
-// ⚡ Initialiser  
-onMounted(() => {
-    handleCheckboxChange();
+// const handleCheckboxChange = () => {
+//     const values = Array.isArray(form.rd_immatriculation_terrain)
+//         ? form.rd_immatriculation_terrain
+//         : [form.rd_immatriculation_terrain || ''];
+
+//     const normalized = values.map(v => v.trim().toLowerCase());
+
+//     showImmatricule.value = normalized.includes('terrain immatriculé');
+//     showNonImmatricule.value = normalized.includes('terrain non immatriculé');
+// };
+
+// // ⚡ Watch avec immediate pour la page edit
+// watch(
+//     () => form.rd_immatriculation_terrain, 
+//     (newVal) => handleCheckboxChange(newVal), 
+//     { immediate: true });
+
+// // ⚡ Sécuriser pour le chargement initial (edit)
+// onMounted(() => handleCheckboxChange());
+ 
+
+// Computed pour gérer automatiquement l'affichage
+const showImmatricule = computed(() => {
+  return (form.rd_immatriculation_terrain || '').trim().toLowerCase() === 'terrain immatriculé';
 });
 
+const showNonImmatricule = computed(() =>  {
+  return (form.rd_immatriculation_terrain || 'Terrain Non Immatriculé').trim().toLowerCase() === 'terrain non immatriculé'
+});
+  
 // Ussu Bornage
 const showMorcellement = ref(false);
 const handleSelectChange = () => {
@@ -878,7 +926,7 @@ watchEffect(() => {
 });
  
 // rechercher
-const rechercherDossier = async () => {
+const codeDaccees = async () => {
     if (!code.value) {
         toast.error("Veuillez entrer un code d'accès.")
         return
@@ -913,21 +961,7 @@ const rechercherDossier = async () => {
     } finally {
         isLoading.value = false
     }
-}
- 
-// Récuperation des fichier PDF 
-   
-// function submit() {
-//     console.log("📤 Données envoyées :", form);
-//     form.put(route('secretariat.update', terrain.id), form.data(), {
-//         forceFormData: true,   // needed for files
-//         preserveScroll: true, 
-//         onSuccess: () => toast.success("✅ Modification réussie !"),
-//         onError: (errors) => console.error(errors),
-//     }); 
-    
-
-// }
+} 
 
 async function submit() {
     try {
@@ -990,11 +1024,12 @@ async function submit() {
                                     type="text"
                                     name="code"
                                     aria-label="Code d'accès"
-                                    class="h-10 block w-full rounded-md bg-white px-2 py-1.5 text-base text-primary-txt 
+                                    class="h-8 block w-full rounded-md bg-white px-2 py-1.5 text-base text-primary-txt 
                                             outline outline-1 outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                            focus:outline-2 focus:outline-primary sm:text-sm/6"
+                                            focus:outline-2 focus:outline-primary-only sm:text-sm/6"
                                     placeholder="Entrez votre code d'accès"
                                     required
+                                    @keyup.enter="codeDaccees"
                                 />
                             </div>
 
@@ -1002,8 +1037,8 @@ async function submit() {
                                 :loading="isLoading"
                                 type="button"
                                 title="Confirmer"
-                                @click="rechercherDossier"
-                                class="w-36 h-10 text-white bg-gradient-to-r from-primary via-primary-dark 
+                                @click="codeDaccees"
+                                class="w-36 h-8 text-white bg-gradient-to-r from-primary via-primary-dark 
                                 to-primary hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
                                 focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 
                                 dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-5 
@@ -1031,7 +1066,7 @@ async function submit() {
                           <template v-if="terrain">
 
                             <div class="flex justify-center"> 
-                              <h1 class="text-lg text-primary-txt font-bold">
+                              <h1 class="text-2xl text-gray-400 font-bold italic">
                                 Modifier la parcelle de numéro dossier : {{ terrain.dossier.txt_num_dossier }}
                               </h1> 
                             </div>
@@ -1086,7 +1121,7 @@ async function submit() {
                                                                       
                                       <div>
                                         <label for="dt_date_creation" class="block font-medium text-primary-txt">Date creation</label> 
-                                        <input v-model="form.dt_date_creation" id="dt_date_creation" type="text" 
+                                        <input v-model="form.dt_date_creation" id="dt_date_creation" type="date" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1177,7 +1212,7 @@ async function submit() {
                                       
                                       <div>
                                         <label for="nbr_surface" class="block font-medium text-primary-txt">Surface</label>
-                                        <input v-model="form.nbr_surface" id="nbr_surface" type="text" 
+                                        <input v-model="form.nbr_surface" id="nbr_surface" type="text" autocomplete="off"
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1208,7 +1243,7 @@ async function submit() {
 
                                       <div>
                                         <label for="txt_num_deliberation" class="block font-medium text-primary-txt">N° Déliberation </label>
-                                        <input v-model="form.txt_num_deliberation" id="txt_num_deliberation" type="text" 
+                                        <input v-model="form.txt_num_deliberation" id="txt_num_deliberation" type="text" autocomplete="off"
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1217,7 +1252,7 @@ async function submit() {
                             
                                       <div>
                                         <label for="dt_date_deliberation" class="block font-medium text-primary-txt">Date Déliberation</label>
-                                        <input v-model="form.dt_date_deliberation" id="dt_date_deliberation" type="text" 
+                                        <input v-model="form.dt_date_deliberation" id="dt_date_deliberation" type="date" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1226,30 +1261,32 @@ async function submit() {
         
                                       <div>
                                         <label for="txt_num_section" class="block font-medium text-primary-txt">N° section</label>
-                                        <input v-model="form.txt_num_section" id="txt_num_section" type="text" 
+                                        <input v-model="form.txt_num_section" id="txt_num_section" type="text" autocomplete="off"
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                          @input="validateInputNumSection"
                                           maxlength="3"
                                           minlength="3"/> 
-                                        <div v-if="form.errors.txt_num_section" class="text-red-500">{{ form.errors.txt_num_section }}</div>
+                                        <div v-if="errorMessageNumSection" class="text-red-500 text-sm mt-1 font-medium text-gray-900">{{ errorMessageNumSection }}</div>
                                       </div>
                                       
                                       <div>
                                         <label for="txt_num_parcelle" class="block font-medium text-primary-txt">N° Parcelle</label>
-                                        <input v-model="form.txt_num_parcelle" id="txt_num_parcelle" type="text" 
+                                        <input v-model="form.txt_num_parcelle" id="txt_num_parcelle" type="text" autocomplete="off"
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                          @input="validateInputNumParcelle"
                                           maxlength="5"
                                           minlength="5"/> 
-                                        <div v-if="form.errors.txt_num_parcelle" class="text-red-500">{{ form.errors.txt_num_parcelle }}</div>
+                                        <div v-if="errorMessageNumParcelle" class="text-red-500 text-sm mt-1 font-medium text-gray-900">{{ errorMessageNumParcelle }}</div>
                                       </div>  
                                       
                                       <div class="sm:col-span-2">
                                         <div class="sm:col-span-1">  
                                           <label for="txt_nicad" class="block font-medium text-primary-txt">NICAD</label>
-                                          <input v-model="form.txt_nicad" id="txt_nicad" type="text" 
+                                          <input v-model="form.txt_nicad" id="txt_nicad" type="text" readonly 
                                             class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1263,7 +1300,7 @@ async function submit() {
                                       Reference Cadastrale
                                     </h5><br>
                                       
-                                    <div> 
+                                    <div class="maz-py-4"> 
                                         <MazRadio
                                             v-model="form.rd_immatriculation_terrain" 
                                             class="text-primary-txt"
@@ -1281,7 +1318,7 @@ async function submit() {
                                     </div>
                                       
                                     <!-- Contenu du Tab 1 ici -->
-                                    <div v-if="form.rd_immatriculation_terrain === 'Terrain Non Immatriculé'" class="maz-py-4">
+                                    <div v-if="showNonImmatricule" class="maz-py-4"> 
                                         <div>
                                       <br/> 
                                       <div class="sm:col-span-12">
@@ -1310,7 +1347,7 @@ async function submit() {
                                     </div>
                                    
                                     <!-- Contenu du Tab 2 ici -->
-                                    <div v-if="form.rd_immatriculation_terrain === 'Terrain Immatriculé'" class="maz-py-4">
+                                    <div v-if="showImmatricule" class="maz-py-4">
                                         <!-- Contenu du Tab 2 ici -->
                                         <br>
                                         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -1427,7 +1464,7 @@ async function submit() {
                                                     class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                    @input="validateInput"
+                                                    @input="validateInputApartement"
                                                     maxlength="3"
                                                     minlength="3"
                                                 />
@@ -1486,10 +1523,15 @@ async function submit() {
                                       
                                       <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="slt_civilite" class="block font-medium text-peimary-txt">Civilite</label>
-                                        <input v-model="form.slt_civilite" id="slt_civilite" type="text" 
+                                        <select v-model="form.slt_civilite" id="slt_civilite" type="text" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                          focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
+                                          focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                          >
+                                          <option value=""></option>
+                                          <option value="Mr">Mr</option>
+                                          <option value="Mme">Mme</option> 
+                                        </select>
                                         <div v-if="form.errors.slt_civilite" class="text-red-500">{{ form.errors.slt_civilite }}</div>
                                       </div>
                                       
@@ -1530,7 +1572,7 @@ async function submit() {
                                                                     
                                       <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="txt_numPiece" class="block font-medium text-primary-txt">N° Pièce</label>
-                                        <input v-model="form.txt_numPiece" id="txt_numPiece" type="text" 
+                                        <input v-model="form.txt_numPiece" id="txt_numPiece" type="text"  autocomplete="off"
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1539,7 +1581,7 @@ async function submit() {
                                                                     
                                       <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="dt_date_delivrance" class="block font-medium text-primary-txt">Date Délivrance</label>
-                                        <input v-model="form.dt_date_delivrance" id="dt_date_delivrance" type="text" 
+                                        <input v-model="form.dt_date_delivrance" id="dt_date_delivrance" type="date" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1548,7 +1590,7 @@ async function submit() {
                                                                     
                                       <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="dt_date_naissance" class="block font-medium text-primary-txt">Date Naissance</label>
-                                        <input v-model="form.dt_date_naissance" id="dt_date_naissance" type="text" 
+                                        <input v-model="form.dt_date_naissance" id="dt_date_naissance" type="date" 
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1575,7 +1617,7 @@ async function submit() {
                                                                                                   
                                       <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="tel_telephone" class="block font-medium text-primary-txt">Telephone</label>
-                                        <input v-model="form.tel_telephone" id="tel_telephone" type="text" 
+                                        <input v-model="form.tel_telephone" id="tel_telephone" type="text" autocomplete="off"
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1584,7 +1626,7 @@ async function submit() {
                                                                                                   
                                       <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="eml_email" class="block font-medium text-primary-txt">Email</label>
-                                        <input v-model="form.eml_email" id="eml_email" type="text" 
+                                        <input v-model="form.eml_email" id="eml_email" type="text" autocomplete="off"
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1593,7 +1635,7 @@ async function submit() {
                                                                                                   
                                       <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="txt_representant" class="block font-medium text-primary-txt">Representant</label>
-                                        <input v-model="form.txt_representant" id="txt_representant" type="text" 
+                                        <input v-model="form.txt_representant" id="txt_representant" type="text" autocomplete="off"
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -1602,7 +1644,7 @@ async function submit() {
                                                                                                   
                                       <div v-if="showSectionPP" class="sm:col-span-1">
                                         <label for="tel_telRepresentant" class="block font-medium text-primary-txt">Tel Representant</label>
-                                        <input v-model="form.tel_telRepresentant" id="tel_telRepresentant" type="text" 
+                                        <input v-model="form.tel_telRepresentant" id="tel_telRepresentant" type="text" autocomplete="off"
                                           class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
                                           outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
@@ -3162,11 +3204,12 @@ async function submit() {
                                   <div class="sm:col-span-6 flex justify-center">
                                     <MazBtn 
                                         type="submit"   
-                                          class="h-8 text-white bg-gradient-to-r from-primary via-primary-dark 
-                                          to-primary hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
-                                          focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 
-                                          dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-5 
-                                          py-2.5 text-center me-2 mb-2"
+                                        class="w-64 h-10 text-white bg-gradient-to-r from-primary via-primary-dark 
+                                            to-primary hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
+                                            focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 
+                                            dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-5 
+                                            py-2.5 text-center me-2 mb-2"
+                                            size="medium"
                                     >
                                       Enregistrer modification
                                     </MazBtn>

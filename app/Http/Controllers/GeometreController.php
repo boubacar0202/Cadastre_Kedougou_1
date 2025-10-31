@@ -242,21 +242,13 @@ class GeometreController extends Controller
             ]);
         
             // Bati
-            $occupantsBP = $request->input('occupantsBP');
-            // $valeurTerrain_Bati = 0; 
-            // // Calculer la somme de la valeur pour les occupants
-            // foreach ($request->input('occupantsBP') as $occupant) {
-            //     $valeurTerrain_Bati += (float) $occupant['nbr_valeurTG'];
-            // }
-
-            // Créer les enregistrements EvaluationTerrain pour chaque occupant dans $occupantsBP
+            $occupantsBP = $request->input('occupantsBP');  
             foreach ($occupantsBP as $occupant) {
 
                 EvaluationBati::create([
                     // Clés étrangères et autres champs
                     'txt_num_dossier'        => $validatedData['txt_num_dossier'], 
-                    'txt_nicad'              => $validatedData['txt_nicad'], 
-
+                    'txt_nicad'              => $validatedData['txt_nicad'],  
                     // Primaire 
                     'txt_dependant_domainePR'   =>  $validatedData['txt_dependant_domainePR'],
                     'slt_categoriePR'           => $validatedData['slt_categoriePR'],
@@ -283,12 +275,7 @@ class GeometreController extends Controller
             }
  
             // Cours Aménager
-            $occupantsCA = $request->input('occupantsCA');
-            // $valeurCours_Amenager = 0; 
-            // // somme occupants
-            // foreach ($request->input('occupantsCA') as $occupant) {
-            //     $valeurCours_Amenager += (float) $occupant['nbr_valeur_ca_total'];
-            // }
+            $occupantsCA = $request->input('occupantsCA'); 
             foreach ($occupantsCA as $occupant) {
                 EvaluationCoursAmenagee::create([
                     // Clés étrangères
@@ -306,12 +293,7 @@ class GeometreController extends Controller
             }
 
             // Clôture
-            $occupantsCL = $request->input('occupantsCL'); 
-            // $valeurCloture = 0; 
-            // // somme occupants
-            // foreach ($request->input('occupantsCL') as $occupant) {
-            //     $valeurCloture += (float) $occupant['nbr_valeur_clo'];
-            // }
+            $occupantsCL = $request->input('occupantsCL');  
             foreach ($occupantsCL as $occupant) {
                 EvaluationCloture::create([
                     // Clés étrangères 
@@ -330,12 +312,7 @@ class GeometreController extends Controller
             }
 
             // Amenagement
-            $occupantsAP = $request->input('occupantsAP');
-            // $valeurAmenagement = 0; 
-            // // somme occupants
-            // foreach ($request->input('occupantsAP') as $occupant) {
-            //     $valeurAmenagement += (float) $occupant['nbr_valeur_am'];
-            // }
+            $occupantsAP = $request->input('occupantsAP'); 
             foreach ($occupantsAP as $occupant) { 
                 EvaluationAmenagement::create([
                     'txt_num_dossier'       => $validatedData['txt_num_dossier'],

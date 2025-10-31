@@ -611,9 +611,9 @@ const tauxValeurLocative = computed(() => {
         return 0.12;
     } else if (
         [
-        177171, 142293, 123552, 93878, 61602, 53793,
-        25000, 22000, 20000, 8000, 158411, 119942,
-        88201, 58801, 40663, 11117, 10000
+            177171, 142293, 123552, 93878, 61602, 53793,
+            25000, 22000, 20000, 8000, 158411, 119942,
+            88201, 58801, 40663, 11117, 10000
         ].includes(cat)
     ) {
         return 0.10;
@@ -693,9 +693,10 @@ const submitForm = async () => {
                                             type="text"
                                             name="txt_num_dossier" 
                                             aria-label="Rechercher"
-                                            class="h-10 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt outline outline-1 outline-offset-1 
+                                            class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt outline outline-1 outline-offset-1 
                                                 outline-primary-only placeholder:text-gray-400 focus:outline-2 focus:outline-primary sm:text-sm/6"
-                                            placeholder="Entrez le numéro du dossier" 
+                                            placeholder="Entrez le numéro du dossier"
+                                            @keyup.enter="rechercherDossier" 
                                         />
                                     </div>
 
@@ -703,12 +704,12 @@ const submitForm = async () => {
                                         type="button" 
                                         title="Rechercher"
                                         @click="rechercherDossier" 
-                                        class="h-8 w-28 text-white bg-gradient-to-r from-primary via-primary-dark 
-                                        to-primary hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
-                                        focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 
-                                        dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-5 
-                                        py-2.5 text-center me-2 mb-2"
-                                    >
+                                        class="w-36 h-8 text-white bg-gradient-to-r from-primary via-primary-dark to-primary
+                                            hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                                            dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg
+                                            dark:shadow-blue-800/80 font-medium rounded-lg text-xs px-3 py-1 text-center me-2 mb-2"
+                                            size="medium"
+                                        >
                                         Suivant
                                     </MazBtn>
                                 </div>
@@ -2144,11 +2145,11 @@ const submitForm = async () => {
                                 
                                 <div class="sm:col-span-6 flex justify-center">
                                     <MazBtn @click.prevent="submitForm" no-shadow no-hover-effect
-                                            class="bg-gradient-to-r from-primary via-primary-light to-primary-dark 
-                                                hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-primary 
-                                                dark:focus:ring-primary-dark shadow-lg shadow-primary/50 
-                                                dark:shadow-lg dark:shadow-primary-dark font-medium rounded-lg text-sm 
-                                                px-5 py-2.5 text-center">
+                                            class="w-64 h-10 text-white bg-gradient-to-r from-primary via-primary-dark to-primary
+                                            hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                                            dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg
+                                            dark:shadow-blue-800/80 font-medium rounded-lg text-xs px-3 py-1 text-center me-2 mb-2"
+                                            size="medium">
                                         Enregistrer
                                     </MazBtn>
                                 </div> 

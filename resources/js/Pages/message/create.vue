@@ -379,13 +379,17 @@ async function updateMessage(message) {
                 <input 
                   v-model="newMessage" 
                   type="text" 
-                  class="flex-1 border border-primary-only rounded px-3 py-2"
+                  class="h-8 flex-1 border border-primary-only rounded px-3 py-2"
                   placeholder="Écrire un message..."
                  />
                 <button 
                   type="submit" 
-                  class="bg-primary text-white px-3 py-2 rounded"
-                >
+                  class="w-36 h-8 text-white bg-gradient-to-r from-primary via-primary-dark to-primary
+                    hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                    dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg
+                    dark:shadow-blue-800/80 font-medium rounded-lg text-xs px-3 py-1 text-center me-2 mb-2"
+                    size="medium"
+                  >
                    {{ editingMessageId ? 'Mettre à jour' : 'Envoyer' }}
                 </button>
 

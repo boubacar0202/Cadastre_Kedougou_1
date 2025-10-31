@@ -89,16 +89,16 @@ const formatDate = (dateString) => {
      
         <div class="py-12">
             <div class="flex justify-center">
-                <div class="w-full max-w-7xl">  
+                <div class="w-full max-w-8xl">  
                     <div class="bg-white shadow-md rounded-lg "> <br> 
-                        <div class="mx-auto max-w-7xl sm:px-8 lg:px-12 mt-4 mb-4">
+                        <div class="mx-auto max-w-8xl sm:px-8 lg:px-12 mt-4 mb-4">
                             <div class="card-header">
                                 <div class="p-4 border-b bg-primary-only">
                                     <h1 class="text-3xl text-primary-txt font-bold">Matrice Cadastrale</h1>
                                 </div>
                             </div>
  
-                            <div class="max-h-[500px] overflow-x-auto shadow-md sm:rounded-lg mt-8">
+                            <div class="max-h-[600px] overflow-x-auto shadow-md sm:rounded-lg mt-8">
                                 <div class="container"> 
                                     <div class="card"> 
                                         <div class="card-body"> 
@@ -183,7 +183,7 @@ const formatDate = (dateString) => {
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Source_Donnee</td>
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.references_cadastrales.txt_titre_mere || '-' }}</td>
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.references_cadastrales?.txt_titre_mere || '-'}}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Type_DocFoncier</td>
+                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.slt_document_admin || '-'}}</td>
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.references_cadastrales?.rd_immatriculation_terrain}}</td>
                                                         
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.txt_prenom || '-'}}</td>

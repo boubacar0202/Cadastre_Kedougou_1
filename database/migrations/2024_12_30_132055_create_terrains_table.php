@@ -17,12 +17,12 @@ return new class extends Migration {
             $table->string('txt_HorsLotissement')->nullable();
             $table->string('txt_num_lotissement')->nullable();
             $table->string('txt_num_section')->nullable(); 
-            $table->decimal('nbr_surface', 10, 2)->nullable(); 
+            $table->decimal('nbr_surface', 50, 2)->nullable(); 
             $table->string('txt_titre_mere')->nullable();
             $table->string('txt_num_titre')->nullable();
             $table->string('txt_appartement')->nullable();
             $table->string('slt_document_admin')->nullable();
-            $table->string('txt_num_deliberation',15)->nullable();
+            $table->string('txt_num_deliberation',200)->nullable();
             $table->date('dt_date_deliberation')->nullable();
             $table->string('txt_nicad')->nullable()->unique();  
 
