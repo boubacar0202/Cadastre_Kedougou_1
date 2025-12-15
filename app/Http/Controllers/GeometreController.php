@@ -53,7 +53,7 @@ class GeometreController extends Controller
     
         $dossier = Dossier::where('txt_num_dossier', $request->txt_num_dossier)->first();
         $terrain = $dossier ? Terrain::where('txt_num_dossier', $dossier->id)->first() : null;
- 
+  
         if ($dossier) {
             // Pas de redirection — juste retour d'un flag JSON
             return response()->json([
@@ -68,8 +68,8 @@ class GeometreController extends Controller
                 ]
             ], 422);
         }
-    } 
-
+    }  
+ 
     // vérifie si le nicad existe dans la base de données 
     public function verifierNicad($nicad)
     {

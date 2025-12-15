@@ -13,7 +13,9 @@ class Mutation extends Model
 
     protected $fillable = [ 
         'txt_numeroMutation',
-        'txt_nicadMutation',
+        'txt_nicadMutation', 
+        'txt_num_lotissement',
+        'txt_lotissement',
         // information titulaire
         'slt_titulaireMT',
         'txt_nationaliteMT',
@@ -29,14 +31,14 @@ class Mutation extends Model
         'tel_telephoneMT',  
         'txt_representantMT',
         'tel_telRepresentantMT', 
-                // Personne physique
+            // Personne physique
         'slt_categoriePM_MT',
         'txt_formJuridiquePM_MT', 
         'txt_denominationPM_MT', 
         'txt_nineaPM_MT', 
         'txt_perssonneRepresentantPM_MT', 
         'txt_fonctionPM_MT', 
-        'txt_telephonePM_MT:', 
+        'txt_telephonePM_MT', 
         'txt_emailPM_MT', 
         'txt_adressePM_MT', 
             // Personne morale
@@ -46,10 +48,11 @@ class Mutation extends Model
         'txt_telephonePA_MT',
         'txt_emailPA_MT',
         'txt_ministèreTutelePA_MT',
+        
         // information ecquereur 
         'slt_titulaireMutation',
         'txt_prenomMutation',
-        'txt_nomMT',
+        'txt_nomMutation',
         'txt_nationaliteMutation',
         'slt_civiliteMutation',
         'slt_pieceMutation',
@@ -77,7 +80,7 @@ class Mutation extends Model
         'txt_emailPM_Mutation',
         'txt_adressePM_Mutation',
             // Personne morale
-        'slt_etablissementPA_MT',
+        'slt_etablissementPA_Mutation',
         'txt_personneResponsablePA_Mutation',
         'txt_fonctionResponsablePA_Mutation',
         'txt_telephonePA_Mutation',

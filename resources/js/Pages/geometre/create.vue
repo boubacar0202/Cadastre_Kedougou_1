@@ -3,20 +3,19 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import MazBtn from "maz-ui/components/MazBtn";
 import MazRadio from "maz-ui/components/MazRadio";
+import BaseInput from '@/Components/BaseInput.vue'; 
+import BaseSelect from '@/Components/BaseSelect.vue';
 import { Inertia } from '@inertiajs/inertia'
 import { useForm } from '@inertiajs/vue3';
 import { reactive, ref, watch, watchEffect, computed } from 'vue'; 
 import DefaultLayout from "@/Layouts/DefaultLayout.vue"; 
-import { useToast } from 'maz-ui'
+import { toast } from "@/Components/AppToast";  
 import axios from 'axios'
 import { usePage } from '@inertiajs/vue3';
  
 defineOptions({ layout: DefaultLayout });
-
-const toast = useToast();
-const txt_num_dossier = ref(''); 
-const txt_nicad = ref('')
-const nbr_surface = ref(0)
+ 
+const txt_num_dossier = ref('');  
 const formVisible = ref(false); 
 const maxOccupants = 25
 const maxOccupantsBP = 4;
@@ -24,10 +23,8 @@ const maxOccupantsCA = 3;
 const maxOccupantsCL = 3;
 const maxOccupantsAP = 3;
 
-const currentCat = ref('');
-const page = usePage();
-
-
+const currentCat = ref(''); 
+ 
 const form = useForm({
     //recupèration
     txt_num_dossier:"",
@@ -119,27 +116,21 @@ const form = useForm({
             nbr_valeur_am:'',
         }
     ],
-    nbr_valeur_totale_ap:'',  
-    
+    nbr_valeur_totale_ap:'',   
     nbr_valeurVenaleLimeuble:'',
     nbr_valeurLocative:'',
     dt_dateEvaluation:'',
 
 });
- 
-
+  
 let show = ref(true);
-    show.value = show;
-
+    show.value = show; 
 let showBati = ref(true);
-    showBati.value = !showBati;
-    
+    showBati.value = !showBati; 
 let showCAmenager = ref(true);
-    showCAmenager.value = !showCAmenager;
-    
+    showCAmenager.value = !showCAmenager; 
 let showCloture = ref(true);
-    showCloture.value = !showCloture;
-        
+    showCloture.value = !showCloture; 
 let showAmenagement = ref(true);
     showAmenagement.value = !showAmenagement;
 
@@ -323,9 +314,57 @@ watch(currentCat, (newVal) => {
 })
   
 // Rechercher le dossier
+// const rechercherDossier = async () => {
+//     try {
+//         const { data } = await axios.post('/dossier/verify', {
+//             txt_num_dossier: txt_num_dossier.value
+//         });
+
+//         if (data.exists) {
+//             const terrain = data.terrain;
+//             const nicad = terrain?.txt_nicad ?? "";
+
+//             // ✅ Vérification du NICAD
+//             if (!nicad) {
+//                 formVisible.value = false;
+//                 toast.error("Ce dossier n'a pas de numéro NICAD.");
+//                 return;
+//             }
+
+//             if (nicad.length <= 8) {
+//                 formVisible.value = false;
+//                 toast.error("Le NICAD est incomplet. Vérifiez !");
+//                 return;
+//             }
+
+//             // ✅ Afficher le formulaire si tout est correct
+//             formVisible.value = true;
+//             form.txt_num_dossier = txt_num_dossier.value;
+//             form.txt_nicad = nicad;
+//             form.nbr_surface = terrain?.nbr_surface ?? 0;
+
+//             toast.success(data.success);
+//             console.log("✅ Terrain chargé :", terrain);
+
+//         } else {
+//             formVisible.value = false;
+//             toast.error(data.error || "Dossier introuvable.");
+//         }
+//     } catch (err) {
+//         formVisible.value = false;
+//         console.error("❌ Erreur complète :", err);
+
+//         if (err.response?.status === 422 && err.response.data.errors) {
+//             Object.values(err.response.data.errors).forEach(msg => toast.error(msg));
+//         } else {
+//             toast.error("Une erreur est survenue lors de la vérification.");
+//         }
+//     }
+// };
+
 const rechercherDossier = async () => {
     try {
-        const { data } = await axios.post('/dossier/verify', {
+        const { data } = await axios.post('/dossier/verificationEnquete', {
             txt_num_dossier: txt_num_dossier.value
         });
 
@@ -333,7 +372,7 @@ const rechercherDossier = async () => {
             const terrain = data.terrain;
             const nicad = terrain?.txt_nicad ?? "";
 
-            // ✅ Vérification du NICAD
+            // Vérif NICAD
             if (!nicad) {
                 formVisible.value = false;
                 toast.error("Ce dossier n'a pas de numéro NICAD.");
@@ -346,14 +385,14 @@ const rechercherDossier = async () => {
                 return;
             }
 
-            // ✅ Afficher le formulaire si tout est correct
+            // Afficher le formulaire
             formVisible.value = true;
             form.txt_num_dossier = txt_num_dossier.value;
             form.txt_nicad = nicad;
             form.nbr_surface = terrain?.nbr_surface ?? 0;
 
             toast.success(data.success);
-            console.log("✅ Terrain chargé :", terrain);
+            console.log("Terrain chargé :", terrain);
 
         } else {
             formVisible.value = false;
@@ -398,8 +437,7 @@ watchEffect(() => {
     }if (surfacebatiSolPR > bati) {
         toast.error("Surface bâtiment Principal dépasse la Superficie Bati.");
         form.nbr_surface_bati_solPR = bati;       
-    }
-
+    } 
 });
 
 // Verification saisis nbr_surface_bati_solTG 
@@ -661,8 +699,7 @@ const submitForm = async () => {
 
 </script>
 
-<template>
-    
+<template> 
     <Head title="Geometre">
         <link rel="icon" sizes="512x512" href="/logo-01.png">
     </Head>
@@ -675,11 +712,10 @@ const submitForm = async () => {
         </template> 
         <div class="py-12">
             <div class="flex justify-center">
-                <div class="w-full max-w-7xl">
-
-                    <div class="bg-white border shadow-md rounded-lg">
-                        <div class="p-4 border-r bg-primary">
-                            <h1 class="text-lg text-white font-semibold">Veillez vérifiier le numéro de dossier !</h1>
+                <div class="w-full max-w-8xl"> 
+                    <div class="bg-white border shadow-md rounded-xl">
+                        <div class="p-4 border-r bg-primary rounded-t-xl">
+                            <h1 class="text-lg text-white text-center font-semibold">Veillez vérifiier le numéro de dossier !</h1>
                         </div>
                         <div class="py-6">
                             <!-- Wrapper flex pour centrer -->
@@ -695,16 +731,15 @@ const submitForm = async () => {
                                             aria-label="Rechercher"
                                             class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt outline outline-1 outline-offset-1 
                                                 outline-primary-only placeholder:text-gray-400 focus:outline-2 focus:outline-primary sm:text-sm/6"
-                                            placeholder="Entrez le numéro du dossier"
-                                            @keyup.enter="rechercherDossier" 
+                                                placeholder="Entrez le numéro du dossier"
+                                                @keyup.enter="rechercherDossier" 
                                         />
-                                    </div>
-
+                                    </div> 
                                     <MazBtn 
                                         type="button" 
                                         title="Rechercher"
                                         @click="rechercherDossier" 
-                                        class="w-36 h-8 text-white bg-gradient-to-r from-primary via-primary-dark to-primary
+                                        class="w-36 h-9 text-white bg-gradient-to-r from-primary via-primary-dark to-primary
                                             hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
                                             dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg
                                             dark:shadow-blue-800/80 font-medium rounded-lg text-xs px-3 py-1 text-center me-2 mb-2"

@@ -6,7 +6,8 @@ import { defineProps } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import {onMounted, ref, computed, watch, watchEffect } from 'vue';
 import axios from "axios"; 
-import { useToast } from "maz-ui";
+import { toast } from "@/Components/AppToast";  
+import AppCodeAccee from '@/Components/AppCodeAccee.vue';
 import MazTabs from 'maz-ui/components/MazTabs';
 import MazRadio from 'maz-ui/components/MazRadio';
 import DefaultLayout from "@/Layouts/DefaultLayout.vue";  
@@ -26,13 +27,12 @@ const { terrain } = defineProps({
     occupants: Array,
     occupantsBP: Array,
 })
- 
-const toast = useToast()
-const page = usePage() 
-const code = ref('')
+  
+// const page = usePage() 
+// const code = ref('')
 const formVisible = ref(false)
-const isLoading = ref(false) 
-// const activeTab = ref("");   
+const showModal = ref(true);     
+const isLoading = ref(false)  
 const maxOccupants = 25;
 const maxOccupantsBP = 4;
 const maxOccupantsCA = 3;
@@ -73,13 +73,6 @@ let showCloture = ref(true);
         
 let showAmenagement = ref(true);
     showAmenagement.value = !showAmenagement;
- 
-// const activeTab = ref('terrain');
-// const setActiveTab = (tab) => {
-//     activeTab.value = tab;
-// };
- 
-
  
 const nbr_valeurPR = ref('');
 const nbr_valeurTG = ref(''); 
@@ -418,31 +411,7 @@ function handleFileChangePDF(event) {
 
     }
 }
-
-// const showImmatricule = ref(false);
-// const showNonImmatricule = ref(false);
-
-// const handleCheckboxChange = () => {
-//     const values = Array.isArray(form.rd_immatriculation_terrain)
-//         ? form.rd_immatriculation_terrain
-//         : [form.rd_immatriculation_terrain || ''];
-
-//     const normalized = values.map(v => v.trim().toLowerCase());
-
-//     showImmatricule.value = normalized.includes('terrain immatriculé');
-//     showNonImmatricule.value = normalized.includes('terrain non immatriculé');
-// };
-
-// // ⚡ Watch avec immediate pour la page edit
-// watch(
-//     () => form.rd_immatriculation_terrain, 
-//     (newVal) => handleCheckboxChange(newVal), 
-//     { immediate: true });
-
-// // ⚡ Sécuriser pour le chargement initial (edit)
-// onMounted(() => handleCheckboxChange());
- 
-
+  
 // Computed pour gérer automatiquement l'affichage
 const showImmatricule = computed(() => {
   return (form.rd_immatriculation_terrain || '').trim().toLowerCase() === 'terrain immatriculé';
@@ -554,8 +523,7 @@ function removeBlockBP(i) {
     }
 }
 
-// Cours Aménager
-// bloc ajouter 
+// Cours Aménager 
 function addBlockCA() {
     if (form.occupantsCA.length < maxOccupantsCA) {
         form.occupantsCA.push({
@@ -578,8 +546,7 @@ function removeBlockCA(i) {
     }
 }
 
-// Clôture
-// bloc ajouter 
+// Clôture 
 function addBlockCL() {
     if (form.occupantsCL.length < maxOccupantsCL) {
         form.occupantsCL.push({
@@ -602,8 +569,7 @@ function removeBlockCL(i) {
     }
 }
 
-// Cours Aménager
-// bloc ajouter 
+// Cours Aménager 
 function addBlockAP() {
     if (form.occupantsAP.length < maxOccupantsAP) {
         form.occupantsAP.push({
@@ -925,9 +891,9 @@ watchEffect(() => {
     form.nbr_valeurLocative = nbr_valeurLocative.value;
 });
  
-// rechercher
-const codeDaccees = async () => {
-    if (!code.value) {
+
+const codeDaccees = async (code) => { 
+    if (!code) {
         toast.error("Veuillez entrer un code d'accès.")
         return
     }
@@ -936,32 +902,33 @@ const codeDaccees = async () => {
 
     try {
         const { data } = await axios.post(route('code.verify'), {
-            code: code.value
+            code
         })
 
         if (data.exists) {
+            showModal.value = false
             formVisible.value = true
             toast.success("Modification autorisée !")
-            code.value = ''
         } else {
             toast.error("Vérifie ton code d'accès !")
             formVisible.value = false
-            code.value = ''
         }
 
     } catch (err) {
         formVisible.value = false
 
         if (err.response?.status === 422 && err.response.data.errors) {
-                Object.values(err.response.data.errors).forEach(msg => toast.error(msg))
+            Object.values(err.response.data.errors)
+                .forEach(msg => toast.error(msg))
         } else {
-                toast.error("Une erreur est survenue lors de la vérification.")
+            toast.error("Une erreur est survenue lors de la vérification.")
         }
 
     } finally {
         isLoading.value = false
     }
-} 
+}
+
 
 async function submit() {
     try {
@@ -982,8 +949,7 @@ async function submit() {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
         }
-
-         
+ 
     } catch (error) {
         console.error("❌ Erreur submit :", error);
         toast.error("❌ Erreur lors de la modification");
@@ -1004,62 +970,20 @@ async function submit() {
       </h2>
     </template>
 
-    <div class="py-12">
-      <div class="flex justify-center">  
-        <div class="w-full max-w-7xl">  
-            <div   v-if="!formVisible" class="w-full max-w-7xl">
-              <div class="bg-white shadow-md rounded-lg">
-                <div class="p-4 border-b bg-primary">
-                    <h1 class="text-2xl text-center text-white font-semibold">Veillez entrer votre code d'accès !</h1>
-                </div>
-                <div class="py-6">  
-                    <div class="flex justify-center"> 
-                        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full max-w-2xl">
-                            <div class="sm:col-span-4 px-5">
-                                <input 
-                                    autocomplete="off"
-                                    autocorrect="off"
-                                    spellcheck="false"
-                                    v-model="code" 
-                                    type="text"
-                                    name="code"
-                                    aria-label="Code d'accès"
-                                    class="h-8 block w-full rounded-md bg-white px-2 py-1.5 text-base text-primary-txt 
-                                            outline outline-1 outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                            focus:outline-2 focus:outline-primary-only sm:text-sm/6"
-                                    placeholder="Entrez votre code d'accès"
-                                    required
-                                    @keyup.enter="codeDaccees"
-                                />
-                            </div>
-
-                            <MazBtn 
-                                :loading="isLoading"
-                                type="button"
-                                title="Confirmer"
-                                @click="codeDaccees"
-                                class="w-36 h-8 text-white bg-gradient-to-r from-primary via-primary-dark 
-                                to-primary hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
-                                focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 
-                                dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-5 
-                                py-2.5 text-center me-2 mb-2"
-                                size="large"
-                            >
-                                Confirmer
-                            </MazBtn>
-                        </div> 
-                    </div>  
-                </div> 
-              </div>
-            </div> 
-        </div> 
-      </div>
-      <br>
-      <div class="flex justify-center ">  
-          <div class="w-full max-w-7xl"> 
-              <div   v-if="formVisible" class="w-full ">
-                  <div class="bg-white shadow-md rounded-lg">
-                      <div class="p-4 border-b bg-primary">
+    <div class="py-12"> 
+        <div class="w-full max-w-8xl">   
+            <AppCodeAccee
+                v-model="showModal"
+                :loading="isLoading"
+                @confirm="codeDaccees"
+            />
+        </div>
+ 
+        <div class="flex justify-center ">  
+          <div class="w-full max-w-8xl"> 
+              <div  v-if="formVisible" class="w-full ">
+                  <div class="bg-white shadow-md rounded-xl">
+                      <div class="p-4 border-b bg-primary rounded-t-xl">
                           <h1 class="text-2xl text-white font-semibold">Pages de Modifiation !</h1>
                       </div>
                       <div class="p-6">  
@@ -1093,11 +1017,25 @@ async function submit() {
                                       </div>
 
                                       <div>
-                                        <label for="slt_service_rendu" class="block font-medium text-primary-txt">Service Rendu</label>
-                                        <input v-model="form.slt_service_rendu" id="slt_service_rendu" type="text" 
-                                          class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                          outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                          focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"/> 
+                                        <label for="slt_service_rendu" class="block font-medium text-primary-txt">Service Rendu</label> 
+                                        <select
+                                            name="slt_service_rendu"
+                                            v-model="form.slt_service_rendu"
+                                            id="slt_service_rendu" 
+                                            class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
+                                            <option selected desabled>Choisir ici</option> 
+                                            <option value="Delimitation">Delimitation</option>
+                                            <option value="Extrait de plan">Extrait de plan</option>
+                                            <option value="Implatation">Implatation</option>
+                                            <option value="Plan de situation">Plan de situation</option>
+                                            <option value="Division">Division</option>
+                                            <option value="Reconstitution des limites">Reconstitution des limites</option>
+                                            <option value="Etat des lieux">Etat des lieux</option>
+                                            <option value="Expertise immobilière">Expertise immobilière</option>
+                                            <option value="Enquête cadastrale">Enquête cadastrale</option>
+                                        </select>
                                         <div v-if="form.errors.slt_service_rendu" class="text-red-500">{{ form.errors.slt_service_rendu }}</div>
                                       </div>
 
@@ -1231,11 +1169,13 @@ async function submit() {
                                             <option selected desabled></option>
                                             <option value="Lettre D'atribution">Lettre D'atribution</option>
                                             <option value="Attestation Foncière">Attestation Foncière</option>
+                                            <option value="Extrait de plan">Extrait de plan</option>
                                             <option value="Notification">Notification</option>
                                             <option value="Bail">Bail</option>
                                             <option value="Acte adminitratif">Acte adminitratif</option>
                                             <option value="Permis d'occupation">Permis d'occupation</option>
                                             <option value="Déliberation">Déliberation</option>
+                                            <option value="Acte de vente">Acte de vente</option>
                                             <option value="Sans Papier">Sans Papier</option>
                                         </select>
                                         <div v-if="form.errors.slt_document_admin" class="text-red-500">{{ form.errors.slt_document_admin }}</div>
@@ -1314,7 +1254,6 @@ async function submit() {
                                             label="Terrain Immatriculé"
                                         />
                                         <div v-if="form.errors.rd_immatriculation_terrain" class="text-red-500">{{ form.errors.rd_immatriculation_terrain }}</div>
-                                       
                                     </div>
                                       
                                     <!-- Contenu du Tab 1 ici -->

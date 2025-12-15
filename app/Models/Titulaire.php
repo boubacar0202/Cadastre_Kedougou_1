@@ -51,4 +51,10 @@ class Titulaire extends Model
         return $this->hasMany(Terrain::class);
     }
 
+    public function dossier()
+    {
+        return $this->belongsTo(Dossier::class, 'txt_num_dossier', 'txt_num_dossier');
+    }
+
+
 }

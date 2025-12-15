@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
 
             $table->string('txt_numeroMutation');
+            $table->string('txt_num_lotissement');
+            $table->string('txt_lotissement');
             // information titulaire
             $table->string('slt_titulaireMT');
             $table->string('txt_nationaliteMT')->nullable();
@@ -50,7 +52,7 @@ return new class extends Migration
             // information ecquereur 
             $table->string('slt_titulaireMutation');
             $table->string('txt_prenomMutation')->nullable();
-            $table->string('txt_nomMT')->nullable();
+            $table->string('txt_nomMutation')->nullable();
             $table->string('txt_nationaliteMutation')->nullable();
             $table->string('slt_civiliteMutation')->nullable();
             $table->string('slt_pieceMutation')->nullable();
@@ -76,7 +78,7 @@ return new class extends Migration
             $table->string('txt_emailPM_Mutation')->nullable();
             $table->string('txt_adressePM_Mutation')->nullable();
                 // Personne morale
-            $table->string('slt_etablissementPA_MT')->nullable();
+            $table->string('slt_etablissementPA_Mutation')->nullable();
             $table->string('txt_personneResponsablePA_Mutation')->nullable();
             $table->string('txt_fonctionResponsablePA_Mutation')->nullable();
             $table->string('txt_telephonePA_Mutation')->nullable();

@@ -28,11 +28,8 @@ import { vLazyImg } from 'maz-ui'
                     v-lazy-img="'https://upload.wikimedia.org/wikipedia/commons/9/93/Map_of_the_departments_of_the_K%C3%A9dougou_region_of_Senegal.png'"
                 />
             </div>
-          
-
-
+           
         </div>
-               
-       
+                
     </AuthenticatedLayout>
 </template>

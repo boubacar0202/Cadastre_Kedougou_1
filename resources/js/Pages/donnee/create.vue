@@ -27,8 +27,7 @@ function searchDossier() {
 function normalize(str) {
   return str?.toString().trim().toLowerCase()
 }
- 
- 
+  
 const terrains = computed(() => {
     // Normalisation des champs de recherche
     const searchNumero = normalize(numero.value || '')
@@ -69,7 +68,7 @@ const formatDate = (dateString) => {
     });
 };
     
-// Compter le nombre total de courrier
+// total enregistrements
 const totalEnregistrement = computed(() => terrains.value.length)
  
 // // Fonction pour supprimer un terrain
@@ -92,8 +91,7 @@ async function supprimerTerrain(terrain) {
          toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
      }
 } 
-
-
+ 
 </script>
 
 <template>
@@ -114,11 +112,11 @@ async function supprimerTerrain(terrain) {
                 <p>Aucun terrain trouvé.</p>
             </template>
            
-        </template v-else>
+        </template>
 
-        <div class="py-12">
+        <div  class="py-12">
             <div class="flex justify-center">   
-                <div class="w-full max-w-8xl">  
+                <div class="w-full max-w-8xl">
                     <div class="bg-white shadow-md rounded-lg "> <br> 
                         <div class="mx-auto   sm:px-8 lg:px-12 mt-4 mb-4">  
                             <div class="card-header">
@@ -127,14 +125,7 @@ async function supprimerTerrain(terrain) {
                                 </div> 
                             </div><br>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="py-12">
-            <div class="flex justify-center">   
-                <div class="w-full max-w-8xl">    
+                    </div> 
                     <div class="bg-white shadow-md rounded-lg "><br> 
                         <div class="mx-auto max-w-8xl sm:px-8 lg:px-12 mt-4">  
                             <div class="card-header"> 
@@ -194,58 +185,56 @@ async function supprimerTerrain(terrain) {
                                     <div class="card">    
                                         <div class="card-body">
                                             <table 
-                                                class="table table-auto w-full text-base text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                                                class="table table-auto w-full text-base text-left rtl:text-right text-gray-400 dark:text-gray-400">
                                                 <thead class="sticky top-0 z-10 text-primary-txt text-center border-l border-primary-only uppercase 
                                                     bg-primary-form bg-gray-50 dark:bg-gray-700 dark:text-gray-400 whitespace-nowrap">
-                                                    <tr class="h-20">
-                                                        <th scope="col" class="px-6 py-3 text-white text-center border-r bg-primary font-bold whitespace-nowrap">N°</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">N° dossier</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Region</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Departement</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Arrondisssement</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Commune</th> 
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Service dendu</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Etat Cession</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Cession définitive</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Date création</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Numéro Parcelle</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Lotissement</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Hors lotissement</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">N° lotissement</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">N° section</th> 
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Appartement</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">N° titre</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Surface</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Document admin</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">N° déliberation</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Date déeliberation</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Nicad</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Immatricalation terrain</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Dépendant domaine</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Ussu bornage</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Titre mére</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Livre Foncière</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">N° réquisition</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Surface bornage</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Date bornage</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Nom géometre</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Titulaire</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Nationalite</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Civilité</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Prénom</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Nom</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Pièce</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">N° Pièce</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Date délivrance</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Date naissance</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Lieu naissance</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Adresse</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Télephone</th>
-                                                        <!-- <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Ninea</th> -->
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Email</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Representant</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border bg-primary font-bold whitespace-nowrap">Telephone Répresentant</th> 
-                                                        <!-- <h3 class="text-lg text-white text-center border-b  bg-primary font-bold whitespace-nowrap text-center">Références Usages</h3> -->
+                                                    <tr class="h-10">
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-r bg-primary font-bold whitespace-nowrap">N°</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">N° dossier</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Region</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Departement</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Arrondisssement</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Commune</th> 
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Service dendu</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Etat Cession</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Cession définitive</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Date création</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Numéro Parcelle</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Lotissement</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Hors lotissement</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">N° lotissement</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">N° section</th> 
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Appartement</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">N° titre</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Surface</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Document admin</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">N° déliberation</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Date déeliberation</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Nicad</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Immatricalation terrain</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Dépendant domaine</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Ussu bornage</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Titre mére</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Livre Foncière</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">N° réquisition</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Surface bornage</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Date bornage</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Nom géometre</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Titulaire</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Nationalite</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Civilité</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Prénom</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Nom</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Pièce</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">N° Pièce</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Date délivrance</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Date naissance</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Lieu naissance</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Adresse</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Télephone</th> 
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Email</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Representant</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Telephone Répresentant</th>  
                                                         <table class="border-b border-primary text-sm">
                                                             <thead>  
                                                                 <tr>
@@ -253,8 +242,7 @@ async function supprimerTerrain(terrain) {
                                                                         Références Usages
                                                                     </th>
                                                                 </tr>
-                                                                <tr>
-                                                                    
+                                                                <tr> 
                                                                     <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Occupant</th>
                                                                     <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Usage</th>
                                                                     <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Résidence</th>
@@ -273,70 +261,64 @@ async function supprimerTerrain(terrain) {
                                                         </table>
 
                                                         <!-- Bati -->
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Surface bati_sol</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Prix mètre carré</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Superficie totale</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Secteur</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Date dévaluation</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur terrain</th> 
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">CurrentCat</th>   
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur terrain_bati</th>
-                                                        <!-- Domaine Principal -->
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Dépendant domaine PR</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Categorie PR</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Prix mètre carré PR</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Surface bati_sol PR</th>    
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Niveau PR</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Surface utile PR</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Coefficient PR</th>        
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Surface corriger PR</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Valeur PR</th>
-                                                        <!-- Dimaine Suivants --> 
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Dependant domaine TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Categorie TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Prix mètre carre TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Surface bati_sol TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Niveau TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Surface utile TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Coefficient TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Surface corriger TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur TG</th>  
-                                                        <!-- Cours Amenagers -->
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Valeur total AM</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Cours amenager totale AM</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Surface total AM</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Categorie total AM</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Prix mètre carre total AM</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Coefficient total AM</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Valeur total AM</th>
-                                                        <!-- Clotures -->
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Cours amenager CL</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Longueur avant CL</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Categorie  CL</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Prix mètre carre CL</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Coefficient CL</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur CL</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur total CL</th>
-                                                        <!-- Amenagements -->
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Désignation AP</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur unitaire AP</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Quantile AP</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Coeficien AP</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur AP</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur totale AP</th>
-                                                        <!-- Actions -->
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur venale de l'imeuble</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur locative</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Date d'évaluation</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Voir le PDF</th>
-                                                        <th scope="col" class="px-6 py-3 text-lg text-primary-txt text-center border-b bg-primary-only font-bold whitespace-nowrap">
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Surface bati_sol</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Prix mètre carré</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Superficie totale</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Secteur</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Date dévaluation</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur terrain</th> 
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">CurrentCat</th>   
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur terrain_bati</th> 
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Dépendant domaine PR</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Categorie PR</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Prix mètre carré PR</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Surface bati_sol PR</th>    
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Niveau PR</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Surface utile PR</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Coefficient PR</th>        
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Surface corriger PR</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Valeur PR</th> 
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Dependant domaine TG</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Categorie TG</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Prix mètre carre TG</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Surface bati_sol TG</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Niveau TG</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Surface utile TG</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Coefficient TG</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Surface corriger TG</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur TG</th>   
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Valeur total AM</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Cours amenager totale AM</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Surface total AM</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Categorie total AM</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Prix mètre carre total AM</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Coefficient total AM</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Valeur total AM</th> 
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Cours amenager CL</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Longueur avant CL</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Categorie  CL</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Prix mètre carre CL</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Coefficient CL</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur CL</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur total CL</th> 
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Désignation AP</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur unitaire AP</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Quantile AP</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Coeficien AP</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur AP</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur totale AP</th> 
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur venale de l'imeuble</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur locative</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Date d'évaluation</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Voir le PDF</th>
+                                                        <th scope="col" class="px-6 py-3 text-sm text-primary-txt text-center border-b bg-primary-only font-bold whitespace-nowrap">
                                                             ACTIONS
                                                         </th>
                                                     </tr>
                                                 </thead>
                                                 <tbody> 
                                                     <tr v-for="(terrain , index) in terrains" :key="terrain.id ?? index"
-                                                    class="h-20 bg-white text-primary-txt text-center font-bold whitespace-nowrap hover:bg-primary-form dark:hover:bg-primary-form">
+                                                    class="h-10 bg-white text-primary-txt text-center font-bold whitespace-nowrap hover:bg-primary-form dark:hover:bg-primary-form">
                             
                                                         <th class="sticky left-0 z-0 border bg-white px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ index + 1 || '-' }}</th>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.dossier.txt_num_dossier || '-' }} </td> 
@@ -359,8 +341,7 @@ async function supprimerTerrain(terrain) {
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.slt_document_admin || '-'}}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_num_deliberation || '-'}}</td>
                                                         <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ formatDate(terrain.dt_date_deliberation) || '-'}}</td>
-                                                        <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_nicad || '-'}}</td>
-                                                        <!--  -->
+                                                        <td class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_nicad || '-'}}</td> 
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.references_cadastrales?.rd_immatriculation_terrain || '-' }}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.references_cadastrales?.slt_dependant_domaine || '-'}}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.references_cadastrales?.ussu_bornage || '-'}}</td>
@@ -386,8 +367,7 @@ async function supprimerTerrain(terrain) {
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.eml_email || '-'}}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_representant || '-'}}</td>
                                                         <td scope="col" class="px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.tel_telRepresentant || '-'}}</td>
-                                                        
-
+                                                         
                                                         <template v-if="terrain.references_usages && terrain.references_usages.length > 0">
                                                             <tr v-for="usage in terrain.references_usages" :key="usage.id"  class="border-b border-primary text-sm">
                                                                 

@@ -1,31 +1,30 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue"; 
+import BaseInput from "@/Components/BaseInput.vue"
+import BaseInput_2 from "@/Components/BaseInput.vue" 
+import BaseSelect from "@/Components/BaseSelect.vue"
 import { Head, useForm } from "@inertiajs/vue3";
 import MazBtn from "maz-ui/components/MazBtn";
 import MazRadio from "maz-ui/components/MazRadio";
-import { onMounted, ref, watch, computed  } from "vue";
+import { onMounted, ref, watch, watchEffect, computed  } from "vue";
 import axios from "axios";
-import { useToast } from "maz-ui";
+import { toast } from "@/Components/AppToast";  
 import DefaultLayout from "@/Layouts/DefaultLayout.vue";
 import { Inertia } from '@inertiajs/inertia';
  
 
 defineOptions({ layout: DefaultLayout });
-
-const toast = useToast();
-const slt_region = ref();
+ 
+const slt_region = ref(); 
 const slt_departement = ref();
 const slt_arrondissement = ref();
-const slt_commune = ref();
-
+const slt_commune = ref(); 
 const departements = ref(null);
 const arrondissements = ref(null);
-const communes = ref(null);
-const slt_dependant_domaine = ref(null); // ou ref({}) selon l'utilisation
+const communes = ref(null); 
 const txt_num_section = ref('');
 const txt_num_parcelle = ref('');
-const txt_appartement = ref('');
-const today = new Date().toISOString().split('T')[0];
+const txt_appartement = ref(''); 
 const fichierPDF = ref(null); 
 const activeTab = ref("");   
 const show = ref(false);
@@ -56,47 +55,13 @@ function handleFileUpload(event) {
 
     console.log("Fichier PDF sélectionné :", fichierPDF.value);
 } 
-
-const txt_nicad = computed(() => {
  
-    const codes = {
-        1: "13110100",
-        2: "13120101",
-        3: "13120102",
-        4: "14120103",
-        5: "13120104",
-        6: "13120201",
-        7: "13120202",
-        8: "13210100",
-        9: "13220101",
-        10: "13220102",
-        11: "13220201",
-        12: "13220202",
-        13: "13220103",
-        14: "13310100",
-        15: "13320101",
-        16: "13320102",
-        17: "13320201",
-        18: "13310202",
-        19: "13220203"
-    }
-
-    const prefix = codes[slt_commune.value] || ''
-    const value = `${prefix}${txt_num_section.value}${txt_num_parcelle.value}${txt_appartement.value}`.trim()
- 
-    // 🔎 Vérification longueur totale
-    if (value.replace(/\s/g, "").length <= 8) {
-        return null;
-    }
-
-    return value;
-});
-
 const props = defineProps({
     regions: {
         type: Array,
         default: () => [],
-    },
+    }, 
+    communes: Array 
 });
  
 const form = useForm({
@@ -170,7 +135,24 @@ const form = useForm({
 
     fichierPDF: "",
 });
- 
+
+
+const selectedCommune = computed(() => {
+    return props.communes.find(c => c.id == form.slt_commune);
+});
+const txt_nicad = computed(() => {
+    const prefix = selectedCommune.value?.txt_codeCommune || "";
+
+    const section = form.txt_num_section || "";
+    const parcelle = form.txt_num_parcelle || "";
+    const appart = form.txt_appartement || "";
+
+    const value = `${prefix}${section}${parcelle}${appart}`.trim();
+
+    const MIN_LENGTH = 9;
+    return value.replace(/\s/g, "").length >= MIN_LENGTH ? value : "";
+}); 
+
 const fetchNextDossier = async () => {
     try {
         const response = await axios.get("/dossier/next");
@@ -182,31 +164,6 @@ const fetchNextDossier = async () => {
 };
 onMounted(fetchNextDossier);
   
-// Mettez à jour les watchers pour utiliser form.selectedRegion, etc.
-watch(
-    () => form.slt_region,
-    (newValue) => {
-        console.log("🔄 Région sélectionnée :", newValue);
-        fetchDepartements();
-    }
-);
-
-watch(
-    () => form.slt_departement,
-    (newValue) => {
-        console.log("🔄 Département sélectionné :", newValue);
-        fetchArrondissements();
-    }
-);
-
-watch(
-    () => form.slt_arrondissement,
-    (newValue) => {
-        console.log("🔄 Arrondissement sélectionné :", newValue);
-        fetchCommunes();
-    }
-);
-
 const fetchDepartements = async () => {
     if (!slt_region.value) {
         departements.value = [];
@@ -221,7 +178,7 @@ const fetchDepartements = async () => {
         console.error("Erreur lors du chargement des départements :", error);
     }
 };
-
+ 
 const fetchArrondissements = async () => {
     if (!slt_departement.value) {
         arrondissements.value = [];
@@ -256,9 +213,14 @@ const fetchCommunes = async () => {
     }
 };
 
-onMounted(() => {
-    console.log("Les régions: ", props.regions);
-    // Vous pouvez ajouter une logique pour initialiser les données ici
+watch(() => form.slt_region, fetchDepartements);
+watch(() => form.slt_departement, fetchArrondissements);
+watch(() => form.slt_arrondissement, fetchCommunes);
+watchEffect(() => {
+    form.slt_region = slt_region.value;
+    form.slt_departement = slt_departement.value;
+    form.slt_arrondissement = slt_arrondissement.value;
+    form.slt_commune = slt_commune.value;
 });
 
 // morcellement
@@ -269,101 +231,54 @@ watch(() => form.ussu_bornage, (newValue) => {
     show.value = newValue === "Morcellement de Copropriété";
 });
 
-// charge titulaire Etat Perssone Morale Personne Physique
-let hasShownError = false;
+// charge titulaire Etat Perssone Morale Personne Physique 
 const handleSelectChangeTitulaire = () => {
-    // Reset toutes les sections
-    showSectionPP.value = false;
-    showSectionPM.value = false;
-    showSectionPA.value = false;
-
-    switch (form.slt_titulaire) {
-        case "Personne Physique":
-            showSectionPP.value = true;
-            hasShownError = false;
-            break;
-        case "Personne Morale":
-            showSectionPM.value = true;
-            hasShownError = false;
-            break;
-        case "Etat":
-            showSectionPA.value = true;
-            hasShownError = false;
-            break;
-        default:
-            if (!hasShownError){
-                hasShownError = true
-                toast.error("Veuillez choisir un titulaire");
-            }  
-    }
+    showSectionPP.value = form.slt_titulaire === "Personne Physique";
+    showSectionPM.value = form.slt_titulaire === "Personne Morale";
+    showSectionPA.value = form.slt_titulaire === "Etat";
 };
-    
-// Réagir automatiquement sans bouton
-watch(() => form.slt_titulaire, (newValue) => {
-
-    handleSelectChangeTitulaire(); 
-
-    if (!["Personne Physique", "Personne Morale", "Etat"].includes(newValue)) {
-            toast.error("Veuillez choisir un titulaire");
-        }
-    }
-);
-
-const errorMessage = ref("");
+watch(() => form.slt_titulaire, handleSelectChangeTitulaire);
+ 
+const errorMessage = ref(""); 
 const validateInput = () => {
-    const value = txt_appartement.value.toString();
+    const value = (form.txt_appartement || "").toString();
 
-    if (value.length > 3) {
-        txt_appartement.value = value.slice(0, 3); // Coupe à 3 chiffres max
-    }
-
-    if (value.length < 3) {
-        errorMessage.value = "❌ 3 chiffres.";
-    } else {
+    if (!/^\d+$/.test(value)) {
+        errorMessage.value = "❌ Seulement des chiffres.";
+    } else if (value.length !== 3) {
+        errorMessage.value = "❌ 3 chiffres minimum.";
+    } else { 
         errorMessage.value = "";
     }
 };
-
-const errorMessageNumSection = ref("");
-// Validation de l'input (saisie à 3 caractères uniquement)
-const validateInputNumSection = () => {
-    const value = txt_num_section.value.toString();
-
-    // Si la longueur est plus grande que 3, on la coupe
-    if (value.length > 3) {
-        txt_num_section.value = value.slice(0, 3); // Limiter à 3 caractères
-    }
-    // Validation pour une saisie de 3 caractères exactement
-    if (value.length < 3) {
-        errorMessageNumSection.value = "❌ 3 chiffres.";
+ 
+const errorMessageNumSection = ref(""); 
+const validateInputNumSection = (e) => {
+    const value = e.target.value;
+    if (!/^\d*$/.test(value)) {
+        errorMessageNumSection.value = "❌ Seulement des chiffres.";
+    } else if (value.length !== 3) {
+        errorMessageNumSection.value = "❌ Exactement 3 chiffres.";
     } else {
         errorMessageNumSection.value = "";
     }
 };
-
-const errorMessageNumParcelle = ref("");
-
-// Validation de l'input (saisie à 5 caractères uniquement)
+ 
+const errorMessageNumParcelle = ref(""); 
 const validateInputNumParcelle = () => {
-    const value = txt_num_parcelle.value.toString();
+    const value = (form.txt_num_parcelle || "").toString();
 
-    // Si la longueur est plus grande que 5, on la coupe
-    if (value.length > 5) {
-        txt_num_parcelle.value = value.slice(0, 5); // Limiter à 5 caractères
-    }
-
-    // Validation pour une saisie de 5 caractères exactement
-    if (value.length < 5) {
-        errorMessageNumParcelle.value = "❌ 5 chiffres.";
+    if (!/^\d+$/.test(value)) {
+        errorMessageNumParcelle.value = "❌ Seulement des chiffres.";
+    } else if (value.length !== 5) {
+        errorMessageNumParcelle.value = "❌ Exactement 5 chiffres.";
     } else {
         errorMessageNumParcelle.value = "";
     }
 };
-
+ 
 // Submit du formulaire
-const submitForm = function () {  // Ajoutez `async` ici
-    console.log("📤 Envoi du formulaire :", form);
-    console.log("✅ Données finales envoyées à Laravel :", form.data());
+const submitForm = function () {  
     form.rd_immatriculation_terrain = activeTab.value || "";  // Mise à jour de la donnée
     form.slt_region = slt_region?.value || ""; // Accès via this.slt_region
     form.slt_departement = slt_departement?.value || ""; // Accès via this.slt_departement
@@ -376,23 +291,19 @@ const submitForm = function () {  // Ajoutez `async` ici
   
     // Formulaire Laravel
     form.post(route('secretariat.store'), {
-        onSuccess: (page) => {
-            console.log("✅ Enregistré !", page);
+        onSuccess: (page) => { 
             toast.success(page.props.flash?.success || "✅ Dossier enregistré !");
             Inertia.visit(route("secretariat.create"), { replace: true });
         },
-        onError: (errors) => {
-            console.error("❌ Erreurs de validation :", errors);
+        onError: (errors) => { 
             Object.values(errors).forEach(msg => toast.error(msg)); 
         },
         onFinish: () => {
             console.log("🟡 Requête terminée");
         }
-    });
-
+    }); 
 };
-
-
+ 
 </script>
 
 <template>
@@ -409,14 +320,14 @@ const submitForm = function () {  // Ajoutez `async` ici
 
         <div class="py-12">
             <div class="flex justify-center">
-                <div class="w-full max-w-7xl">
-                    <div class="bg-white shadow-md rounded-lg">
+                <div class="w-full max-w-8xl">
+                    <div class="bg-white shadow-md rounded-xl">
                         <!-- En-tête du formulaire -->
-                        <div   class="p-4 border-b bg-primary">
+                        <div   class="p-4 border-b bg-primary rounded-t-xl">
                             <h1 class="text-lg text-white font-semibold">Formulaire</h1>
                         </div>
                         <!-- Corps du formulaire -->
-                        <form @submit.prevent="submitForm">
+                        <form autocomplete="on" @submit.prevent="submitForm">
                             <div class="p-6">
                                 <!-- Section Parcelle -->
                                 <h5 class="text-lg text-primary-txt font-bold">
@@ -427,196 +338,62 @@ const submitForm = function () {  // Ajoutez `async` ici
                                     <div
                                         class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"
                                     >
-                                        <div class="sm:col-span-1">
-                                            <div class="sm:col-span-1">
-                                                <label 
-                                                    for="txt_num_dossier"
-                                                    class="block text-sm/6 font-medium text-primary-txt">
-                                                    N° Dossier
-                                                </label>
-                                                <div class="mt-2">
-                                                    <input
-                                                        type="text"
-                                                        name="txt_num_dossier"
-                                                        v-model="form.txt_num_dossier"
-                                                        id="txt_num_dossier"
-                                                        class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
+                                    
+                                        <BaseInput
+                                            label="N° Dossier"
+                                            name="txt_num_dossier"
+                                            required="on"
+                                            v-model="form.txt_num_dossier"
+                                        />
+
+                                        <BaseInput
+                                            label="N° dordre"
+                                            name="txt_num_dordre"
+                                            required="on"
+                                            v-model="form.txt_num_dordre"
+                                        />
+                                         
+                                        <BaseSelect
+                                            label="Service Rendu"
+                                            name="slt_service_rendu"
+                                            required="on"
+                                            :options="[
+                                                {value:'Delimitation', label:'Delimitation'},
+                                                {value:'Extrait de plan', label:'Extrait de plan'},
+                                                {value:'Implantation', label:'Implantation'},
+                                                {value:'Plan de situation', label:'Plan de situation'},
+                                                {value:'Division', label:'Division'},
+                                                {value:'Reconstitution des limites', label:'Reconstitution des limites'},
+                                                {value:'Etat des lieux', label:'Etat des lieux'},
+                                                {value:'Expertise immobilière', label:'Expertise immobilière'},
+                                                {value:'Enquête cadastrale', label:'Enquête cadastrale'},
+                                            ]"
+                                            v-model="form.slt_service_rendu"
+                                        />
  
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <div class="sm:col-span-1">
-                                                <label 
-                                                    for="txt_num_dordre"
-                                                    class="block text-sm/6 font-medium text-primary-txt">
-                                                    N° dordre
-                                                </label>
-                                                <div class="mt-2">
-                                                    <input
-                                                        type="text"
-                                                        name="txt_num_dordre"
-                                                        v-model.number="form.txt_num_dordre" 
-                                                        min="1" 
-                                                        id="txt_num_dordre"
-                                                        class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
- 
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <div class="sm:col-span-1">
-                                                <label
-                                                    for="slt_service_rendu"
-                                                    class="block text-sm/6 font-medium text-primary-txt"
-                                                    >Service Rendu</label
-                                                >
-                                                <div class="mt-2">
-                                                    <select
-                                                        name="slt_service_rendu"
-                                                        v-model="
-                                                            form.slt_service_rendu
-                                                        "
-                                                        id="slt_service_rendu"
-                                                        autocomplete="address-level2"
-                                                        class="h-7  scrollbar-thin scrollbar-thumb-primary scrollbar-track-gray-300 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                        style="max-height: 200px;" 
-                                                    >
-                                                        <option
-                                                            value=""
-                                                            desabled
-                                                        ></option>
-                                                        <option
-                                                            
-                                                            value="Delimitation"
-                                                        >
-                                                            Delimitation
-                                                        </option>
-                                                        <option
-                                                            value="Extrait de plan"
-                                                        >
-                                                            Extrait de plan
-                                                        </option>
-                                                        <option
-                                                            value="Implatation"
-                                                        >
-                                                            Implatation
-                                                        </option>
-                                                        <option
-                                                            value="Plan de situation"
-                                                        >
-                                                            Plan de situation
-                                                        </option>
-                                                        <option
-                                                            value="Division"
-                                                        >
-                                                            Division
-                                                        </option>
-                                                        <option
-                                                            value="Reconstitution des limites"
-                                                        >
-                                                            Reconstitution des
-                                                            limites
-                                                        </option>
-                                                        <option
-                                                            value="Etat des lieux"
-                                                        >
-                                                            Etat des lieux
-                                                        </option>
-                                                        <option
-                                                            value="Expertise immobilière"
-                                                        >
-                                                            Expertise
-                                                            immobilière
-                                                        </option>
-                                                        <option
-                                                            value="Enquête cadastrale"
-                                                        >
-                                                            Enquête cadastrale
-                                                        </option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <div class="sm:col-span-1">
-                                                <label
-                                                    for="txt_etat_cession"
-                                                    class="block text-sm/6 font-medium text-primary-txt"
-                                                    >Etat de cession</label
-                                                >
-                                                <div class="mt-2">
-                                                    <input
-                                                        type="text"
-                                                        name="txt_etat_cession"
-                                                        v-model="
-                                                            form.txt_etat_cession
-                                                        "
-                                                        id="txt_etat_cession"
-                                                        autocomplete="address-level2"
-                                                        class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <div class="sm:col-span-1">
-                                                <label
-                                                    for="txt_cession_definitive"
-                                                    class="block text-sm/6 font-medium text-primary-txt"
-                                                    >Cession définitive</label
-                                                >
-                                                <div class="mt-2">
-                                                    <input
-                                                        type="text"
-                                                        name="txt_cession_definitive"
-                                                        v-model="
-                                                            form.txt_cession_definitive
-                                                        "
-                                                        id="txt_cession_definitive"
-                                                        autocomplete="address-level2"
-                                                        class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <div class="sm:col-span-1">
-                                                <label
-                                                    for="dt_date_creation"
-                                                    class="block text-sm/6 font-medium text-primary-txt"
-                                                    >Date d'enregistrement</label
-                                                >
-                                                <div class="mt-2">
-                                                    <input
-                                                        type="Date"
-                                                        name="dt_date_creation"
-                                                        v-model="
-                                                            form.dt_date_creation
-                                                        "
-                                                        :max="today"
-                                                        required
-                                                        id="dt_date_creation"
-                                                        autocomplete="address-level2"
-                                                        class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <BaseInput
+                                            label="Etat de cession"
+                                            name="txt_etat_cession"
+                                            autocomplete="on"
+                                            required="on"
+                                            v-model="form.txt_etat_cession"
+                                        />
+                                     
+                                        <BaseInput
+                                            label="Cession definitive"
+                                            name="txt_cession_definitive"
+                                            autocomplete="given-name"
+                                            v-model="form.txt_cession_definitive"
+                                        />
+                                                                         
+                                        <BaseInput
+                                            label="Date d'enregistrement"
+                                            name="dt_date_creation"
+                                            type="date"
+                                            required="on"
+                                            v-model="form.dt_date_creation"
+                                        />
+
                                     </div> 
 
                                     <!-- Parcelle -->
@@ -627,398 +404,145 @@ const submitForm = function () {  // Ajoutez `async` ici
                                     <div
                                         class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"
                                     >
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="slt_region"
-                                                class="block text-sm font-medium text-primary-txt"
-                                            >
-                                                Région
-                                            </label>
-                                            <div class="mt-2">
-                                                <select
-                                                    id="slt_region"
-                                                    name="slt_region"
-                                                    v-model="slt_region"
-                                                    required
-                                                    @change="
-                                                        fetchDepartements()
-                                                    "
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                >
-                                                    <option
-                                                        v-for="region in regions"
-                                                        :key="region.id"
-                                                        :value="region.id"
-                                                    >
-                                                        {{ region?.slt_region }}
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="departements"
-                                                class="block text-sm font-medium text-primary-txt"
-                                                >Département</label
-                                            >
-                                            <div class="mt-2">
-                                                <select
-                                                    id="departements"
-                                                    name="slt_departement"
-                                                    v-model="slt_departement"
-                                                    required
-                                                    @change="
-                                                        fetchArrondissements()
-                                                    "
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                >
-                                                    <option
-                                                        value=""
-                                                        disabled
-                                                        selected
-                                                    >
-                                                        Choisir ici
-                                                    </option>
-                                                    <option
-                                                        v-for="departement in departements"
-                                                        :key="departement.id"
-                                                        :value="departement.id"
-                                                    >
-                                                        {{
-                                                            departement.slt_departement
-                                                        }}
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="arrondissements"
-                                                class="block text-sm font-medium text-primary-txt"
-                                                >Arrondissement
-                                            </label>
-                                            <div class="mt-2">
-                                                <select
-                                                    id="arrondissements"
-                                                    name="slt_arrondissement"
-                                                    v-model="slt_arrondissement"
-                                                    required
-                                                    @change="fetchCommunes()"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                >
-                                                    <option
-                                                        value=""
-                                                        disabled
-                                                        selected
-                                                    >
-                                                        Choisir ici
-                                                    </option>
-                                                    <option
-                                                        v-for="arrondissement in arrondissements"
-                                                        :key="arrondissement.id"
-                                                        :value="
-                                                            arrondissement.id
-                                                        "
-                                                    >
-                                                        {{
-                                                            arrondissement.slt_arrondissement
-                                                        }}
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="communes"
-                                                class="block text-sm font-medium text-primary-txt"
-                                                >Commune</label
-                                            >
-                                            <div class="mt-2">
-                                                <select
-                                                    id="communes"
-                                                    name="slt_commune  "
-                                                    v-model="slt_commune"
-                                                    required
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                >
-                                                    <option
-                                                        value=""
-                                                        disabled
-                                                        selected
-                                                    >
-                                                        Choisir ici
-                                                    </option>
-                                                    <option
-                                                        v-for="commune in communes"
-                                                        :key="commune.id"
-                                                        :value="commune.id"
-                                                    >
-                                                        {{
-                                                            commune.slt_commune
-                                                        }}
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="txt_lotissement"
-                                                class="block text-sm font-medium text-primary-txt"
-                                                >Lotissement/Quartier</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_lotissement"
-                                                    v-model="
-                                                        form.txt_lotissement
-                                                    "
-                                                    id="txt_lotissement"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="txt_HorsLotissement"
-                                                class="block text-sm font-medium text-primary-txt"
-                                                >Hors Lotissement</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_HorsLotissement"
-                                                    v-model="
-                                                        form.txt_HorsLotissement
-                                                    "
-                                                    id="txt_HorsLotissement"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="txt_num_lotissement"
-                                                class="block text-sm font-medium text-primary-txt"
-                                                >N° Lot</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_num_lotissement"
-                                                    v-model="
-                                                        form.txt_num_lotissement
-                                                    "
-                                                    id="txt_num_lotissement"
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
                                        
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="surface"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Surface</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="number"
-                                                    step="0.01" min="0" 
-                                                    name="nbr_surface"
-                                                    v-model="form.nbr_surface"
-                                                    id="surface"
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="Document_admin"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Doc adminitratif</label
-                                            >
-                                            <div class="mt-2">
-                                                <select
-                                                    name="slt_document_admin"
-                                                    v-model="
-                                                        form.slt_document_admin
-                                                    "
-                                                    id="Document_admin"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                >
-                                                    <option
-                                                        selected
-                                                        desabled
-                                                    ></option>
-                                                    <option
-                                                        value="Lettre D'atribution"
-                                                    >
-                                                        Lettre D'atribution
-                                                    </option>
-                                                    <option
-                                                        value="Attestation Foncière"
-                                                    >
-                                                        Attestation Foncière
-                                                    </option>
-                                                    <option
-                                                        value="Notification"
-                                                    >
-                                                        Notification
-                                                    </option>
-                                                    <option value="Bail">
-                                                        Bail
-                                                    </option>
-                                                    <option
-                                                        value="Acte adminitratif"
-                                                    >
-                                                        Acte adminitratif
-                                                    </option>
-                                                    <option
-                                                        value="Permis d'occupation"
-                                                    >
-                                                        Permis d'occupation
-                                                    </option>
-                                                    <option
-                                                        value="Déliberation"
-                                                    >
-                                                        Déliberation
-                                                    </option>
-                                                    <option value="Sans Papier">
-                                                        Sans Papier
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="Num_deliberation"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >N° Déliberation</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_num_deliberation"
-                                                    v-model="
-                                                        form.txt_num_deliberation
-                                                    "
-                                                    id="Num_deliberation"
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="Date_deliberation"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Date Déliberation</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="date"
-                                                    name="dt_date_deliberation"
-                                                    v-model="
-                                                        form.dt_date_deliberation
-                                                    "
-                                                    id="Date_deliberation"
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="Num_section"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >N° Section</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_num_section"
-                                                    v-model="
-                                                        txt_num_section
-                                                    "
-                                                    autocomplete="off"
-                                                    id="Num_section"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                    @input="validateInputNumSection"
-                                                    maxlength="3"
-                                                    minlength="3"
-                                                />
-                                            </div>
-                                            <p v-if="errorMessageNumSection" class="text-red-500 text-sm mt-1">{{ errorMessageNumSection }}</p>
-                                        </div>
-                                     
-                                        <div class="sm:col-span-1">
-                                            <label for="Num_parcelle" class="block text-sm/6 font-medium text-primary-txt">N° Parcelle</label>
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_num_parcelle"
-                                                    v-model="txt_num_parcelle"
-                                                    id="Num_parcelle" 
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                    @input="validateInputNumParcelle"
-                                                    maxlength="5"
-                                                    minlength="5"
-                                                />
-                                            </div>
-                                            <p v-if="errorMessageNumParcelle" class="text-red-500 text-sm mt-1">{{ errorMessageNumParcelle }}</p>
-                                        </div>
-                                        <div class="sm:col-span-2">
-                                            <label 
-                                                for="txt_nicad" 
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >
-                                                Nicad</label>
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_nicad"
-                                                    v-model="
-                                                        txt_nicad
-                                                    "
-                                                    id="txt_nicad"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                    readonly
-                                                />
-                                            </div>
-                                        </div>
+                                        <BaseSelect
+                                            label="Région"
+                                            name="slt_region"
+                                            :options="regions" 
+                                            optionLabel="slt_region"
+                                            optionValue="id"
+                                            required="on"
+                                            v-model="slt_region"
+                                            @change="fetchDepartements"
+                                        />
+ 
+
+                                        <BaseSelect
+                                            label="Département"
+                                            name="slt_departement"
+                                            :options="departements"
+                                            optionLabel="slt_departement"
+                                            optionValue="id"
+                                            required="on"
+                                            v-model="slt_departement"
+                                            @change="fetchArrondissements"
+                                        />
+  
+                                        <BaseSelect
+                                            label="Arrondissement"
+                                            name="slt_arrondissement"
+                                            :options="arrondissements"
+                                            optionLabel="slt_arrondissement"
+                                            optionValue="id"
+                                            required="on"
+                                            v-model="slt_arrondissement"
+                                            @change="fetchCommunes"
+                                        /> 
+              
+                                        <BaseSelect
+                                            label="Commune"
+                                            name="slt_commune"
+                                            :options="communes"
+                                            optionLabel="slt_commune"
+                                            optionValue="id"
+                                            required="on"
+                                            v-model="slt_commune" 
+                                        />
+
+  
+
+ 
+                                        <BaseInput
+                                            label="Lotissement/Quartier"
+                                            name="txt_lotissement"
+                                            autocomplete="address-level2" 
+                                            v-model="form.txt_lotissement"
+                                        />
+ 
+                                        
+                                        <BaseInput
+                                            label="Hors Lotissement"
+                                            name="txt_HorsLotissement" 
+                                            autocomplete="address-level2"
+                                            v-model="form.txt_HorsLotissement"
+                                        />
+                                      
+                                        <BaseInput
+                                            label="N° Lot"
+                                            name="txt_num_lotissement"
+                                            v-model="form.txt_num_lotissement"
+                                        />
+   
+                                        <BaseInput
+                                            label="Surface"
+                                            name="nbr_surface"
+                                            min="0.0"
+                                            step="0.01"
+                                            autocomplete="given-name"
+                                            v-model="form.nbr_surface"
+                                        /> 
+                                        
+                                        <BaseSelect
+                                            label="Doc.Adminitratif"
+                                            name="slt_document_admin"
+                                            :options="[
+                                                {value:'Lettre d\'atribution', label:'Lettre d\'atribution'},
+                                                {value:'Extrait de plan', label:'Extrait de plan'},
+                                                {value:'Notification', label:'Notification'},
+                                                {value:'Bail', label:'Bail'},
+                                                {value:'Acte adminitratif', label:'Acte adminitratif'},
+                                                {value:'Permis d\'occupation', label:'Permis d\'occupation'},
+                                                {value:'Déliberation', label:'Déliberation'},
+                                                {value:'Atestation Foncière', label:'Atestation Foncière'},
+                                                {value:'Acte de vente', label:'Acte de vente'},
+                                                {value:'Sans Papier', label:'Sans Papier'}, 
+                                            ]"
+                                            v-model="form.slt_document_admin"
+                                        /> 
+                                                                           
+                                        <BaseInput
+                                            label="N° Déliberation"
+                                            name="txt_num_deliberation"  
+                                            v-model="form.txt_num_deliberation"
+                                        /> 
+                                                                                                                   
+                                        <BaseInput
+                                            label="Date Déliberation"
+                                            name="dt_date_deliberation" 
+                                            type="date" 
+                                            v-model="form.dt_date_deliberation"
+                                        />  
+                                        
+                                        <BaseInput
+                                            label="N° Section"
+                                            name="txt_num_section"  
+                                            :maxlength="3"
+                                            :minlength="3"
+                                            v-model="form.txt_num_section" 
+                                            :error="errorMessageNumSection" 
+                                            @input="() => validateInputNumSection()"
+
+                                        /> 
+
+                                        <BaseInput
+                                            label="N° Parcelle"
+                                            name="txt_num_parcelle"  
+                                            :maxlength="5"
+                                            :minlength="5"
+                                            v-model="form.txt_num_parcelle"
+                                            @input="validateInputNumParcelle"
+                                            :error="errorMessageNumParcelle" 
+                                        />  
+  
+                                        <BaseInput
+                                            class="sm:col-span-2"
+                                            label="NICAD"
+                                            name="txt_nicad"   
+                                            :modelValue="txt_nicad"
+                                            readonly 
+                                        /> 
+                                        
+
                                     </div>
                                 </div>
 
@@ -1059,30 +583,20 @@ const submitForm = function () {  // Ajoutez `async` ici
                                         <br/>
                                         <div class="sm:col-span-12">
                                             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                                                <div class="sm:col-span-2">
-                                                    <label
-                                                        for="slt_dependant_domaine"
-                                                        class="block text-sm font-medium text-primary-txt"
-                                                    >
-                                                        Dépendant du domaine
-                                                    </label>
-                                                    <div class="mt-2">
-                                                        <select
-                                                            v-model="form.slt_dependant_domaine"
-                                                            name="slt_dependant_domaine"
-                                                            id="slt_dependant_domaine"
-                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                        >
-                                                            <option selected disabled>choisi ici</option>
-                                                            <option value="Domaine National">Domaine National</option>
-                                                            <option value="Domaine Public">Domaine Public</option>
-                                                            <option value="Domaine Fluvial">Domaine Fluvial</option>
-                                                            <option value="Domaine Maritime">Domaine Maritime</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
+                                       
+                                                <BaseSelect
+                                                    class="sm:col-span-2"
+                                                    label="Dépendance Domaine"
+                                                    name="slt_dependant_domaine" 
+                                                    :options="[
+                                                        {value:'Domaine National', label:'Domaine National'},
+                                                        {value:'Domaine Public', label:'Domaine Public'},
+                                                        {value:'Domaine Fluvial', label:'Domaine Fluvial'},
+                                                        {value:'Domaine Maritime', label:'Domaine Maritime'}, 
+                                                    ]" 
+                                                    v-model="form.slt_dependant_domaine" 
+                                                /> 
+
                                             </div>
                                         </div>
                                     </div>
@@ -1093,170 +607,83 @@ const submitForm = function () {  // Ajoutez `async` ici
                                          <br>
                                         <div class="sm:col-span-12">
                                             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                                                <div class="sm:col-span-1">
-                                                    <label for="Bornage"
-                                                        class="block text-sm font-medium text-primary-txt" >Ussu de bornage</label>
-                                                    <div class="mt-2">
-                                                        <select
-                                                            v-model="form.ussu_bornage"
-                                                            name="issu_bornage"
-                                                            id="Bornage"     autocomplete="off"
-                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                            @change="handleSelectChange"
-                                                        >
-                                                            <option selected disabled>choisir ici</option>
-                                                            <option value="Immatriculation">Immatriculation</option>
-                                                            <option value="Morcellement">Morcellement</option>
-                                                            <option value="Rectificatif de Limite">Rectificatif de Limite</option>
-                                                            <option value="Fusion">Fusion</option>
-                                                            <option value="Morcellement de Copropriété">Morcellement de Copropriété</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                <div class="sm:col-span-1">
-                                                    <label for="Titre_mere"
-                                                    class="block text-sm font-medium text-primary-txt">Titre Mere</label>
-                                                    <div class="mt-2">
-                                                        <input
-                                                            v-model="form.txt_titre_mere"
-                                                            type="text"
-                                                            name="txt_titre_mere"
-                                                            id="Titre_mere"
-                                                            autocomplete="off"
-                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div class="sm:col-span-1">
-                                                    <label
-                                                        for="numTitre"
-                                                        class="block text-sm/6 font-medium text-primary-txt"
-                                                        >N° Titre</label
-                                                    >
-                                                    <div class="mt-2">
-                                                        <input
-                                                            type="text"
-                                                            name="txt_num_titre"
-                                                            v-model="form.txt_num_titre"
-                                                            id="numTitre"
-                                                            autocomplete="off"
-                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div class="sm:col-span-1">
-                                                    <label for="LF"
-                                                        class="block text-sm font-medium text-primary-txt">LF</label>
-                                                    <div class="mt-2">
-                                                        <select
-                                                            v-model="form.slt_lf"
-                                                            name="slt_lf"
-                                                            id="LF"
-                                                            autocomplete="off"
-                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                        >
-                                                            <option selected desabled></option>
-                                                            <option value="NO">NO</option>
-                                                            <option value="KG">KG</option>
-                                                            <option value="SM">SM</option>
-                                                            <option value="SR">SR</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                <div class="sm:col-span-1">
-                                                    <label for="Num_requisition"
-                                                        class="block text-sm font-medium text-primary-txt">N° Requisition</label>
-                                                    <div class="mt-2">
-                                                        <input
-                                                            v-model="form.txt_num_requisition"
-                                                            type="text"
-                                                            name="txt_num_requisition"
-                                                            id="Num_requisition"
-                                                            autocomplete="off"
-                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div class="sm:col-span-1">
-                                                    <label for="Surface_bornage"
-                                                        class="block text-sm font-medium text-primary-txt">Surfacce au bornage</label>
-                                                    <div class="mt-2">
-                                                        <input
-                                                            v-model="form.txt_surface_bornage"
-                                                            type="text"
-                                                            name="txt_surface_bornage"
-                                                            id="Surface_bornage"
-                                                            autocomplete="off"
-                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div class="sm:col-span-1">
-                                                    <label for="Date_bornage"
-                                                        class="block text-sm font-medium text-primary-txt">Date Bornage</label>
-                                                    <div class="mt-2">
-                                                        <input
-                                                            v-model="form.dt_date_bornage"
-                                                            type="date"
-                                                            name="dt_date_bornage"
-                                                            id="Date_bornage"
-                                                            autocomplete="off"
-                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div v-if="show" class="sm:col-span-1">
-                                                    <label for="txt_appartement" 
-                                                        class="block text-sm/6 font-medium text-primary-txt">
-                                                        Appartement
-                                                    </label>
-                                                    <div class="mt-2">
-                                                        <input
-                                                            type="text"
-                                                            name="txt_appartement"
-                                                            v-model="txt_appartement"
-                                                            id="txt_appartement"
-                                                            autocomplete="off"
-                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                            @input="validateInput"
-                                                            maxlength="3"
-                                                            minlength="3"
-                                                        />
-                                                        <p v-if="errorMessage" class="text-red-500 text-sm mt-1 font-medium text-primary-txt">{{ errorMessage }}</p>
-                                                    </div>
-                                                </div>
-                                                <div class="sm:col-span-2">
-                                                    <label for="Nom_geometre"
-                                                        class="block text-sm font-medium text-primary-txt">Nom Geometre</label>
-                                                    <div class="mt-2">
-                                                        <input
-                                                            v-model="form.txt_nom_geometre"
-                                                            type="text"
-                                                            name="txt_nom_geometre"
-                                                            id="Nom_geometre"
-                                                            autocomplete="off"
-                                                            class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                        />
-                                                    </div>
-                                                </div>
+                                                 
+                                                <BaseSelect
+                                                    class="sm:col-span-2"
+                                                    label="Ussu de bornage"
+                                                    name="ussu_bornage" 
+                                                    :options="[
+                                                        {value:'Immatriculation', label:'Immatriculation'},
+                                                        {value:'Morcellement', label:'Morcellement'},
+                                                        {value:'Rectificatif de Limite', label:'Rectificatif de Limite'},
+                                                        {value:'Morcellement de Copropriété', label:'Morcellement de Copropriété'}, 
+                                                    ]" 
+                                                    v-model="form.ussu_bornage" 
+                                                    @change="handleSelectChange"
+                                                />  
+
+                                                <BaseInput
+                                                    label="Titre Mere"
+                                                    name="txt_titre_mere"   
+                                                    v-model="form.txt_titre_mere" 
+                                                />   
+
+                                                <BaseInput
+                                                    label="N° Titre"
+                                                    name="txt_num_titre"
+                                                    v-model="form.txt_num_titre" 
+                                                /> 
+
+                                                <BaseSelect 
+                                                    label="LF"
+                                                    name="slt_lf" 
+                                                    :options="[
+                                                        {value:'NO', label:'NO'},
+                                                        {value:'KG', label:'KG'},
+                                                        {value:'SM', label:'SM'},
+                                                        {value:'SR', label:'SR'}, 
+                                                    ]" 
+                                                    v-model="form.slt_lf"  
+                                                />    
+
+                                                <BaseInput 
+                                                    label="N° Requisition"
+                                                    name="txt_num_requisition"   
+                                                    v-model="form.txt_num_requisition" 
+                                                />  
+
+                                                <BaseInput 
+                                                    label="Surface au bornage"
+                                                    name="txt_surface_bornage"   
+                                                    v-model="form.txt_surface_bornage" 
+                                                /> 
+  
+                                                <BaseInput 
+                                                    label="Date Bornage"
+                                                    name="dt_date_bornage"   
+                                                    type="date"
+                                                    v-model="form.dt_date_bornage" 
+                                                /> 
+ 
+                                                <BaseInput 
+                                                    v-if="show" 
+                                                    label="Appartement"
+                                                    name="txt_appartement" 
+                                                    @input="validateInput"
+                                                    :maxlength="3"
+                                                    :minlength="3"
+                                                    v-model="form.txt_appartement"
+                                                    :error="errorMessageNumSection"  
+                                                /> 
+ 
+                                                <BaseInput 
+                                                    class="sm:col-span-2"
+                                                    label="ApparNom Géomètre"
+                                                    name="txt_nom_geometre" 
+                                                    v-model="form.txt_nom_geometre" 
+                                                /> 
+
+
                                             </div>
                                         </div>
                                     </div>
@@ -1271,751 +698,296 @@ const submitForm = function () {  // Ajoutez `async` ici
                                     <div
                                         class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"
                                     >
-                                        <div class="sm:col-span-2">
-                                            <label
-                                                for="Titulaire"
-                                                class="block text-sm font-medium text-primary-txt"
-                                                >Titulaire</label
-                                            >
-                                            <div class="mt-2 grid grid-cols-1">
-                                                <select
-                                                    name="slt_titulaire"
-                                                    v-model="form.slt_titulaire"
-                                                    id="Titulaire"
-                                                    required
-                                                    class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                    @change="handleSelectChangeTitulaire"
-                                                >
-                                                    >
-                                                    <option selected disabled>
-                                                        Choisir ici
-                                                    </option>
-                                                    <option
-                                                        value="Personne Physique"
-                                                    >
-                                                        Personne Physique
-                                                    </option>
-                                                    <option
-                                                        value="Personne Morale"
-                                                    >
-                                                        Personne Morale
-                                                    </option>
-                                                    <option value="Etat">
-                                                        État
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
+ 
+                                        <BaseSelect
+                                            class="sm:col-span-2"
+                                            label="Titulaire"
+                                            name="slt_titulaire" 
+                                            v-model="form.slt_titulaire" 
+                                            @change="handleSelectChangeTitulaire"
+
+                                            :options="[
+                                                {value: 'Personne Physique', label: 'Perssonne Physique'},
+                                                {value: 'Personne Morale', label: 'Personne Morale'},
+                                                {value: 'Etat', label: 'Etat'},
+                                            ]"
+                                        /> 
+                                        
                                     </div>
                                     <br>
                                     <div
                                         class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"
-                                        >
-                                        <div v-if="showSectionPP" class="sm:col-span-1">
-                                            <label
-                                                for="Nationalite"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Nationalite</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_nationalite"
-                                                    v-model="
-                                                        form.txt_nationalite
-                                                    " 
-                                                    id="Nationalite"
-                                                    autocomplete="on"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPP" class="sm:col-span-1">
-                                            <label
-                                                for="Civilite"
-                                                class="block text-sm font-medium text-primary-txt"
-                                                >Civilité</label
-                                            >
-                                            <div class="mt-2">
-                                                <select
-                                                    name="slt_civilite"
-                                                    v-model="form.slt_civilite" 
-                                                    id="Civilite" autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                >
-                                                    <option selected disabled>
-                                                        Choisir ici
-                                                    </option>
-                                                    <option value="Mr">
-                                                        Mr
-                                                    </option>
-                                                    <option value="Mme">
-                                                        Mme
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPP" class="sm:col-span-1">
-                                            <label
-                                                for="Prenom"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Prénom</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_prenom"
-                                                    v-model="form.txt_prenom" 
-                                                    id="Prenom"
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPP" class="sm:col-span-1">
-                                            <label
-                                                for="nom"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Nom</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_nom"
-                                                    v-model="form.txt_nom" 
-                                                    id="nom"
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPP" class="sm:col-span-1">
-                                            <label
-                                                for="selectePiece"
-                                                class="block text-sm font-medium text-primary-txt"
-                                                >Types de Piece</label
-                                            >
-                                            <div class="mt-2">
-                                                <select
-                                                    name="slt_piece"
-                                                    v-model="form.slt_piece" 
-                                                    id="selectePiece" autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                >
-                                                    <option selected disabled>
-                                                        Choisir ici
-                                                    </option>
-                                                    <option value="CNI">
-                                                        CNI
-                                                    </option>
-                                                    <option value="Passeport">
-                                                        Passeport
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPP" class="sm:col-span-1">
-                                            <label
-                                                for="numPiece"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >N° Pièce</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_num_piece"
-                                                    v-model="form.txt_numPiece" 
-                                                    id="numPiece"
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPP" class="sm:col-span-1">
-                                            <label
-                                                for="dateDelivrance"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Date Delivrance</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="date"
-                                                    name="dt_date_delivrance"
-                                                    v-model="
-                                                        form.dt_date_delivrance
-                                                    " 
-                                                    :max="new Date().toISOString().split('T')[0]"
-                                                    id="dateDelivrance"
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPP" class="sm:col-span-1">
-                                            <label
-                                                for="dateNaissance"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Date de Naissance</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="date"
-                                                    name="dt_date_naissance"
-                                                    v-model="
-                                                        form.dt_date_naissance
-                                                    "
-                                                    :max="new Date().toISOString().split('T')[0]" 
-                                                    id="dateNaissance"
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPP" class="sm:col-span-1">
-                                            <label
-                                                for="lieuNaissance"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Lieu de Naissance</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_lieu_naissance"
-                                                    v-model="
-                                                        form.txt_lieu_naissance
-                                                    " 
-                                                    id="lieuNaissance"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPP" class="sm:col-span-1">
-                                            <label
-                                                for="adresse"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Adresse</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_adresse"
-                                                    v-model="form.txt_adresse" 
-                                                    id="adresse"
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPP" class="sm:col-span-1">
-                                            <label
-                                                for="telephone"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Telephone</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="tel"
-                                                    name="tel_telephone"
-                                                    v-model="form.tel_telephone" 
-                                                    id="telephone"
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div> 
-                                        <div v-if="showSectionPP" class="sm:col-span-1">
-                                            <label
-                                                for="Email"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Email</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="email"
-                                                    name="eml_email"
-                                                    v-model="form.eml_email"
-                                                    id="Email"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPP" class="sm:col-span-1">
-                                            <label
-                                                for="txt_representant"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Representant</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_representant"
-                                                    v-model="
-                                                        form.txt_representant
-                                                    "
-                                                    id="txt_representant"
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPP" class="sm:col-span-1">
-                                            <label
-                                                for="tel_telRepresentant"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Telephone Representant</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="tel_telRepresentant"
-                                                    v-model="
-                                                        form.tel_telRepresentant
-                                                    "
-                                                    id="tel_telRepresentant"
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
+                                    >
+ 
+                                        <BaseInput 
+                                            v-if="showSectionPP" 
+                                            label="Nationalite"
+                                            name="txt_nationalite" 
+                                            autocomplete="given-name"
+                                            v-model="form.txt_nationalite" 
+                                        /> 
+ 
+                                        <BaseSelect
+                                            v-if="showSectionPP" 
+                                            label="Civilité"
+                                            name="slt_civilite"  
+                                            v-model="form.slt_civilite" 
+                                            :options="[
+                                                {value: 'Mr', label: 'Mr'},
+                                                {value: 'Mme', label: 'Mme'},
+                                            ]"
+                                        /> 
+ 
+                                        <BaseInput 
+                                            v-if="showSectionPP" 
+                                            label="Prénom"
+                                            name="txt_prenom"  
+                                            v-model="form.txt_prenom" 
+                                        />
+ 
+                                        <BaseInput 
+                                            v-if="showSectionPP" 
+                                            label="Nom"
+                                            name="txt_nom"  
+                                            v-model="form.txt_nom" 
+                                        />
+ 
+                                        <BaseSelect
+                                            v-if="showSectionPP" 
+                                            label="Types de Piece"
+                                            name="slt_piece"  
+                                            v-model="form.slt_piece" 
+                                            :options="[
+                                                {value: 'CNI', label: 'CNI'},
+                                                {value: 'Passepotr', label: 'Passeport'}
+                                            ]"
+                                        />
+ 
+                                        <BaseInput 
+                                            v-if="showSectionPP" 
+                                            label="N° Pièce"
+                                            name="txt_numPiece"  
+                                            v-model="form.txt_numPiece" 
+                                        />
+                                    
+                                        <BaseInput 
+                                            v-if="showSectionPP" 
+                                            type="date"
+                                            label="Date Délivrance"
+                                            name="dt_date_delivrance"  
+                                            v-model="form.dt_date_delivrance" 
+                                            :max="new Date().toISOString().split('T')[0]" 
+                                        />
+ 
+                                        <BaseInput 
+                                            v-if="showSectionPP" 
+                                            type="date"
+                                            label="Date de Naissance"
+                                            name="dt_date_naissance"  
+                                            v-model="form.dt_date_naissance" 
+                                            :max="new Date().toISOString().split('T')[0]" 
+                                        />
+ 
+                                        <BaseInput 
+                                            v-if="showSectionPP"  
+                                            label="Lieu de Naissance"
+                                            name="txt_lieu_naissance" 
+                                            autocomplete="given-name" 
+                                            v-model="form.txt_lieu_naissance"  
+                                        />
+ 
+                                        <BaseInput 
+                                            v-if="showSectionPP"  
+                                            label="Adresse"
+                                            name="txt_adresse"  
+                                            v-model="form.txt_adresse" 
+                                            autocomplete="given-name"
+                                        />
+                                     
+                                        <BaseInput 
+                                            v-if="showSectionPP" 
+                                            type="tel" 
+                                            label="Téléphone"
+                                            name="tel_telephone"  
+                                            maxlength="15"
+                                            v-model="form.tel_telephone"  
+                                            @input="validatePhone"
+                                        />
+                                                                              
+                                        <BaseInput 
+                                            v-if="showSectionPP" 
+                                            type="email" 
+                                            label="Email"
+                                            name="eml_email"   
+                                            v-model="form.eml_email"   
+                                        />
+                                                                                                                       
+                                        <BaseInput 
+                                            v-if="showSectionPP"  
+                                            label="Representant"
+                                            name="txt_representant"   
+                                            v-model="form.txt_representant"   
+                                        />
+                                                                                                                                                              
+                                        <BaseInput 
+                                            v-if="showSectionPP"  
+                                            label="Tél.Representant"
+                                            name="tel_telRepresentant"   
+                                            v-model="form.tel_telRepresentant"   
+                                        />
 
                                         <!-- Perssonne Morale -->
-                                        <div v-if="showSectionPM" class="sm:col-span-1">
-                                            <label
-                                                for="slt_categoriePM"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Catégorie</label
-                                            >
-                                            <div class="mt-2">
-                                                <select
-                                                    name="slt_categoriePM"
-                                                    v-model="form.slt_categoriePM" 
-                                                    id="selectePiece"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                >
-                                                    <option  value=""> 
-                                                         
-                                                    </option>
-                                                    <option value="Station">
-                                                        Station
-                                                    </option>
-                                                    <option value="Industrue">
-                                                        Industrue
-                                                    </option>
-                                                    <option value="Restaurant">
-                                                        Restaurant
-                                                    </option>
-                                                    <option value="Hotel">
-                                                        Hotel
-                                                    </option>
-                                                    <option value="Hoberge">
-                                                        Hoberge
-                                                    </option>
-                                                    <option value="Elevage">
-                                                        Elevage
-                                                    </option>
-                                                    <option value="Agrobusness">
-                                                        Agrobusness
-                                                    </option>
-                                                    <option value="Epicerie">
-                                                        Epicerie
-                                                    </option>
-                                                    <option value="Alimentation Générale">
-                                                        Alimentation Générale
-                                                    </option>
-                                                    <option value="Qincaillerie">
-                                                        Qincaillerie
-                                                    </option>
-                                                    <option value="Transport">
-                                                        Transport
-                                                    </option>
-                                                    <option value="Coopérative Habitat">
-                                                        Coopérative Habitat
-                                                    </option>
-                                                    <option value="BTP">
-                                                        BTP
-                                                    </option>
-                                                    <option value="Organisation Religieux">
-                                                        Organisation Religieux
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPM" class="sm:col-span-1">
-                                            <label
-                                                for="txt_formJuridiquePM"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Forme Juridique</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_formJuridiquePM"
-                                                    v-model="
-                                                        form.txt_formJuridiquePM 
-                                                    "
-                                                    id="txt_formJuridiquePM"
-                                                    autocomplete="address-level2" 
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPM" class="sm:col-span-1">
-                                            <label
-                                                for="txt_denominationPM"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Dénomination</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_denominationPM"
-                                                    v-model="
-                                                        form.txt_denominationPM
-                                                    "
-                                                    id="txt_denominationPM"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPM" class="sm:col-span-1">
-                                            <label
-                                                for="txt_nineaPM"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Ninea</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_nineaPM"
-                                                    v-model="
-                                                        form.txt_nineaPM
-                                                    "
-                                                    id="txt_nineaPM"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPM" class="sm:col-span-1">
-                                            <label
-                                                for="txt_perssonneRepresentantPM"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Nom.Personne Responsable</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_perssonneRepresentantPM"
-                                                    v-model="
-                                                        form.txt_perssonneRepresentantPM
-                                                    "
-                                                    id="txt_perssonneRepresentantPM"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPM" class="sm:col-span-1">
-                                            <label
-                                                for="txt_fonctionPM"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Fonction Responsable</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_fonctionPM"
-                                                    v-model="
-                                                        form.txt_fonctionPM
-                                                    "
-                                                    id="txt_fonctionPM"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPM" class="sm:col-span-1">
-                                            <label
-                                                for="txt_telephonePM"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Téléphone Responsable</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_telephonePM"
-                                                    v-model="
-                                                        form.txt_telephonePM
-                                                    "
-                                                    id="txt_telephonePM"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPM" class="sm:col-span-1">
-                                            <label
-                                                for="txt_emailPM"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Email</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="email"
-                                                    name="txt_emailPM"
-                                                    v-model="
-                                                        form.txt_emailPM
-                                                    "
-                                                    id="txt_emailPM"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPM" class="sm:col-span-1">
-                                            <label
-                                                for="txt_adressePM"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Adresse Sciège </label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_adressePM"
-                                                    v-model="
-                                                        form.txt_adressePM
-                                                    "
-                                                    id="txt_adressePM"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div> 
+                                                                                                                                                                                                
+                                        <BaseSelect
+                                            v-if="showSectionPM"  
+                                            label="Catégorie"
+                                            name="slt_categoriePM"   
+                                            v-model="form.slt_categoriePM"  
+                                            :options="[
+                                                {value: 'Station', label: 'Station'},
+                                                {value: 'Industie', label: 'Industrie'},
+                                                {value: 'Restaurant', label: 'Restaurant'},
+                                                {value: 'Hotel', label: 'Hotel'},
+                                                {value: 'Hoberge', label: 'Hoberge'},
+                                                {value: 'Elevage', label: 'Elevage'},
+                                                {value: 'Agrobusness', label: 'Agrobusness'},
+                                                {value: 'Epicerie', label: 'Epicerie'},
+                                                {value: 'Alimentation Générale', label: 'Alimentation Générale'},
+                                                {value: 'Qincaillerie', label: 'Qincaillerie'},
+                                                {value: 'Transport', label: 'Transport'},
+                                                {value: 'Coopérative Habitat', label: 'Coopérative Habitat'},
+                                                {value: 'BTP', label: 'BTP'},
+                                                {value: 'Organisation Religieux', label: 'Organisation Religieux'},
+                                            ]" 
+                                        />
+                                                                                                                                                                                                    
+                                        <BaseInput 
+                                            v-if="showSectionPM"  
+                                            label="Forme Juridique"
+                                            name="txt_formJuridiquePM"  
+                                            v-model="form.txt_formJuridiquePM"
+                                            autocomplete="given-name"  
+                                        /> 
+                                                                                                                                                                                                                                                                                        
+                                        <BaseInput 
+                                            v-if="showSectionPM"  
+                                            label="Dénomination"
+                                            name="txt_denominationPM"  
+                                            v-model="form.txt_denominationPM"  
+                                        /> 
+                                                                                                                                                                                                                                                                                                                                
+                                        <BaseInput 
+                                            v-if="showSectionPM"  
+                                            label="Ninea"
+                                            name="txt_nineaPM"  
+                                            v-model="form.txt_nineaPM"  
+                                        /> 
+                                                                                                                                                                                                                                                                                                                                                                        
+                                        <BaseInput 
+                                            v-if="showSectionPM"  
+                                            label="Nom.Personne Responsable"
+                                            name="txt_perssonneRepresentantPM"  
+                                            v-model="form.txt_perssonneRepresentantPM"  
+                                        /> 
+                                                                                                                                                                                                                                                                                                                                                                                                                
+                                        <BaseInput 
+                                            v-if="showSectionPM"  
+                                            label="Fonction Responsable"
+                                            name="txt_fonctionPM"  
+                                            v-model="form.txt_fonctionPM"  
+                                            autocomplete="given-name"
+                                        /> 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+                                        <BaseInput 
+                                            v-if="showSectionPM"  
+                                            label="Tél.Responsable"
+                                            name="txt_telephonePM"  
+                                            v-model="form.txt_telephonePM"  
+                                        /> 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+                                        <BaseInput 
+                                            v-if="showSectionPM"  
+                                            type="email"
+                                            label="Email"
+                                            name="txt_emailPM"  
+                                            v-model="form.txt_emailPM"  
+                                        /> 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+                                        <BaseInput 
+                                            v-if="showSectionPM"
+                                            label="Adresse Sciège"
+                                            name="txt_adressePM"  
+                                            v-model="form.txt_adressePM"  
+                                            autocomplete="given-name"
+                                        />
 
                                         <!-- Etat -->
-                                        <div v-if="showSectionPA" class="sm:col-span-1">
-                                            <label
-                                                for="slt_etablissementPA"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Etablissement</label
-                                            >
-                                            <div class="mt-2">
-                                                <select
-                                                    name="slt_etablissementPA"
-                                                    v-model="form.slt_etablissementPA" 
-                                                    id="selectePiece"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                >
-                                                    <option  value=""> 
-                                                         
-                                                    </option>
-                                                    <option value="Sanitaire">
-                                                        Sanitaire
-                                                    </option>
-                                                    <option value="Scolaire">
-                                                        Scolaire
-                                                    </option>
-                                                    <option value="Millitaire">
-                                                        Millitaire
-                                                    </option>
-                                                    <option value="Administratif">
-                                                        Administratif
-                                                    </option>
-                                                    <option value="Aéroportuaire">
-                                                        Aéroportuaire
-                                                    </option>
-                                                    <option value="Sportif">
-                                                        Sportif
-                                                    </option>
-                                                    <option value="Universitaire">
-                                                        Universitaire
-                                                    </option>
-                                                    <option value="Autres">
-                                                        Autres
-                                                    </option> 
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPA" class="sm:col-span-1">
-                                            <label
-                                                for="txt_personneResponsablePA"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Personne Responsable</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_personneResponsablePA"
-                                                    v-model="
-                                                        form.txt_personneResponsablePA
-                                                    "
-                                                    id="txt_personneResponsablePA" 
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPA" class="sm:col-span-1">
-                                            <label
-                                                for="txt_fonctionResponsablePA"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Fonction Responsable</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_fonctionResponsablePA"
-                                                    v-model="
-                                                        form.txt_fonctionResponsablePA
-                                                    "
-                                                    id="txt_fonctionResponsablePA"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPA" class="sm:col-span-1">
-                                            <label
-                                                for="txt_telephonePA"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Téléphone</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_telephonePA"
-                                                    v-model="
-                                                        form.txt_telephonePA
-                                                    "
-                                                    id="txt_telephonePA"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPA" class="sm:col-span-1">
-                                            <label
-                                                for="txt_emailPA"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Email</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="email"
-                                                    name="txt_emailPA"
-                                                    v-model="
-                                                        form.txt_emailPA
-                                                    "
-                                                    id="txt_emailPA" 
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div v-if="showSectionPA" class="sm:col-span-1">
-                                            <label
-                                                for="txt_ministèreTutelePA"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Ministère Tutelle</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_ministèreTutelePA"
-                                                    v-model="
-                                                        form.txt_ministèreTutelePA
-                                                    "
-                                                    id="txt_ministèreTutelePA"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                          
-                                        <div  class="sm:col-span-2"> 
-                                            <label 
-                                                for="fichierPDF" 
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Importer le fichier</label
-                                            >
-                                            <div class="mt-2">
-                                                <input 
-                                                type="file"  
-                                                name="fichierPDF"
-                                                accept="application/pdf"
-                                                @change="handleFileUpload" 
-                                                id="fichierPDF"
-                                                autocomplete="off"  
-                                                class="h-7 block w-full rounded-md bg-white 
-                                                    px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
-                                                    outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
-                                                    focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
-                                            </div> 
-                                        </div>
-                                         
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+                                        <BaseSelect
+                                            v-if="showSectionPA"
+                                            label="Etablissement"
+                                            name="slt_etablissementPA"  
+                                            v-model="form.slt_etablissementPA"
+                                            :options="[
+                                                {value: 'Sanitaite', label: 'Sanitaire'},
+                                                {value: 'Scolaire', label: 'Scolaire'},
+                                                {value: 'Millitaire', label: 'Millitaire'},
+                                                {value: 'Administratif', label: 'Administratif'},
+                                                {value: 'Aéroportuaire', label: 'Aéroportuaire'},
+                                                {value: 'Sportif', label: 'Sportif'},
+                                                {value: 'Universitaire', label: 'Universitaire'},
+                                                {value: 'Autres', label: 'Autres'},
+                                            ]"
+                                        /> 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+                                        <BaseInput 
+                                            v-if="showSectionPA"
+                                            label="Personne Responsable"
+                                            name="txt_personneResponsablePA"  
+                                            v-model="form.txt_personneResponsablePA"  
+                                        /> 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+                                        <BaseInput 
+                                            v-if="showSectionPA"
+                                            label="Fonction Responsable"
+                                            name="txt_fonctionResponsablePA"  
+                                            v-model="form.txt_fonctionResponsablePA"
+                                            autocomplete="given-name"  
+                                        /> 
+
+                                        <BaseInput 
+                                            v-if="showSectionPA"
+                                            label="Téléphone"
+                                            type="tel"
+                                            name="txt_telephonePA"
+                                            v-model="form.txt_telephonePA"  
+                                        /> 
+                                        
+                                        <BaseInput 
+                                            v-if="showSectionPA"
+                                            label="Email"
+                                            type="email"
+                                            name="txt_emailPA"
+                                            v-model="form.txt_emailPA"  
+                                        /> 
+                                                                                
+                                        <BaseInput 
+                                            v-if="showSectionPA"
+                                            label="Ministère Tutelle" 
+                                            name="txt_ministèreTutelePA"
+                                            v-model="form.txt_ministèreTutelePA" 
+                                            autocomplete="given-name" 
+                                        /> 
+                                        
+                                        <BaseInput 
+                                            type="file"
+                                            accept="application/pdf"
+                                            class="sm:col-span-2"
+                                            label="Importer le Fichier PDF" 
+                                            name="fichierPDF" 
+                                            @change="handleFileUpload" 
+                                        /> 
+ 
                                     </div>
                                 </div>
                                 <br />

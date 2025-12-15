@@ -1,5 +1,5 @@
 <?php
-
+ 
 use App\Models\Dossier;
 use App\Models\Terrain;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -14,6 +14,7 @@ use App\Http\Controllers\SecretariatController;
 use App\Http\Controllers\TerrainController; 
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MutationController;
+use App\Http\Controllers\ParametreController;
 use GuzzleHttp\Psr7\Request;
 use Illuminate\Container\Attributes\Auth; 
 use Illuminate\Foundation\Application;
@@ -40,9 +41,7 @@ Route::post('/logout', function () {
     request()->session()->regenerateToken();
     return redirect('/');
 })->name('logout');
-
-
-
+ 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -53,26 +52,27 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::get('/dossier/next', [DossierController::class, 'getNextDossier']);  
-Route::get('/departements/{regionId}', [LocationController::class, 'getDepartementsByRegion']);
-Route::get('/arrondissements/{departementId}', [LocationController::class, 'getArrondissementByDepartement']);
-Route::get('/communes/{arrondissementId}', [LocationController::class, 'getCommunesByArrondissement']);
+Route::get('/dossier/next', [DossierController::class, 'getNextDossier']);    
+Route::get('/departements/{region}', [LocationController::class, 'getDepartementsByRegion']);
+Route::get('/arrondissements/{departement}', [LocationController::class, 'getArrondissementByDepartement']);
+Route::get('/communes/{arrondissement}', [LocationController::class, 'getCommunesByArrondissement']);
+
 Route::resource('secretariat', SecretariatController::class);
 Route::resource('geometre', GeometreController::class);
 Route::resource('donnee', DonneeController::class);
 Route::resource('matriceCadastrale', MatriceCadastraleController::class);
 Route::resource('/message', MessageController::class);
-Route::resource('/mutation', MutationController::class);
+Route::resource('/mutation', MutationController::class); 
+Route::resource('lotissement', ParametreController::class); 
+ 
 Route::get('/secretariat/create', [SecretariatController::class, 'create'])->name('secretariat.create');
 Route::get('/donnee/create', [DonneeController::class, 'create'])->name('donnee.create'); 
 Route::get('/secretariat/dernier-ordre/{annee}', [SecretariatController::class, 'dernierOrdre']);
- 
-Route::post('dossier/verify', [GeometreController::class, 'verify'])->name('dossier.verify');
- 
+  
+Route::post('/dossier/verificationEnquete', [GeometreController::class, 'verify'])->name('dossier.verify');  
 Route::get('/secretariat', [SecretariatController::class, 'create'])->name('secretariat.create');
 Route::post('/secretariat', [SecretariatController::class, 'store'])->name('secretariat.store');
-Route::get('/geometre/create', [GeometreController::class, 'create'])->name('geometre.create'); 
-// Route::get('/geometre/create/{txt_num_dossier}', [GeometreController::class, 'create'])->name('geometre.create');
+Route::get('/geometre/create', [GeometreController::class, 'create'])->name('geometre.create');  
 
 Route::get('/dossier/last', function () {
     $lastDossier = Dossier::latest('id')->first(); 
@@ -85,30 +85,22 @@ Route::post('/code/verify', [CodeAccesController::class, 'verify'])->name('code.
 Route::get('/donnee/create', [DonneeController::class, 'create'])->name('donnee.create');
 
 // vérifier Nicad 
-Route::get('/verifier-nicad/{nicad}', [GeometreController::class, 'verifierNicad']);
- 
-// Route::put('/secretariat/update/{id}', [SecretariatController::class, 'update'])->name('secretariat.update'); 
-Route::get('/secretariat/edit/{id}', [SecretariatController::class, 'edit'])->name('secretariat.edit'); 
- 
+Route::get('/verifier-nicad/{nicad}', [GeometreController::class, 'verifierNicad']); 
+Route::get('/secretariat/edit/{id}', [SecretariatController::class, 'edit'])->name('secretariat.edit');  
 Route::post('/secretariat/{terrain}/upload-pdf', [SecretariatController::class, 'uploadPDF'])->name('secretariat.uploadPDF');
-Route::put('/secretariat/{terrain}', [SecretariatController::class, 'update'])->name('secretariat.update');
- 
+Route::put('/secretariat/{terrain}', [SecretariatController::class, 'update'])->name('secretariat.update'); 
 Route::post('/terrain/verifier-supprimer', [TerrainController::class, 'verifierEtSupprimer'])->name('terrain.verifier.supprimer');
 
-// message
-// Groupe protégé par middleware auth
+// message 
 Route::middleware('auth')->group(function () {
     // Page d’écriture d’un message
-    Route::get('/message/create', [MessageController::class, 'create'])->name('message.create');
-
+    Route::get('/message/create', [MessageController::class, 'create'])->name('message.create'); 
     // Liste des messages entre utilisateurs
     Route::get('/message', [MessageController::class, 'index'])->name('message.index');
-    Route::post('/message', [MessageController::class, 'store'])->name('message.store');
-
+    Route::post('/message', [MessageController::class, 'store'])->name('message.store'); 
     // API
     Route::get('/api/messages/{withUserId}', [MessageController::class, 'apiIndex'])->name('message.apiIndex');
-    Route::get('/message/{id}', [MessageController::class, 'show'])->name('message.show');
-
+    Route::get('/message/{id}', [MessageController::class, 'show'])->name('message.show'); 
     // Non lus / reçus / lus
     Route::get('/messages/unread-total', [MessageController::class, 'unreadTotal']);
     Route::get('/messages/unread-by-user', [MessageController::class, 'unreadByUser']);
@@ -127,8 +119,39 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // mutation 
-Route::post('dossier/verify', [MutationController::class, 'verify'])->name('dossier.verify');
-Route::post('/fetch-references-arrivee', [MutationController::class, 'fetchReferencesLotissement']); 
+Route::post('/dossier/verifyLotissement', [MutationController::class, 'verifyLotissement'])->name('dossier.verifyLotissement');
+Route::post('/fetchReferencesLotissement', [MutationController::class, 'fetchReferencesLotissement']); 
+Route::get('/mutation/create', [MutationController::class, 'create'])->name('mutation.create');
+Route::post('/mutation/store', [MutationController::class, 'store'])->name('mutation.store');
 
 
+// paramétrages
+Route::prefix('parametre')->group(function () {
+    Route::get('/admin', [ParametreController::class, 'admin'])->name('parametre.admin'); 
+    Route::delete('/admin/{id}', [ParametreController::class, 'destroyUser'])->name('parametre.admin.destroy'); 
+    Route::get('/adminEdit/{id}', [ParametreController::class, 'editUser'])->name('parametre.admin.edit');  
+    Route::put('/admin/update/{id}', [ParametreController::class, 'updateUser'])->name('parametre.updateUser');
+    Route::get('/mutation', [ParametreController::class, 'mutation'])->name('parametre.mutation');
+    Route::get('/mutationEdit/{id}', [ParametreController::class, 'editMutation'])->name('parametre.mutation.edit');
+    Route::put('/mutation/update/{id}', [ParametreController::class, 'updateMutation'])->name('parametre.updateMutation'); 
+    Route::delete('/mutation/{id}', [ParametreController::class, 'destroyMutation'])->name('parametre.mutation.destroy'); 
+
+ 
+    //  formulaire
+    Route::post('/store', [ParametreController::class, 'store'])->name('parametre.store');  
+    // IMPORTANT : utilisation du contrôleur ici
+    Route::get('/lotissement/index',    [ParametreController::class, 'index'])->name('parametre.lotissement.index');
+    Route::get('/lotissement/create',   [ParametreController::class, 'create'])->name('parametre.lotissement.create');
+    Route::get('/lotissement/edit/{id}', [ParametreController::class, 'edit'])->name('parametre.lotissement.edit');
+    Route::get('/lotissement/edit/{id}', [ParametreController::class, 'edit'])->name('parametre.lotissement.edit');
+    Route::put('/lotissement/update/{id}', [ParametreController::class, 'update'])->name('parametre.lotissement.update');
+    Route::delete('/lotissement/destroy/{id}', [ParametreController::class, 'destroy'])->name('parametre.lotissement.destroy');
+    Route::post('/code/verifyLotissement', [CodeAccesController::class, 'verifyLotissement'])->name('code.verifyLotissement');
+});
+  
+// gerer la liste des lotissements 
+Route::get('/departements', [ParametreController::class, 'getDepartements']);
+Route::get('/arrondissements/{departement}', [ParametreController::class, 'getArrondissementByDepartement']);
+Route::get('/communes/{arrondissement}', [ParametreController::class, 'getCommunesByArrondissement']);   
+ 
 require __DIR__ . '/auth.php';

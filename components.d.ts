@@ -8,5 +8,6 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     MazBtn: typeof import('maz-ui/components/MazBtn')['default']
+    MazInput: typeof import('maz-ui/components/MazInput')['default']
   }
 }

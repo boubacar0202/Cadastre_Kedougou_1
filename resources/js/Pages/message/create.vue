@@ -260,12 +260,12 @@ async function updateMessage(message) {
 
     <div class="py-12" v-if="user">
       <div class="flex justify-center">
-        <div class="w-full max-w-7xl">
-          <div class="bg-white shadow-md h-[600px] flex">
+        <div class="w-full max-w-8xl">
+          <div class="h-[700px] bg-white border shadow-md flex rounded-xl">
             
             <!-- Sidebar utilisateurs -->
-            <div class="w-1/3 border-r bg-white flex flex-col">
-              <div class="p-4 border-b rounded bg-primary text-white font-semibold">
+            <div class="w-1/3 border-r bg-white flex flex-col rounded-xl">
+              <div class="p-4 border-b bg-primary text-white font-semibold rounded-tl-xl">
                 Utilisateurs : {{ user.name }}
               </div>
               <ul>
@@ -295,7 +295,7 @@ async function updateMessage(message) {
             <!-- Zone discussion -->
             <div class="w-2/3 flex flex-col">
               <!-- Header discussion -->
-              <div class="p-4 border-b bg-primary text-white font-semibold">
+              <div class="p-4 border-b bg-primary text-white font-semibold  rounded-tr-xl">
                 <span v-if="receiverUser">Discussion avec {{ receiverUser.name }}</span>
                 <span v-else>Sélectionnez un utilisateur</span>
               </div> 

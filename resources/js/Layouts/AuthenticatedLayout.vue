@@ -2,9 +2,12 @@
 import { ref, onMounted, onUnmounted, watch  } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3'; 
 import NavLink from '@/Components/NavLink.vue';
-import { useToast } from 'maz-ui'
-// import Chat from '@/Components/Chat.vue'
-  
+import { toast } from "@/Components/AppToast"; 
+import { computed } from 'vue'
+// import { route } from '@inertiajs/vue3' 
+import axios from 'axios';
+import { route } from 'ziggy-js'
+ 
 // Récupérer l'utilisateur depuis les props Inertia
 const page = usePage();
 const user = page.props.auth?.user;
@@ -12,9 +15,14 @@ const isMenuOpen = ref(false);
 const isDesktop = ref(false);
 const showingNavigationDropdown = ref(false);
 const unreadTotal = ref(0);
-
+const isSettingsOpen = ref(false)
+   
+// Ouvrir automatiquement si on est dans parametre.*
+if (route().current('parametre.*')) {
+    isSettingsOpen.value = true;
+}
 // Message alerte 
-const toast = useToast() 
+// const toast = useToast() 
 onMounted(() => {
   if (page.props.flash.success) {
     toast.success(page.props.flash.success)
@@ -92,17 +100,16 @@ onMounted(async () => {
             </div>
 
             <!-- Navigation Links -->
-            <div class="flex flex-col space-y-4">
+            <div class="flex flex-col space-y-1">
                 <!-- Bouton d'ouverture/fermeture -->
                 <button @click="toggleMenu" class="p-2 bg-primary text-white rounded shadow-md">
                     ☰ Menu
                 </button>
                 <transition name="slide">
                     
-                        <nav v-if="isMenuOpen || !isDesktop" class="flex flex-col space-y-4" >
+                        <div v-if="isMenuOpen || !isDesktop" class="flex flex-col space-y-1" >
                             <!-- Navigation Links -->
-                            <div class="flex flex-col space-y-4">
-                              
+                            <div class="flex flex-col space-y-1"> 
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')" 
                                     class="hover:bg-primary-dark hover:text-white hover:text-1xl hover:font-bold p-2 
                                     rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('dashboard')}">
@@ -166,8 +173,7 @@ onMounted(async () => {
                                 </NavLink>
                                 <NavLink :href="route('message.create')" :active="route().current('message.create')" 
                                     class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
-                                    rounded text-lg text-primary-txt border border-l-8 flex items-center m" 
-                                    :class="{'border-primary-menu': route().current('message.create')}">
+                                    rounded text-lg text-primary-txt border border-l-8 flex items-center" :class="{'border-primary-menu': route().current('message.create')}">
                                     <svg class="w-6 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 12H7v-2h10v2zm0-3H7V9h10v2zm0-3H7V6h10v2z"/>
                                     </svg>
@@ -176,9 +182,70 @@ onMounted(async () => {
                                             class="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-green-500 text-white rounded-full">
                                         {{ unreadTotal }}
                                     </span>
-                                </NavLink> 
+                                </NavLink>   
+                                
+                                <div
+                                    class="relative h-10 hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl 
+                                        p-2 rounded text-lg text-primary-txt border border-l-8 flex items-center justify-between"
+                                    :class="{'border-primary-menu': route().current().startsWith('parametre.') || isSettingsOpen}"
+                                >
+                                    <NavLink 
+                                        :href="route('parametre.admin')" 
+                                        :active="route().current().startsWith('parametre.')"
+                                        class="hover:text-white text-md text-primary-txt h-10"
+                                    >
+                                        <svg class="w-6 h-6 mr-4" xmlns="http://www.w3.org/2000/svg"
+                                            fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                        </svg>
+                                        Paramètres
+                                    </NavLink> 
+
+                                    <button @click.stop="isSettingsOpen = !isSettingsOpen">
+                                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                            viewBox="0 0 24 24" stroke="#5f2e01">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </button> 
+                                </div>
+
+                                <div v-show="isSettingsOpen" class="ml-5 mt-1 space-y-0.5">
+                                    <NavLink
+                                        :href="route('parametre.admin')" :active="route().current('parametre.admin')"
+                                        class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
+                                        rounded text-lg text-primary-txt border border-l-8 flex items-center justify-between"
+                                    >
+                                        Administrateur
+                                    </NavLink>
+ 
+                                    <NavLink :href="route('parametre.lotissement.create')" :active="route().current('parametre.lotissement.create')"
+                                        class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
+                                        rounded text-lg text-primary-txt border border-l-8 flex items-center"
+                                    >
+                                        Ajouter Lotissements
+                                    </NavLink>
+
+                                    <NavLink 
+                                        :href="route('parametre.lotissement.index')" :active="(route().current() || '') === 'parametre.lotissement.index'"
+                                        class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
+                                        rounded text-lg text-primary-txt border border-l-8 flex items-center"
+                                    >
+                                        Liste lotissements
+                                    </NavLink> 
+                                    
+                                    <NavLink 
+                                        :href="route('parametre.mutation')" :active="route().current('parametre.mutation')"
+                                        class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
+                                        rounded text-lg text-primary-txt border border-l-8 flex items-center"
+                                    >
+                                        Registre Mutations
+                                    </NavLink> 
+                                </div>
+
                             </div>
-                        </nav> 
+                        </div> 
                 </transition>
             </div>
             <footer class="bg-white border-t border-primary-only text-center text-sm text-primary-txt mt-auto py-4">

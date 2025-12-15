@@ -1,10 +1,9 @@
 <script setup>
-import { Link, usePage } from '@inertiajs/vue3';
-import { useToast } from 'maz-ui';
+import { Link, usePage } from '@inertiajs/vue3'; 
+import { toast } from "@/Components/AppToast";  
 import { onMounted } from 'vue';
 
-const page = usePage();
-const toast = useToast();
+const page = usePage(); 
 
 onMounted(() => {
   if (page.props.flash.success) {

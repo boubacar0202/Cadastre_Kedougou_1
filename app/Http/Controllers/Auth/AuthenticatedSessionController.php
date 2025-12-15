@@ -38,7 +38,7 @@ class AuthenticatedSessionController extends Controller
 
         // Ajoute le message flash 
         if ($user) {
-            Session::flash('success', $user->name . ", bienvenue sur le Système !");
+            Session::flash('info', $user->name . ", bienvenue sur le Système !");
 
         } else {
             Session::flash('error', 'Utilisateur non connecté.');
@@ -61,6 +61,6 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         // Message de déconnexion avec une nouvelle session
-        return redirect('/')->with('success', 'Au revoir ' . $user->name . ' ! Vous êtes maintenant déconnecté(e).');
+        return redirect('/')->with('info', 'Au revoir ' . $user->name . ' ! Vous êtes maintenant déconnecté(e).');
     }
 }

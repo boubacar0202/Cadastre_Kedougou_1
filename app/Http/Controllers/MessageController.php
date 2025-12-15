@@ -282,15 +282,15 @@ class MessageController extends Controller
             return response()->json(['error' => 'Utilisateur non authentifié'], 401);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'receiver_id' => 'required|exists:users,id',
             'content' => 'required|string|max:1000',
         ]);
  
         $message = Message::create([
             'sender_id'   => $user->id,
-            'receiver_id' => $request->receiver_id,
-            'content'     => $request->content,
+            'receiver_id' => $validated['receiver_id'],
+            'content'     => $validated['content'],
             'is_received' => false,
             'is_read'     => false,
         ]);

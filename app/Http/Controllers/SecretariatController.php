@@ -38,10 +38,12 @@ class SecretariatController extends Controller
     public function create()
     {
         $regions = Region::all(); 
+        $communes = Commune::select('id', 'slt_commune', 'txt_codeCommune')->get();
 
         return Inertia::render("secretariat/create",  [
             "regions" => $regions,
             "departements" => [], 
+            'communes' => $communes,
   
         ]);
     }
@@ -72,6 +74,7 @@ class SecretariatController extends Controller
             'communes' => Commune::select('id', 'slt_commune')->get(),  
         ]);
     }
+ 
 
     public function dernierOrdre($annee)
     {
@@ -89,7 +92,6 @@ class SecretariatController extends Controller
 
         $validatedData = $request->validate([
             'txt_num_dossier' => 'required|string|unique:dossiers,txt_num_dossier',
-            // 'txt_num_dordre' => 'required|numeric',
             'slt_service_rendu' => 'nullable|string',
             'txt_etat_cession' => 'nullable|string',
             'txt_cession_definitive' => 'nullable|string',
@@ -411,20 +413,17 @@ class SecretariatController extends Controller
             ]);
 
             // 📂 Vérifie si un fichier est envoyé
-            if ($request->hasFile('fichierPDF') && $request->file('fichierPDF')->isValid()) {
-                Log::info('📁 Nouveau fichier PDF détecté, remplacement...');
+            if ($request->hasFile('fichierPDF') && $request->file('fichierPDF')->isValid()) { 
                 
                 // Supprimer l'ancien fichier s'il existe
                 if ($terrain->titulaire->fichierPDF) {
                     Storage::disk('public')->delete($terrain->titulaire->fichierPDF);
                 }
                 
-                $titulaireData['fichierPDF'] = $request->file('fichierPDF')->store('numerisation', 'public');
-                Log::info('Nouveau fichier stocké:', ['path' => $titulaireData['fichierPDF']]);
+                $titulaireData['fichierPDF'] = $request->file('fichierPDF')->store('numerisation', 'public'); 
             } else {
                 // 📂 Si pas de fichier envoyé → conserver l’ancien fichier
-                $titulaireData['fichierPDF'] = $terrain->titulaire->fichierPDF;
-                Log::info('📝 Aucun nouveau fichier PDF, conservation du fichier existant');
+                $titulaireData['fichierPDF'] = $terrain->titulaire->fichierPDF; 
             }
         
             // ✅ MAJ ici
