@@ -28,10 +28,11 @@ const code = ref('');
 const formVisible = ref(false)
 const showModal = ref(true);     
 const isLoading = ref(false)  
-
  
 // Form
 const form = useForm({
+    id: lotissements.id,
+
     txt_denomination:   lotissements.txt_denomination || '',
     txt_nombreParcelle: lotissements.txt_nombreParcelle || '',
     slt_departement:    lotissements.departement?.id || '',
@@ -149,12 +150,11 @@ const codeDaccees = async (code) => {
         isLoading.value = false
     }
 }
-
-// Submit
+  
 async function submitForm() {
     try {
         const formData = new FormData();
-        formData.append('_method', 'PUT');
+        formData.append('_method', 'PUT'); 
         formData.append('txt_denomination', form.txt_denomination);
         formData.append('txt_nombreParcelle', form.txt_nombreParcelle);
         formData.append('slt_departement', form.slt_departement);
@@ -166,34 +166,19 @@ async function submitForm() {
             formData.append('txt_documentsAfferants', form.txt_documentsAfferants);
         }
 
-        // URL correcte
-        const url = route('parametre.lotissement.update', { id: lotissements.id });
-        console.log("➡️ URL envoyée :", url);
+        const url = route('parametre.lotissement.update', form.id); 
 
-        await axios.post(url, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        await axios.post(url, formData);
 
         toast.success("Modification réussie !");
         Inertia.visit(route('parametre.lotissement.index'), { replace: true });
 
     } catch (error) {
-        console.error("🔥 Erreur catch Axios :", error);
-
-        if (!error.response) {
-            toast.error("Serveur injoignable ou URL incorrecte !");
-            return;
-        }
-
-        console.error("📡 Réponse serveur :", error.response.data);
-
-        if (error.response.data.errors) {
-            Object.values(error.response.data.errors).forEach(e => toast.error(e));
-        } else {
-            toast.error("Erreur lors de l'enregistrement");
-        }
+        console.error(error);
+        toast.error("Erreur lors de la modification");
     }
 }
+
 
 
 </script>
@@ -220,50 +205,7 @@ async function submitForm() {
                             :loading="isLoading"
                             @confirm="codeDaccees"
                         />
-                    </div>
-                    <!-- <div   v-if="!formVisible" class="w-full max-w-8xl">
-                        <div class="bg-white shadow-md sm:rounded-xl">
-                            <div class="p-4 border-b bg-primary rounded-t-xl">
-                                <h1 class="text-xl text-center text-white font-bold">Veillez entrer votre code d'accès !</h1>
-                            </div>
-                            <div class="py-6">  
-                                <div class="flex justify-center"> 
-                                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full max-w-2xl"> 
-                                        <div class="sm:col-span-4 px-5">
-                                            <BaseInput 
-                                                autocomplete="off"
-                                                autocorrect="off"
-                                                spellcheck="false" 
-                                                v-model="code"  
-                                                name="code"
-                                                aria-label="Code d'accès"
-                                                class="sm:col-span-4"
-                                                required
-                                                placeholder="Entrez votre code d'accès"
-                                                @keyup.enter="codeDacceesModifierLotissement"
-                                            />  
-                                        </div>
-
-                                        <MazBtn 
-                                            :loading="isLoading"
-                                            type="button"
-                                            title="Confirmer"
-                                            @click="codeDacceesModifierLotissement"
-                                            class="w-36 h-8 text-white bg-gradient-to-r from-primary via-primary-dark 
-                                            to-primary hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
-                                            focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 
-                                            dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-4 
-                                            py-2.5 text-center mt-1.5"
-                                            size="large"
-                                        >
-                                            Confirmer
-                                        </MazBtn>
-                                    </div> 
-                                </div>  
-                            </div> 
-                        </div>
-                    </div>  
-                        <br> -->
+                    </div> 
 
                     <div v-if="formVisible" class="bg-white shadow-md rounded-lg"> 
                         <div   class="p-4 border-b bg-primary">

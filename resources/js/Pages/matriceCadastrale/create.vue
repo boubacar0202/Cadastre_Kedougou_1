@@ -200,8 +200,7 @@ const formatDate = (dateString) => {
                                                         
                                                         <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
                                                             <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
-                                                                <div
-                                                                    v-for="(ref, index) in terrain.references_usages"
+                                                                <div v-for="(ref, index) in terrain.references_usages"
                                                                     :key="index"
                                                                     class="block"
                                                                     > 

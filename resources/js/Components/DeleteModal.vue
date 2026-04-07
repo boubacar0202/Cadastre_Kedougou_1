@@ -41,7 +41,7 @@ const confirmer = () => {
             <p class="text-center text-gray-700 mb-4">
                 Voulez-vous vraiment supprimer :
                 <br>
-                <span class="font-semibold text-primary">{{ mutation?.txt_numeroMutation }}</span> ?
+                <!-- <span class="font-semibold text-primary">{{ mutation?.txt_numeroMutation }}</span> ? -->
             </p>
 
                 <div>

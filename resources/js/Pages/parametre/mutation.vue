@@ -33,40 +33,42 @@ const supprimerMutation = (mutation) => {
     showDeleteModal.value = true
 }
 
- 
-const confirmerSuppression = async () => {
-    if (!selectedMutation.value) return
+const confirmerSuppression = async (code) => {
 
-    if (!deleteCode.value) {
-        toast.error("Entrer votre code pour confirmer.")
+    if (!selectedMutation.value || loadingDelete.value) return;
+
+    if (!code?.trim()) {
+        toast.error("Veuillez entrer le code administrateur.")
         return
     }
 
     try {
-        loadingDelete.value = true
+        loadingDelete.value = true;
 
-        const url = route('parametre.mutation.destroy', selectedMutation.value.id)
+        const url = route('parametre.mutation.destroy', selectedMutation.value.id);
 
-        const { data } = await axios.delete(url, {
-            data: { code: deleteCode.value }
-        })
+        const { data } = await axios.delete(url, { data: { code } });
 
         if (data.success) {
             toast.success(data.message)
             showDeleteModal.value = false
-            Inertia.reload()
+            Inertia.reload({ preserveState: false })
         } else {
-            toast.error(data.message)
+            toast.error(data.message || "Code invalide.")
         }
 
     } catch (error) {
-        console.error(error)
-        toast.error("Erreur lors de la suppression !")
+        console.error("Erreur suppression :", error)
+        if (error.response?.status === 403) {
+            toast.error(error.response.data.message || "Code invalide, veuillez contacter l'administrateur.")
+        } else {
+            toast.error("Impossible de supprimer le lotissement.")
+        }
     } finally {
-        loadingDelete.value = false
+        loadingDelete.value = false;
     }
-} 
- 
+}
+
 </script>
  
 <template>
@@ -95,10 +97,9 @@ const confirmerSuppression = async () => {
                                 @confirm="confirmerSuppression"
                             />
                         </div>
-                        
- 
+                         
                         <div class="p-6">  
-                            <div class="max-h-[600px] overflow-x-auto shadow-md sm:rounded-lg mt-4">
+                            <div class="max-h-[600px] overflow-x-auto shadow-md sm:rounded-xl mt-4">
                                 <div class="container">
                                     <div class="card-body">
                                         <table class="table table-auto w-full text-base text-left text-gray-500">

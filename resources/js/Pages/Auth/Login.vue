@@ -40,88 +40,94 @@ const submit = () => {
 </script>
 
 <template>
-    <GuestLayout class="bg-white">
-        <Head title="Login" />
+    <GuestLayout class="bg-white">  
+                <Head title="Login" />
 
-        <div v-if="status" class="mb-4 text-sm font-medium text-primary-txt font-bold">
-            {{ status }}
-        </div>
-          
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Adresse Email" class="text-primary-txt font-bold" />
-
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-primary-txt 
-                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
-                    v-model="form.email"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
-
-                <InputError class="mt-2" :message="form.errors.email" />
-            </div>
-
-            <div class="mt-4">
-                <InputLabel for="password" value="Mot de Passe" class="text-primary-txt font-bold" />
-
-                <div class="flex items-center mt-1 relative">
-                    <TextInput
-                        id="password"
-                        :type="showPassword ? 'text' : 'password'"
-                        class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-primary-txt 
-                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
-                        v-model="form.password"
-                        required
-                        autocomplete="current-password"
-                        
-                    />
-
-                    <button
-                        type="button"
-                        @click="togglePassword"
-                        class="absolute right-3 text-primary-txt"
-                        >
-                        <span v-if="showPassword">👁️</span>
-                        <span v-else>👁️‍🗨️</span>
-                    </button> 
+                <div v-if="status" class="mb-6 bg-white/90 text-sm font-medium text-primary-txt font-bold">
+                    {{ status }}
                 </div>
 
-                    <InputError class="mt-2" :message="form.errors.password" />
-            </div>
+                <div class="justify-right"> 
+                    <form @submit.prevent="submit"
+                        class="w-full max-w-md">
+                        <div>
+                            <InputLabel for="email" value="Adresse Email" class="text-primary-txt font-bold" />
 
-            <div class="mt-4 block">
-                <label class="flex items-center">
-                    <Checkbox name="remember" v-model:checked="form.remember" class="text-primary" />
-                    <span class="ms-2 text-sm text-primary"
-                        >Se souvenir de moi</span
-                    >
-                </label>
-            </div>
+                            <TextInput
+                                id="email"
+                                type="email"
+                                class="mt-1 block w-full h-12 text-lg px-3 py-2 rounded-xl bg-white text-base text-primary-txt 
+                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
+                                v-model="form.email"
+                                required
+                                autofocus
+                                autocomplete="username"
+                            />
 
-            <div class="mt-4 flex items-center justify-end">
-                <Link
-                    v-if="canResetPassword"
-                    :href="route('password.request')"
-                    class="rounded-md text-sm text-primary underline hover:text-primary-dark focus:outline-none focus:ring-primary focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                    Mot de passe oublié ?
-                </Link>
+                            <InputError class="mt-2" :message="form.errors.email" />
+                        </div>
 
-                <PrimaryButton
-                    class="ms-4 bg-primary-dark text-white hover:bg-primary-dark focus:ring-primary-dark disabled:opacity-25"
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Se Connecter
-                </PrimaryButton>
-            </div>
-        </form>
-      
+                        <div class="mt-4">
+                            <InputLabel for="password" value="Mot de Passe" class="text-primary-txt font-bold" />
+
+                            <div class="flex items-center mt-1 relative">
+                                <TextInput
+                                    id="password"
+                                    :type="showPassword ? 'text' : 'password'"
+                                    class="mt-1 block w-full h-12 text-lg px-3 py-2 rounded-xl bg-white text-base text-primary-txt 
+                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
+                                    v-model="form.password"
+                                    required
+                                    autocomplete="current-password"
+                                    
+                                />
+
+                                <button
+                                    type="button"
+                                    @click="togglePassword"
+                                    class="absolute right-3 text-primary-txt"
+                                    >
+                                    <span v-if="showPassword">👁️</span>
+                                    <span v-else>👁️‍🗨️</span>
+                                </button> 
+                            </div>
+
+                                <InputError class="mt-2" :message="form.errors.password" />
+                        </div>
+
+                        <div class="mt-6 block">
+                            <label class="flex items-center">
+                                <Checkbox name="remember" v-model:checked="form.remember" class="text-primary" />
+                                <span class="ms-2 text-sm text-primary"
+                                    >Se souvenir de moi</span
+                                >
+                            </label>
+                        </div><br>
+
+                        <div class="mt-4 flex items-center justify-end">
+                            <Link
+                                v-if="canResetPassword"
+                                :href="route('password.request')"
+                                class="rounded-md text-sm text-primary underline hover:text-primary-dark focus:outline-none focus:ring-primary focus:ring-indigo-500 focus:ring-offset-2"
+                            >
+                                Mot de passe oublié ?
+                            </Link>
+
+                            <PrimaryButton
+                                class="ms-4 bg-primary-dark text-white hover:bg-primary-dark focus:ring-primary-dark disabled:opacity-25"
+                                :class="{ 'opacity-25': form.processing }"
+                                :disabled="form.processing"
+                            >
+                                Connecter
+                            </PrimaryButton>
+                        </div>
+                    </form> 
+                </div>
+            
+ 
     </GuestLayout>
 </template>
+
+ 

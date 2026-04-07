@@ -5,38 +5,74 @@ namespace App\Http\Controllers;
 use App\Models\Terrain;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\CodeAcces;
+use App\Models\CodeAcces;    
 
 class TerrainController extends Controller
 {
-    //
-    public function destroy(Terrain $terrain)
+    public function destroyTerrain(Request $request, $id)
     {
-        // 
-        $titulaire = $terrain->titulaire;
-    
+        try {
 
-        if ($terrain->dossier) {
-            $terrain->dossier->delete();
-        }
-        if ($terrain->references_usage) {
-            $terrain->references_usage->delete();
-        }
-        if ($terrain->references_cadastrales) {
-            $terrain->references_cadastrales->delete();
-        }
-        $terrain->delete();
+            if (!$request->filled('code')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Code administrateur requis.'
+                ], 422);
+            }
 
-        if ($titulaire && $titulaire->terrains()->count() === 0) {
-            $titulaire->delete();
-        }
+            $code = CodeAcces::where('id', 3)
+                ->where('code', $request->input('code'))
+                ->first();
 
-        // return redirect()->back()->with('success', 'Terrain supprimé avec succès.');
-        
-        return redirect()->back()->with('success', 'Terrain supprimé...');
+            if (!$code) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Code d’accès invalide.'
+                ], 403);
+            }
+
+            $terrain = Terrain::findOrFail($id);
+
+            DB::beginTransaction();
+
+            $titulaire = $terrain->titulaire;
+
+            if ($terrain->dossier) {
+                $terrain->dossier->delete();
+            }
+
+            if ($terrain->references_usage) {
+                $terrain->references_usage->delete();
+            }
+
+            if ($terrain->references_cadastrales) {
+                $terrain->references_cadastrales->delete();
+            }
+
+            $terrain->delete();
+
+            if ($titulaire && $titulaire->terrains()->count() === 0) {
+                $titulaire->delete();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Terrain supprimé avec succès.'
+            ]);
+
+        } catch (\Throwable $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur serveur : ' . $e->getMessage()
+            ], 500);
+        }
     }
 
  
-
 }
  

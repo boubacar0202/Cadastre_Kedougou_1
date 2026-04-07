@@ -11,6 +11,7 @@ use App\Models\EvaluationAmenagement;
 use App\Models\EvaluationBati;
 use App\Models\EvaluationCloture;
 use App\Models\EvaluationCoursAmenagee;
+use App\Models\Lotissement;
 use App\Models\ReferenceCadastrale;
 use App\Models\ReferenceUsage;
 use App\Models\Terrain;
@@ -20,8 +21,9 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log; 
-use Illuminate\Support\Facades\Storage; 
- 
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\JsonResponse;
+
 class SecretariatController extends Controller
 {
 
@@ -71,10 +73,89 @@ class SecretariatController extends Controller
             'regions' => Region::select('id', 'slt_region')->get(),
             'departements' => Departement::select('id', 'slt_departement')->get(),
             'arrondissements' => Arrondissement::select('id', 'slt_arrondissement')->get(),
-            'communes' => Commune::select('id', 'slt_commune')->get(),  
+            'communes' => Commune::select('id', 'slt_commune', 'txt_codeCommune')->get(),  
         ]);
     }
- 
+
+    // verifier Dossier exist
+    // public function verifyDossier(Request $request)
+    // {
+    //     $request->validate([
+    //         'txt_num_lotissement' => 'required|string',
+    //         'txt_lotissement' => 'required', // ID du lotissement
+    //     ]);
+
+    //     $num = trim($request->txt_num_lotissement);
+    //     $lotissementId = $request->txt_lotissement;
+
+    //     // Chercher le terrain uniquement
+    //     $terrain = Terrain::where('txt_num_lotissement', $num) && 
+    //         Lotissement::where('id', $lotissementId) 
+    //         ->first();
+
+    //     if (!$terrain) {
+    //         return response()->json([
+    //             'exists' => false,
+    //             'message' => '❌ Terrain introuvable, enregistrer le terrain avant mutation.'
+    //         ]);
+    //     }
+  
+    //     // ✅ Si le terrain existe
+    //     return response()->json([
+    //         'exists'  => true,
+    //         'terrain' => $terrain, 
+    //         'message' => '✅ Terrain existant et enregistré sous '
+    //     ]);
+    // }
+
+    public function verifyDossier(Request $request)
+    {
+        $request->validate([
+            'txt_num_lotissement' => 'required|string',
+            'txt_lotissement' => 'required|string', // nom du lotissement
+        ]);
+
+        $num = trim($request->txt_num_lotissement);
+        $lotissementName = trim($request->txt_lotissement); // nom du lotissement
+
+        // Chercher le terrain
+        $terrain = Terrain::where('txt_num_lotissement', $num)
+            ->where('txt_lotissement', $lotissementName)  // comparer avec le nom
+            ->first();
+
+        if (!$terrain) {
+            return response()->json([
+                'exists' => false,
+                'message' => '❌ Terrain introuvable, enregistrer le terrain avant mutation.'
+            ]);
+        }
+
+        // ✅ Tout existe
+        return response()->json([
+            'exists'  => true,
+            'terrain' => $terrain,
+            'message' => '✅ Terrain existant'
+        ]);
+    }
+
+    // Récupérer les références de lotissement
+    public function fetchReferencesLotissement(): JsonResponse
+    { 
+        // Récupérer tous les lotissement non vide
+        $Lotissements = Lotissement::whereNotNull('txt_denomination')
+                        ->where('txt_denomination', '!=', '')
+                        ->get();
+         
+        // Extraire les références de lotissement (sans doublons)
+        $referencesLot = $Lotissements->pluck('txt_denomination')
+                                        ->unique()
+                                        ->values()
+                                        ->all(); 
+    
+        return response()->json([
+            'referencesLot' => $referencesLot, 
+        ]);
+    }
 
     public function dernierOrdre($annee)
     {
@@ -161,28 +242,34 @@ class SecretariatController extends Controller
             'slt_departement' => 'required|exists:departements,id',
             'slt_arrondissement' => 'required|exists:arrondissements,id',
             'slt_commune' => 'required|exists:communes,id', 
-
-
         ], [
         
-            'txt_num_dossier.unique' => 'Le numéro de dossier existe déjà.',
-            'txt_num_dossier.required' => 'Numéro dossier est obligatoire',
-            // 'txt_num_dordre.required' => 'Numéro d\'ordre est obligatoire',
-            // 'txt_num_dordre.unique' => 'Le numero dordre existe deja',
-            // 'txt_num_dordre.numeric' => 'Le numero dordre dois etre en entier',
-            'slt_region.required' => 'Region est Obligatoire',
-            'slt_departement.required' => 'Departement requis',
-            'slt_arrondissement.required' => 'Arrondissement requis',
-            'slt_commune.required'=> 'Commune requis', 
-            'dt_date_creation.required' => 'Date de creation est obligatoire',
-            'dt_date_delivrance.after' => 'La date de délivrance doit être postérieure à la date de naissance.',
-            'txt_nicad.unique' => 'Ce NICAD existe déjà dans la base.',
-            'slt_titulaire.required' => 'Titulaire est Obligatoire', 
-            'rd_immatriculation_terrain.required' => 'Immatriculation Terrain est obligatoire', 
-            'nbr_surface.numeric' => 'Le surface dois etre en Numerique',
-            'fichierPDF.file' => 'Le fichier sélectionné est invalide.',
-            'fichierPDF.mimes' => 'Le fichier doit être au format PDF.',
-            'fichierPDF.max' => 'La taille du fichier ne doit pas dépasser 120 Mo.',
+                // Dossier
+                'txt_num_dossier.required' => 'Le numéro de dossier est obligatoire.',
+                'txt_num_dossier.unique'   => 'Le numéro de dossier existe déjà.',
+
+                // Localisation
+                'slt_region.required'        => 'La région est obligatoire.',
+                'slt_departement.required'   => 'Le département est requis.',
+                'slt_arrondissement.required'=> 'L’arrondissement est requis.',
+                'slt_commune.required'       => 'La commune est requise.',
+
+                // Dates
+                'dt_date_creation.required'  => 'La date de création est obligatoire.',
+                'dt_date_delivrance.after'   => 'La date de délivrance doit être postérieure à la date de naissance.',
+
+                // Terrain
+                'txt_nicad.unique'           => 'Ce NICAD existe déjà dans la base.',
+                'rd_immatriculation_terrain.required' => 'L’immatriculation du terrain est obligatoire.',
+                'nbr_surface.numeric'        => 'La surface doit être numérique.',
+
+                // Titulaire
+                'slt_titulaire.required'     => 'Le titulaire est obligatoire.',
+
+                // Fichier PDF (⚠️ nom à vérifier)
+                'fichierPDF.file'  => 'Le fichier sélectionné est invalide.',
+                'fichierPDF.mimes' => 'Le fichier doit être au format PDF.',
+                'fichierPDF.max'   => 'La taille du fichier ne doit pas dépasser 120 Mo.',
 
         ]);     
             
@@ -523,20 +610,20 @@ class SecretariatController extends Controller
 
             }
         }
-
+        $txtNicad = $terrain->txt_nicad;
         // ✅ Mise à jour de la relation evaluation_amenagements
         if ($terrain->evaluations_amenagements && $request->has('occupantsAP')) {
             foreach ($request->input('occupantsAP') as $occupantData) {
                 EvaluationAmenagement::updateOrCreate(
                     [
-                        'txt_nicad' => $terrain->txt_nicad,
+                        'txt_nicad' => $txtNicad ?? $terrain->txt_nicad,
                     ],
                     array_merge([
                         'txt_num_dossier' => $terrain->dossier?->txt_num_dossier ?? $terrain->txt_num_dossier,
                         'nbr_valeur_totale_ap' => $request->input('nbr_valeur_totale_ap') ?? 0,
                     ], $occupantData)
-                );
-
+                ); 
+ 
             }
         }
  

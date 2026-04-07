@@ -13,23 +13,18 @@ onMounted(() => {
     toast.error(page.props.flash.error);
   }
 });
-</script>
+</script> 
 
 <template>
     <div
-        class="flex min-h-screen flex-col items-center bg-white pt-6 sm:justify-center sm:pt-0"
+        class="h-screen w-screen flex items-center justify-center bg-center bg-cover overflow-hidden"
+        style="background-image: url('/pageAcceuil.jpg')"
     >
-        <div>
-            <Link href="/">
-                <!-- <ApplicationLogo class="h-20 w-20 fill-current text-gray-500" />   gray-100    -->
-                <img src="/logo_logo.jpg" alt="Logo" class="h-20 w-auto">
-            </Link>
-        </div>
-
-        <div
-            class="mt-6 w-full overflow-hidden bg-gray-200 border border-gray-400 px-6 py-4 shadow-md sm:max-w-md sm:rounded-lg"
-        >
+        <!-- Contenu centré -->
+        <div class="w-full max-w-md bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-lg m-2 sm:max-w-md sm:rounded-xl">
             <slot />
         </div>
     </div>
 </template>
+
+

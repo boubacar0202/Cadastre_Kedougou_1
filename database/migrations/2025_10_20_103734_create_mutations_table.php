@@ -65,7 +65,7 @@ return new class extends Migration
             $table->string('txt_typeActeMutation');
             $table->string('txt_nomNotaireMutation')->nullable();
             $table->date('dt_dateMutation');
-            $table->string('txt_jugementMutation')->nullable();
+            $table->string('txt_natureMutation')->nullable();
             $table->string('txt_observationMutation')->nullable();
                 // Personne physique
             $table->string('slt_categoriePM_Mutation')->nullable();

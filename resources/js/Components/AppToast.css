@@ -1,7 +1,0 @@
-/* Supprime les paddings et styles internes de vue3-toastify */
-.custom-toast {
-    padding: 0 !important;
-    margin: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-}

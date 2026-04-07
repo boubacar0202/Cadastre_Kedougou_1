@@ -11,7 +11,9 @@ import axios from "axios";
 import { toast } from "@/Components/AppToast";  
 import DefaultLayout from "@/Layouts/DefaultLayout.vue";
 import { Inertia } from '@inertiajs/inertia';
- 
+import { usePage } from '@inertiajs/vue3'
+
+const page = usePage() 
 
 defineOptions({ layout: DefaultLayout });
  
@@ -19,19 +21,24 @@ const slt_region = ref();
 const slt_departement = ref();
 const slt_arrondissement = ref();
 const slt_commune = ref(); 
+const txt_lotissement = ref();
+
 const departements = ref(null);
 const arrondissements = ref(null);
 const communes = ref(null); 
+const lotissements = ref(null); 
+
 const txt_num_section = ref('');
 const txt_num_parcelle = ref('');
 const txt_appartement = ref(''); 
 const fichierPDF = ref(null); 
 const activeTab = ref("");   
 const show = ref(false);
-const showSectionPP = ref(false); // Perssone Physique
-const showSectionPM = ref(false); // Personne Morale
-const showSectionPA = ref(false); // Etat
-  
+const showSectionPP = ref(false); 
+const showSectionPM = ref(false); 
+const showSectionPA = ref(false); 
+const formVisible = ref(false);
+
 // Récuperer le fichier PDF 
 function handleFileUpload(event) {
     const file = event.target.files[0];
@@ -61,7 +68,9 @@ const props = defineProps({
         type: Array,
         default: () => [],
     }, 
-    communes: Array 
+    communes: Array,
+    lotissements: Array
+
 });
  
 const form = useForm({
@@ -136,7 +145,77 @@ const form = useForm({
     fichierPDF: "",
 });
 
+// Vérifier l'existence du dossier avant d'afficher le formulaire
+// const verifierDossier = async () => {
+//     try {
+//         const { data } = await axios.post('/dossier/verifyDossier', {
+//             txt_num_lotissement: form.txt_num_lotissement,
+//             txt_lotissement: form.txt_lotissement,
+//         });
 
+//         // Si un terrain identique existe déjà
+//         if (data.duplicate) {
+//             formVisible.value = false;
+//             toast.success(data.message);
+//             return;
+//         }
+
+//         // Afficher le formulaire
+//         formVisible.value = true; 
+//         toast.success(data.message);
+
+ 
+
+//         // Remplir le dossier s'il existe
+//         if (data.dossier) {
+//             form.txt_num_dossier = data.dossier.txt_num_dossier ?? '';
+//         }
+
+//     } catch (err) {
+//         formVisible.value = false; 
+
+//         if (err.response) {  
+//             toast.error(err.response.data?.error || "Entrer le numéro lotissement et le lotissement.");
+//         } else if (err.request) { 
+//             toast.error("Aucune réponse du serveur");
+//         } else { 
+//             toast.error(err.message);
+//         }
+//     } 
+// };
+const verifierDossier = async () => {
+    console.log("Vérification du dossier avec : ", {
+        txt_num_lotissement: form.txt_num_lotissement,
+        txt_lotissement: form.txt_lotissement
+    });
+    if (!form.txt_num_lotissement || !form.txt_lotissement) {
+        toast.error("Remplir les champs N° lotissement et Lotissement");
+        formVisible.value = false;
+        return;
+    }
+
+    try {
+        const { data } = await axios.post('/dossier/verifyDossier', {
+            txt_num_lotissement: form.txt_num_lotissement.trim(),
+            txt_lotissement: form.txt_lotissement
+        });
+
+        if (data.exists) {
+            formVisible.value = true;
+            toast.success(data.message);
+        } else {
+            formVisible.value = false;
+            toast.error(data.message);
+        }
+
+    } catch (err) {
+        console.error(err.response?.data); // Pour debug
+        formVisible.value = false;
+        toast.error("Erreur serveur");
+    }
+};
+
+// Préremplire le champ NICAD
 const selectedCommune = computed(() => {
     return props.communes.find(c => c.id == form.slt_commune);
 });
@@ -148,7 +227,6 @@ const txt_nicad = computed(() => {
     const appart = form.txt_appartement || "";
 
     const value = `${prefix}${section}${parcelle}${appart}`.trim();
-
     const MIN_LENGTH = 9;
     return value.replace(/\s/g, "").length >= MIN_LENGTH ? value : "";
 }); 
@@ -213,14 +291,39 @@ const fetchCommunes = async () => {
     }
 };
 
+const fetchlotissements = async () => {
+    if (!slt_commune.value) {   // ❗ correction ici
+        lotissements.value = [];
+        return;
+    }
+
+    try {
+        const response = await axios.get(
+            `/lotissements/${slt_commune.value}`
+        );
+
+        lotissements.value = response.data.lotissements;
+
+        console.log("lotissements : ", lotissements.value);
+    } catch (error) {
+        console.error("Erreur lors du chargement des lotissements :", error);
+        toast.error(page.props.flash?.error || 
+            "❌ Erreur lors du chargement des lotissements");
+    }
+};
+
 watch(() => form.slt_region, fetchDepartements);
 watch(() => form.slt_departement, fetchArrondissements);
 watch(() => form.slt_arrondissement, fetchCommunes);
+watch(() => form.slt_commune, fetchlotissements);
+// watch(() => form.txt_lotissement, fetchlotissement);
+
 watchEffect(() => {
     form.slt_region = slt_region.value;
     form.slt_departement = slt_departement.value;
     form.slt_arrondissement = slt_arrondissement.value;
-    form.slt_commune = slt_commune.value;
+    form.slt_commune = slt_commune.value; 
+    form.txt_lotissement = txt_lotissement.value; 
 });
 
 // morcellement
@@ -277,17 +380,18 @@ const validateInputNumParcelle = () => {
     }
 };
  
+ 
 // Submit du formulaire
 const submitForm = function () {  
-    form.rd_immatriculation_terrain = activeTab.value || "";  // Mise à jour de la donnée
-    form.slt_region = slt_region?.value || ""; // Accès via this.slt_region
-    form.slt_departement = slt_departement?.value || ""; // Accès via this.slt_departement
-    form.slt_arrondissement = slt_arrondissement?.value || ""; // Accès via this.slt_arrondissement
-    form.slt_commune = slt_commune?.value || ""; // Accès via this.slt_commune
-    form.txt_nicad = txt_nicad?.value || ""; // Accès via this.slt_commune
-    form.txt_num_section = txt_num_section?.value || ""; // Accès via this.slt_commune
-    form.txt_num_parcelle = txt_num_parcelle?.value || ""; // Accès via this.slt_commune
-    form.txt_appartement = txt_appartement?.value || ""; // Accès via this.slt_commune
+    form.rd_immatriculation_terrain = activeTab.value || "";
+    form.slt_region = slt_region?.value || "";
+    form.slt_departement = slt_departement?.value || ""; 
+    form.slt_arrondissement = slt_arrondissement?.value || ""; 
+    form.slt_commune = slt_commune?.value || "";
+    form.txt_nicad = txt_nicad?.value || ""; 
+    form.txt_num_section = txt_num_section?.value || ""; 
+    form.txt_num_parcelle = txt_num_parcelle?.value || ""; 
+    form.txt_appartement = txt_appartement?.value || ""; 
   
     // Formulaire Laravel
     form.post(route('secretariat.store'), {
@@ -313,30 +417,40 @@ const submitForm = function () {
         <template #header>
             <h2 class="text-xl font-semibold leading-tight text-primary-txt">
                 Secretariat
-                
             </h2>
-
         </template>
 
         <div class="py-12">
             <div class="flex justify-center">
                 <div class="w-full max-w-8xl">
-                    <div class="bg-white shadow-md rounded-xl">
-                        <!-- En-tête du formulaire -->
-                        <div   class="p-4 border-b bg-primary rounded-t-xl">
+                    <div class="bg-white shadow-md rounded-xl"> 
+                        <div class="p-4 border-b bg-primary rounded-t-xl">
                             <h1 class="text-lg text-white font-semibold">Formulaire</h1>
-                        </div>
-                        <!-- Corps du formulaire -->
-                        <form autocomplete="on" @submit.prevent="submitForm">
+                        </div> 
+                        <form
+                            class="space-y-4" autocomplete="on" @submit.prevent="submitForm"
+                        >
                             <div class="p-6">
-                                <!-- Section Parcelle -->
-                                <h5 class="text-lg text-primary-txt font-bold">
-                                    Réferences Dossiers
-                                </h5>
-                                <br />
+                                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2 relative">
+                                    <h5 class="text-lg text-primary-txt font-bold mb-4">
+                                        Réferences Dossiers
+                                    </h5> 
+                                    <MazBtn 
+                                        type="submit" 
+                                        no-shadow no-hover-effect
+                                        class="w-28 h-8 text-white bg-gradient-to-r from-primary via-primary-dark to-primary
+                                            hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                                            dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg
+                                            dark:shadow-blue-800/80 font-medium rounded-lg text-xs px-3 py-1 text-center me-2 mb-2"
+                                            size="medium"
+                                            @click="verifierDossier"
+                                    >
+                                        Vérifier
+                                    </MazBtn>
+                                </div>
                                 <div class="mb-6">
                                     <div
-                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"
+                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2"
                                     >
                                     
                                         <BaseInput
@@ -387,7 +501,7 @@ const submitForm = function () {
                                         />
                                                                          
                                         <BaseInput
-                                            label="Date d'enregistrement"
+                                            label="Date d'état de session"
                                             name="dt_date_creation"
                                             type="date"
                                             required="on"
@@ -397,12 +511,12 @@ const submitForm = function () {
                                     </div> 
 
                                     <!-- Parcelle -->
-                                    <h5 class="text-lg text-primary-txt font-bold mt-8">
+                                    <h5 class="text-lg text-primary-txt font-bold mt-4">
                                         Réferences Parcellelaires
                                     </h5>
                                     <br />
                                     <div
-                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"
+                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2"
                                     >
                                        
                                         <BaseSelect
@@ -438,7 +552,7 @@ const submitForm = function () {
                                             v-model="slt_arrondissement"
                                             @change="fetchCommunes"
                                         /> 
-              
+                                        
                                         <BaseSelect
                                             label="Commune"
                                             name="slt_commune"
@@ -446,20 +560,28 @@ const submitForm = function () {
                                             optionLabel="slt_commune"
                                             optionValue="id"
                                             required="on"
-                                            v-model="slt_commune" 
-                                        />
-
-  
-
- 
-                                        <BaseInput
+                                            v-model="slt_commune"  
+                                            @change="fetchlotissements"
+                                        />   
+<!--                                         
+                                        <BaseSelect
                                             label="Lotissement/Quartier"
-                                            name="txt_lotissement"
-                                            autocomplete="address-level2" 
+                                            :options="lotissements"
+                                            optionLabel="txt_denomination"
+                                            optionValue="id"
                                             v-model="form.txt_lotissement"
-                                        />
- 
+                                            @keyup.enter="verifierDossier" 
+                                        />  -->
                                         
+                                        <BaseSelect
+                                            label="Lotissement/Quartier"
+                                            :options="lotissements"
+                                            optionLabel="txt_denomination"
+                                            optionValue="txt_denomination"  
+                                            v-model="form.txt_lotissement"
+                                            @keyup.enter="verifierDossier"
+                                        />
+  
                                         <BaseInput
                                             label="Hors Lotissement"
                                             name="txt_HorsLotissement" 
@@ -496,6 +618,7 @@ const submitForm = function () {
                                                 {value:'Atestation Foncière', label:'Atestation Foncière'},
                                                 {value:'Acte de vente', label:'Acte de vente'},
                                                 {value:'Sans Papier', label:'Sans Papier'}, 
+                                                {value:'TF', label:'TF'}, 
                                             ]"
                                             v-model="form.slt_document_admin"
                                         /> 
@@ -548,7 +671,7 @@ const submitForm = function () {
 
                                 <!-- exemple de tabs avec MazUi -->
 
-                                <h5 class="text-lg text-primary-txt font-bold">
+                                <h5 class="text-lg text-primary-txt font-bold mt-4">
                                     Réferences Cadastrales
                                 </h5>
                                 <br />
@@ -582,7 +705,7 @@ const submitForm = function () {
                                         <!-- Contenu du Tab 1 ici -->
                                         <br/>
                                         <div class="sm:col-span-12">
-                                            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                                            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
                                        
                                                 <BaseSelect
                                                     class="sm:col-span-2"
@@ -606,7 +729,7 @@ const submitForm = function () {
                                         <!-- Contenu du Tab 2 ici -->
                                          <br>
                                         <div class="sm:col-span-12">
-                                            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                                            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
                                                  
                                                 <BaseSelect
                                                     class="sm:col-span-2"
@@ -690,13 +813,13 @@ const submitForm = function () {
                                 </div> 
 
                                 <!-- Section Titulaire -->
-                                <h5 class="text-lg text-primary-txt font-bold mt-8">
+                                <h5 class="text-lg text-primary-txt font-bold mt-4">
                                     Identité Titulaire de droit
                                 </h5>
                                 <br />
                                 <div class="mb-6">
                                     <div
-                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"
+                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2"
                                     >
  
                                         <BaseSelect
@@ -716,7 +839,7 @@ const submitForm = function () {
                                     </div>
                                     <br>
                                     <div
-                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"
+                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2"
                                     >
  
                                         <BaseInput 
@@ -759,7 +882,7 @@ const submitForm = function () {
                                             v-model="form.slt_piece" 
                                             :options="[
                                                 {value: 'CNI', label: 'CNI'},
-                                                {value: 'Passepotr', label: 'Passeport'}
+                                                {value: 'Passeport', label: 'Passeport'}
                                             ]"
                                         />
  
@@ -858,7 +981,11 @@ const submitForm = function () {
                                                 {value: 'Coopérative Habitat', label: 'Coopérative Habitat'},
                                                 {value: 'BTP', label: 'BTP'},
                                                 {value: 'Organisation Religieux', label: 'Organisation Religieux'},
-                                            ]" 
+                                                {value: 'Securité', label: 'Securité'},
+                                                {value: 'Santé', label: 'Santé'},
+                                                {value: 'Mine', label: 'Mine'},
+                                                {value: 'Autres', label: 'Autres'},
+                                            ]"
                                         />
                                                                                                                                                                                                     
                                         <BaseInput 

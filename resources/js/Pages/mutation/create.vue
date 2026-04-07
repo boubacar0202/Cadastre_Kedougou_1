@@ -4,20 +4,17 @@ import { Head, useForm } from "@inertiajs/vue3";
 import BaseInput from "@/Components/BaseInput.vue";
 import BaseSelect from "@/Components/BaseSelect.vue";
 import MazBtn from "maz-ui/components/MazBtn";
-import MazRadio from "maz-ui/components/MazRadio";
-import { onMounted, ref, watch, computed  } from "vue";
+import { onMounted, ref, watch } from "vue";
 import axios from "axios"; 
 import { toast } from "@/Components/AppToast"; 
 import DefaultLayout from "@/Layouts/DefaultLayout.vue";
 import { Inertia } from '@inertiajs/inertia';
    
-defineOptions({ layout: DefaultLayout });
- 
+defineOptions({ layout: DefaultLayout }); 
 // const toast = showToast();
  
 const formVisible = ref(false); 
-const referencesLot = ref([]);   
- 
+const referencesLot = ref([]);    
 const fichierPDF = ref(null);  
 const show = ref(false);  
 const showSectionPP = ref(false); // Perssone Physique
@@ -106,7 +103,7 @@ const form = useForm({
     txt_typeActeMutation:"",
     txt_nomNotaireMutation:"",
     dt_dateMutation:"",
-    txt_jugementMutation:"",
+    txt_natureMutation:"",
     txt_observationMutation:"",
         // Personne physique
     slt_categoriePM_Mutation: "",
@@ -960,11 +957,10 @@ const submitForm = function () {
                                             name="txt_typeActeMutation"
                                             v-model="form.txt_typeActeMutation"
                                             @change="mutationNotaire"
-                                            :options="[
-                                                { value: '', label: '' },
+                                            :options="[ 
                                                 { value: 'Acte Notarie', label: 'Acte Notarié' },
                                                 { value: 'Acte Sous Seing Privé', label: 'Acte sous Seing Privé' },
-                                                { value: 'Acte de donation', label: 'Acte de donation' },
+                                                { value: 'Jugement', label: 'Jugement' }
                                             ]"
                                         />
 
@@ -976,8 +972,21 @@ const submitForm = function () {
                                             type="text"
                                         />
 
+                                        <BaseSelect
+                                            label="Nature"
+                                            name="txt_natureMutation"
+                                            v-model="form.txt_jugementMutation"
+                                            :options="[
+                                                { value: 'Vente', label: 'Vente'},
+                                                { value: 'Echange', label:'Echange'},
+                                                { value: 'Donnation', label: 'Donnation'},
+                                                { value: 'Partage-Heritage', label: 'Partage-Heritage'},
+                                                { value: 'Autres', label: 'Autres'}
+                                            ]"
+                                        />
+
                                         <BaseInput
-                                            label="Date Mutation"
+                                            label="Date Acte"
                                             name="dt_dateMutation"
                                             v-model="form.dt_dateMutation"
                                             type="date"

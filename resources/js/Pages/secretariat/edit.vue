@@ -11,9 +11,7 @@ import AppCodeAccee from '@/Components/AppCodeAccee.vue';
 import MazTabs from 'maz-ui/components/MazTabs';
 import MazRadio from 'maz-ui/components/MazRadio';
 import DefaultLayout from "@/Layouts/DefaultLayout.vue";  
-
  
-
 defineOptions({ layout: DefaultLayout }); 
 // const fichierPDF = ref(null);
 
@@ -43,7 +41,12 @@ const showSectionPM = ref(false); // Personne Morale
 const showSectionPA = ref(false); // Etat
 const errorMessage = ref("");
 const errorMessageNumSection = ref("");
-const errorMessageNumParcelle = ref("");
+const errorMessageNumParcelle = ref(""); 
+const activeTab = ref('terrain') // onglet par défaut
+
+const setActiveTab = (tab) => {
+    activeTab.value = tab
+}
   
 // Traitement Categorie 
 const categories = {
@@ -234,6 +237,7 @@ const form = useForm({
     slt_region: terrain?.region?.id || '',
     slt_departement: terrain?.departement?.id || '',
     slt_commune: terrain?.commune?.id || '',
+    txt_codeCommune: terrain?.commune?.txt_codeCommune || '',
     slt_arrondissement: terrain?.arrondissement?.id || '',
     txt_lotissement: terrain?.txt_lotissement || '',
     txt_HorsLotissement: terrain?.txt_HorsLotissement || '',
@@ -337,10 +341,10 @@ const txt_nicad_calcule = computed(() => {
         1: "13110100",
         2: "13120101",
         3: "13120102",
-        4: "14120103",
+        4: "13120103",
         5: "13120104",
-        6: "13120201",
-        7: "13120202",
+        6: "13120202",
+        7: "13120201",
         8: "13210100",
         9: "13220101",
         10: "13220102",
@@ -348,11 +352,11 @@ const txt_nicad_calcule = computed(() => {
         12: "13220202",
         13: "13220103",
         14: "13310100",
-        15: "13320101",
-        16: "13320102",
-        17: "13320201",
-        18: "13310202",
-        19: "13220203"
+        15: "13320102",
+        16: "13320101",
+        17: "13320203",
+        18: "13320202",
+        19: "13320201"
     } 
     const prefix = codes[form.slt_commune] || ''  
     const value = `${prefix}${form.txt_num_section}${form.txt_num_parcelle}${form.txt_appartement}`.trim() 
@@ -366,7 +370,7 @@ const txt_nicad_calcule = computed(() => {
 watchEffect(() => {
     form.txt_nicad = txt_nicad_calcule.value;
 })
-
+ 
 // Fonction utilitaire pour nettoyer et valider un champ numérique
 const validateNumericField = (field, maxLength, errorRef, label) => {
     let value = (form[field] ?? "").toString().replace(/\D/g, ""); // Supprimer les non-chiffres
@@ -2097,8 +2101,7 @@ async function submit() {
                                                   >
                                                       Aménagements particuliers
                                                   </button>
-                                              </li>
-
+                                              </li> 
                                           </ul>
                                       </div>
 

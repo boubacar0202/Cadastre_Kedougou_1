@@ -46,8 +46,7 @@ class MutationController extends Controller
         $Lotissements = Lotissement::whereNotNull('txt_denomination')
                         ->where('txt_denomination', '!=', '')
                         ->get();
-        
-        
+         
         // Extraire les références de lotissement (sans doublons)
         $referencesLot = $Lotissements->pluck('txt_denomination')
                                         ->unique()
@@ -166,7 +165,7 @@ class MutationController extends Controller
         'txt_typeActeMutation' => 'required|string',
         'txt_nomNotaireMutation' => 'nullable|string',
         'dt_dateMutation' => 'required|date',
-        'txt_jugementMutation' => 'nullable|string',
+        'txt_natureMutation' => 'nullable|string',
         'txt_observationMutation' => 'nullable|string',
             //  
         'slt_categoriePM_Mutation'  =>  'nullable|string',
@@ -270,7 +269,7 @@ class MutationController extends Controller
             'txt_typeActeMutation' => $validatedData['txt_typeActeMutation'] ?? null,
             'txt_nomNotaireMutation' => $validatedData['txt_nomNotaireMutation'] ?? null,
             'dt_dateMutation' => $validatedData['dt_dateMutation'] ?? null,
-            'txt_jugementMutation' => $validatedData['txt_jugementMutation'] ?? null,
+            'txt_natureMutation' => $validatedData['txt_natureMutation'] ?? null,
             'txt_observationMutation' => $validatedData['txt_observationMutation'] ?? null,
                 // Personne physique
             'slt_categoriePM_Mutation'  => $validatedData['slt_categoriePM_Mutation'] ?? null,
@@ -292,6 +291,40 @@ class MutationController extends Controller
 
             'fichierPDFMutation' => $validatedData['fichierPDFMutation'] ?? null,
         ]); 
+
+        // table titulaires a alimenter 
+        // Titulaire::create([
+        //     'slt_titulaire' => $validatedData['slt_titulaireMutation'] ?? null,
+        //     'txt_nationalite' => $validatedData['txt_nationaliteMutation'] ?? null,
+        //     'slt_civilite' => $validatedData['slt_civiliteMutation'] ?? null,
+        //     'txt_prenom' => $validatedData['txt_prenomMutation'] ?? null,
+        //     'txt_nom' => $validatedData['txt_nomMutation'] ?? null,
+        //     'slt_piece' => $validatedData['slt_pieceMutation'] ?? null,
+        //     'txt_numPiece' => $validatedData['txt_numPieceMutation'] ?? null,
+        //     'dt_date_delivrance' => $validatedData ['dt_date_delivranceMutation'] ?? null,
+        //     'dt_date_naissance' => $validatedData ['dt_date_naissanceMutation'] ?? null,
+        //     'txt_lieu_naissance' => $validatedData['txt_lieu_naissanceMutation'] ?? null,
+        //     'txt_adresse' => $validatedData['txt_adresseMutation'] ?? null,
+        //     'tel_telephone' => $validatedData['tel_telephoneMutation'] ?? null,
+        //         // Personne physique
+        //     'slt_categoriePM'   => $validatedData['slt_categoriePM_Mutation'] ?? null,
+        //     'txt_formJuridiquePM' => $validatedData['txt_formJuridiquePM_Mutation'] ?? null, 
+        //     'txt_denominationPM' => $validatedData['txt_denominationPM_Mutation'] ?? null, 
+        //     'txt_nineaPM' => $validatedData['txt_nineaPM_Mutation'] ?? null, 
+        //     'txt_perssonneRepresentantPM' => $validatedData['txt_perssonneRepresentantPM_Mutation'] ?? null, 
+        //     'txt_fonctionPM' => $validatedData['txt_fonctionPM_Mutation'] ?? null, 
+        //     'txt_telephonePM' => $validatedData['txt_telephonePM_Mutation'] ?? null, 
+        //     'txt_emailPM' => $validatedData['txt_emailPM_Mutation'] ?? null, 
+        //     'txt_adressePM' => $validatedData['txt_adressePM_Mutation'] ?? null, 
+        //         // Personne morale
+        //     'slt_etablissementPA' => $validatedData['slt_etablissementPA_Mutation'] ?? null,
+        //     'txt_personneResponsablePA' => $validatedData['txt_personneResponsablePA_Mutation'] ?? null,
+        //     'txt_fonctionResponsablePA' => $validatedData['txt_fonctionResponsablePA_Mutation'] ?? null,
+        //     'txt_telephonePA' => $validatedData['txt_telephonePA_Mutation'] ?? null,
+        //     'txt_emailPA' => $validatedData['txt_emailPA_Mutation'] ?? null,
+        //     'txt_ministèreTutelePA' => $validatedData['txt_ministèreTutelePA_Mutation'] ?? null,
+ 
+        // ]);
   
         return redirect()->back()->with('success', '✅ Données enregistrées !');
  

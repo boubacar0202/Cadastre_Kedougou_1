@@ -312,56 +312,7 @@ watchEffect(() => {
 watch(currentCat, (newVal) => {
   form.currentCat = newVal
 })
-  
-// Rechercher le dossier
-// const rechercherDossier = async () => {
-//     try {
-//         const { data } = await axios.post('/dossier/verify', {
-//             txt_num_dossier: txt_num_dossier.value
-//         });
-
-//         if (data.exists) {
-//             const terrain = data.terrain;
-//             const nicad = terrain?.txt_nicad ?? "";
-
-//             // ✅ Vérification du NICAD
-//             if (!nicad) {
-//                 formVisible.value = false;
-//                 toast.error("Ce dossier n'a pas de numéro NICAD.");
-//                 return;
-//             }
-
-//             if (nicad.length <= 8) {
-//                 formVisible.value = false;
-//                 toast.error("Le NICAD est incomplet. Vérifiez !");
-//                 return;
-//             }
-
-//             // ✅ Afficher le formulaire si tout est correct
-//             formVisible.value = true;
-//             form.txt_num_dossier = txt_num_dossier.value;
-//             form.txt_nicad = nicad;
-//             form.nbr_surface = terrain?.nbr_surface ?? 0;
-
-//             toast.success(data.success);
-//             console.log("✅ Terrain chargé :", terrain);
-
-//         } else {
-//             formVisible.value = false;
-//             toast.error(data.error || "Dossier introuvable.");
-//         }
-//     } catch (err) {
-//         formVisible.value = false;
-//         console.error("❌ Erreur complète :", err);
-
-//         if (err.response?.status === 422 && err.response.data.errors) {
-//             Object.values(err.response.data.errors).forEach(msg => toast.error(msg));
-//         } else {
-//             toast.error("Une erreur est survenue lors de la vérification.");
-//         }
-//     }
-// };
-
+    
 const rechercherDossier = async () => {
     try {
         const { data } = await axios.post('/dossier/verificationEnquete', {
@@ -467,13 +418,14 @@ watchEffect(() => {
   const secteur = Number(form.slt_secteur);
   form.nbr_prix_metre_carre = prixParSecteur[secteur] || 0;
 }); 
+
+// Calcule valeur_terrain
 const nbr_valeur_terrain = computed(() => {
     const prix = parseFloat(form.nbr_prix_metre_carre) || 0;
     const bati = parseFloat(form.txt_superficie_bati_sol) || 0;
     const total = parseFloat(form.nbr_surface) || 0; 
     return ((prix / 2) * bati + prix * (total - bati)).toFixed(2);
-});
- 
+}); 
 watchEffect(() => {
     form.nbr_valeur_terrain = nbr_valeur_terrain.value;
 });
@@ -526,6 +478,7 @@ watchEffect(() => {
         occupant.nbr_valeurTG = ( prixmetrecarre * surfaceCorrige).toFixed(2);
     });
 });
+
 //  Calculer montant valeur batiment  
 const txt_valeur_terrain_bati = computed(() => {
     const valeurPR = parseFloat(form.nbr_valeurPR)  || 0;
@@ -556,6 +509,7 @@ watchEffect(() => {
         occupant.nbr_valeur_ca_total = (surfaceCA * prixMetre * coeffCA).toFixed(2);
     });
 }); 
+
 // Sommes Cours Amenager nbr_valeur_total_cours
 const nbr_valeur_total_ca = computed(() => {nbr_valeur_total_ca
     return form.occupantsCA.reduce((total, occupant) => {
@@ -589,6 +543,7 @@ watchEffect(() => {
         occupant.nbr_valeur_clo = ( lineaire * prixmetrecarreCL * coeffCL).toFixed(2);
     });
 }); 
+
 // Sommes Cours Amenager nbr_valeur_total_clotur
 const nbr_valeur_total_clotur = computed(() => {nbr_valeur_total_clotur
     return form.occupantsCL.reduce((total, occupant) => {
@@ -623,21 +578,22 @@ watchEffect(() => {
 
 // Calcule nbr_valeurVenaleLimeuble ,nbr_valeurLocative
 const nbr_valeurVenaleLimeuble = computed(() => {
-    const terrain = parseFloat(txt_valeur_terrain_bati.value) || 0;
+    const terrain = parseFloat(nbr_valeur_terrain.value) || 0;
+    const terrainBati = parseFloat(txt_valeur_terrain_bati.value) || 0;
     const ca = parseFloat(nbr_valeur_total_ca.value) || 0;
     const clotur = parseFloat(nbr_valeur_total_clotur.value) || 0;
     const ap = parseFloat(nbr_valeur_totale_ap.value) || 0;
 
     //return terrain + ca + clotur + ap;
-    const resulval = terrain + ca + clotur + ap;
+    const resulval = terrain + terrainBati + ca + clotur + ap;
     return parseFloat(resulval.toFixed(2));
 });
 watchEffect(() => {
     form.nbr_valeurVenaleLimeuble = nbr_valeurVenaleLimeuble.value;
 });
  
+// Calculer tauxValeurLocative
 const isPrincipalSelected = computed(() => form.txt_dependant_domainePR = 'Principale');
-
 const tauxValeurLocative = computed(() => {
     if (!isPrincipalSelected.value) return 0;
 
@@ -660,6 +616,7 @@ const tauxValeurLocative = computed(() => {
     }
 });
 
+// valeur locative
 const nbr_valeurLocative = computed(() => {
     if (!isPrincipalSelected.value) return 0; 
     const valeurVenale = parseFloat(form.nbr_valeurVenaleLimeuble) || 0;
@@ -865,7 +822,7 @@ const submitForm = async () => {
                                                                     type="text" 
                                                                     v-model="occupant.txt_nomOccupantTG"
                                                                     :id="'NomOccupant_${i}'"  
-                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>   
@@ -879,7 +836,7 @@ const submitForm = async () => {
                                                                     type="text" 
                                                                     v-model="occupant.txt_numAppartementTG"
                                                                     :id="'NunAppartement_${i}'"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -921,7 +878,7 @@ const submitForm = async () => {
                                                                     autocorrect="off" 
                                                                     v-model="occupant.tel_telephoneTG"
                                                                     :id="'Telephone_${i}'"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -934,7 +891,7 @@ const submitForm = async () => {
                                                                     autocorrect="off"  
                                                                     v-model="occupant.nbr_montantLoyerTG"
                                                                     :id="'Montant_loyer_${i}'"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -947,7 +904,7 @@ const submitForm = async () => {
                                                                     autocorrect="off" 
                                                                     v-model="occupant.txt_dateLieuNaissanceTG"
                                                                     :id="'DateNaissnace_${i}'"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -960,7 +917,7 @@ const submitForm = async () => {
                                                                     autocorrect="off" 
                                                                     v-model="occupant.txt_cniPasseportTG"
                                                                     :id="'CNIPasseport_${i}'"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -973,17 +930,15 @@ const submitForm = async () => {
                                                                     autocorrect="off" 
                                                                     v-model="occupant.dt_dateDelivranceTG"
                                                                     :id="'DateDelivrance_${i}'"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-30 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
-                                                        
-                                                        </div>
-                                                    
+                                                        </div> 
                                                     </div>
-                                                </TransitionGroup>
-                                                <div class="flex gap-4 mt-6">
+                                                </TransitionGroup> 
+                                                <div class="flex gap-2 mt-6">
                                                     <button  
                                                         @click="addBlock"
                                                         type="button"
@@ -993,8 +948,7 @@ const submitForm = async () => {
                                                         dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-5 
                                                         py-2.5 text-center">
                                                         Ajouter
-                                                    </button>
-                                                    
+                                                    </button> 
                                                     <button 
                                                         @click="removeBlock"
                                                         type="button"
@@ -1005,7 +959,7 @@ const submitForm = async () => {
                                                         py-2.5 text-center">
                                                         Retirer
                                                     </button>
-                                                </div>
+                                                </div>  
 
                                                 <div  class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-8">
                                                     <div class="sm:col-span-2">
@@ -1237,27 +1191,33 @@ const submitForm = async () => {
                                         </div>
 
                                         <!--   BATI -->
-                                        <div v-show="activeTab === 'bati'" class="space-y-4">
-                                            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                                                <!-- Boutons radio -->
-                                                <div class="sm:col-span-2">
-                                                    <div class="h-10 flex items-center ps-8 border border-primary-only rounded dark:border-primary">
-                                                        <MazRadio v-model="currentCat" 
-                                                        value="Maison individuelle" 
-                                                        label="Maison individuelle" />
+                                        <div v-show="activeTab === 'bati'" class="space-y-4">  
+                                            <div class="flex justify-center">
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div class="w-72">
+                                                        <div class="h-10 flex items-center ps-8 border border-primary-only rounded">
+                                                            <MazRadio
+                                                                v-model="currentCat"
+                                                                value="Maison individuelle"
+                                                                label="Maison individuelle"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="w-72">
+                                                        <div class="h-10 flex items-center ps-8 border border-primary-only rounded">
+                                                            <MazRadio
+                                                                v-model="currentCat"
+                                                                value="Immeuble collectif"
+                                                                label="Immeuble collectif"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div class="sm:col-span-2">
-                                                    <div class="h-10 flex items-center ps-8 border border-primary-only rounded dark:border-primary">
-                                                        <MazRadio v-model="currentCat" 
-                                                        value="Immeuble collectif" 
-                                                        label="Immeuble collectif" />
-                                                    </div>
-                                                </div>
-                                                <br/>    
                                             </div>
+  
                                             <!-- Batiment  Princil-->
-                                            <center><h6 class="text-lg"><b>Bâtiment(s) Principal(aux)</b></h6></center>
+                                            <h6 class="text-lg text-justify-center text-center text-primary-txt"><b>Bâtiment(s) Principal(aux)</b></h6>
                                             <div class="w-full flex flex-wrap justify-between gap-4 mt-4">
                                                 <TransitionGroup>
                                                     <div 
@@ -1286,7 +1246,7 @@ const submitForm = async () => {
                                                                         v-model="form.slt_categoriePR" 
                                                                         name="slt_categoriePR" 
                                                                         id="Dependant_domaine" 
-                                                                        class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                        class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                                 outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-dark 
                                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desable></option> 
@@ -1311,7 +1271,7 @@ const submitForm = async () => {
                                                                     v-model="form.slt_categoriePR"
                                                                     name="slt_categoriePR" 
                                                                     id="Dependant_domaine" 
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-dark 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desable></option>  
@@ -1367,7 +1327,7 @@ const submitForm = async () => {
                                                                     name="nbr_niveauPR"
                                                                     type="number" 
                                                                     id="nbr_niveauPR" 
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-dark 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -1393,7 +1353,7 @@ const submitForm = async () => {
                                                                     v-model="form.slt_coeffPR"
                                                                     name="slt_coeffPR"
                                                                     id="Coeff"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-graprimary-dark                                                                      focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desabled></option>
                                                                         <option value="0.1">0.1</option>
@@ -1417,7 +1377,7 @@ const submitForm = async () => {
                                                                     type="number" 
                                                                     id="Surface_corriger" 
                                                                     readonly
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-graprimary-dark                                                                      focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1432,7 +1392,7 @@ const submitForm = async () => {
                                                                     @blur="() => arrondirDeuxDecimales(nbr_valeurPR)"
                                                                     readonly
                                                                     id="Valeur"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-graprimary-dark                                                                      focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1455,25 +1415,27 @@ const submitForm = async () => {
                                                                         name="slt_dependant_domaine" 
                                                                         id="Dependant_domaine" 
                                                                         class="h-8 block w-36 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"> 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"> 
                                                                             <option value="Secondaire">Secondaire</option>
                                                                             <option value="Tertiaire">Tertiaire</option>
                                                                             <option value="Dépendance">Dépendance</option>
                                                                             <option value="Partie Saillante">Partie Saillante</option>
+                                                                            <option value="Partie saillante verticale">Partie saillante verticale</option>
+                                                                            <option value="Partie saillante horizontale">Partie saillante horizontale</option>
+                                                                            <option value="Balcon">Balcon</option>
                                                                         </select>
                                                                     </div>
                                                              </div>
                                                             <div  class="sm:col-span-2">
-                                                                <div v-if="currentCat === 'Maison individuelle'" class="sm:col-span-1">
-                                                                    <!-- Vous avez sélectionné une catégorie de type Maison individuelle. -->
+                                                                <div v-if="currentCat === 'Maison individuelle'" class="sm:col-span-1"> 
                                                                     <label for="Dependant_domaine" class="block text-sm/6 font-medium text-primary-txt">CAT</label>
                                                                     <div>   
                                                                         <select 
                                                                         v-model="occupant.slt_categorieTG" 
                                                                         name="slt_categorieTG" 
                                                                         id="Dependant_domaine" 
-                                                                        class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                        class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                                 outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desable></option>
@@ -1498,7 +1460,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.slt_categorieTG"
                                                                     name="slt_categorieTG" 
                                                                     id="Dependant_domaine" 
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desable></option>
@@ -1554,7 +1516,7 @@ const submitForm = async () => {
                                                                     name="nbr_niveauTG" 
                                                                     type="number" 
                                                                     id="Niveau" 
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                             outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -1580,7 +1542,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.slt_coeffTG"
                                                                     name="slt_coeffTG"
                                                                     id="Coeff"  
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desabled></option>
@@ -1605,7 +1567,7 @@ const submitForm = async () => {
                                                                     type="number" 
                                                                     id="Surface_corriger" 
                                                                     readonly
-                                                                    class="h-8 block w-20 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -1621,7 +1583,7 @@ const submitForm = async () => {
                                                                     name="nbr_valeurTG"
                                                                     readonly
                                                                     id="Valeur"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                         outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -1666,7 +1628,7 @@ const submitForm = async () => {
                                                         @blur="txt_valeur_terrain_bati = arrondirDeuxDecimales(txt_valeur_terrain_bati)" 
                                                         readonly
                                                         id="Valeur_terrain_bati"
-                                                        class="block w-full rounded-md bg-white 
+                                                        class="block w-64 rounded-md bg-white 
                                                             px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
                                                             outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                             focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
@@ -1715,7 +1677,7 @@ const submitForm = async () => {
                                                                     :max="form.nbr_surface"
                                                                     @input="verifierSurfaceOccupant(occupant)"
                                                                     name="nbr_surface_ca_total" id="Surface_ca_total"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">                         
                                                                 </div>
@@ -1727,10 +1689,10 @@ const submitForm = async () => {
                                                                     v-model="occupant.slt_categorie_ca_total" 
                                                                     name="slt_categorie_ca_total"  
                                                                     id="Categorie_ca_total"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
-                                                                            <option selected sesabled></option>
+                                                                            <option selected disabled></option>
                                                                             <option :value="1">1</option>
                                                                             <option :value="2">2</option>
                                                                             <option :value="3">3</option>
@@ -1746,7 +1708,7 @@ const submitForm = async () => {
                                                                     readonly
                                                                     name="nbr_prix_metre_carre_ca_total" 
                                                                     id="Prix_metre_carre_ca_total"
-                                                                    class="h-8 block w-36 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -1758,7 +1720,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.nbr_coefficient_ca_total" 
                                                                     name="nbr_coefficient_ca_total" 
                                                                     id="Coefficient_ca_total"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desabled></option>
@@ -1781,7 +1743,7 @@ const submitForm = async () => {
                                                                     readonly
                                                                     name="nbr_valeur_ca_total" 
                                                                     id="Valeur_ca_total"  
-                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-72 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -1821,7 +1783,7 @@ const submitForm = async () => {
                                                     step="0.01"
                                                     @blur="nbr_valeur_total_ca = arrondirDeuxDecimales(nbr_valeur_total_ca)" 
                                                     readonly
-                                                    name="nbr_valeur_total_cours" id="Valeur_total_cours"  class="block w-full rounded-md bg-white 
+                                                    name="nbr_valeur_total_cours" id="Valeur_total_cours"  class="block w-72 rounded-md bg-white 
                                                         px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
                                                         outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                         focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
@@ -1868,7 +1830,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.nbr_longueur_avant_clo" 
                                                                     name="nbr_longueur_avant_clo" 
                                                                     id="Longueur_avant_clo"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">                         
                                                                 </div>
@@ -1880,7 +1842,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.slt_categorie_clo" 
                                                                     name="slt_categorie_clo" 
                                                                     id="Categorie_clo"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected sesabled></option>
@@ -1901,7 +1863,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.nbr_prix_metre_carre_clo" 
                                                                     name="nbr_prix_metre_carre_clo" 
                                                                     id="Prix_metre_carre_clo"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -1913,7 +1875,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.nbr_coefficient_clo" 
                                                                     name="nbr_coefficient_clo" 
                                                                     id="Coefficient_clo"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desabled></option>
@@ -1936,7 +1898,7 @@ const submitForm = async () => {
                                                                     @blur="arrondirOccupantValeur(occupant)"
                                                                     name="nbr_valeur_clo" 
                                                                     id="Valeur_clo"  
-                                                                    class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-72 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -1981,7 +1943,7 @@ const submitForm = async () => {
                                                         readonly
                                                         name="nbr_valeur_total_clotur" 
                                                         id="Valeur_total_clotur"  
-                                                        class="block w-full rounded-md bg-white 
+                                                        class="block w-72 rounded-md bg-white 
                                                         px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
                                                         outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                         focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
@@ -2007,7 +1969,7 @@ const submitForm = async () => {
                                                                     <input id="Designation_1"          
                                                                     v-model="occupant.txt_designation_am" 
                                                                     type="text" 
-                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6" />
                                                                 </div>
@@ -2018,7 +1980,7 @@ const submitForm = async () => {
                                                                     <input type="number"           
                                                                     v-model="occupant.nbr_valeur_unitaire_am"
                                                                     id="Valeur_unitaire_1"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">                         
                                                                 </div>
@@ -2029,7 +1991,7 @@ const submitForm = async () => {
                                                                     <input type="number"            
                                                                     v-model="occupant.nbr_quantile_am" 
                                                                     id="Quantile_1" 
-                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -2040,7 +2002,7 @@ const submitForm = async () => {
                                                                     <select type="select"             
                                                                     v-model="occupant.slt_coeficien_am" 
                                                                     id="Coeficien_1"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desabled></option>
@@ -2063,7 +2025,7 @@ const submitForm = async () => {
                                                                     <input type="number"              
                                                                     v-model="occupant.nbr_valeur_am"  
                                                                     id="Valeur"  
-                                                                    class="h-8 block w-34 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                    class="h-8 block w-72 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
                                                                     outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
@@ -2108,7 +2070,7 @@ const submitForm = async () => {
                                                         readonly
                                                         name="nbr_valeur_totale_ap" 
                                                         id="valeur_totale_ap"  
-                                                        class="block w-full rounded-md bg-white 
+                                                        class="block w-72 rounded-md bg-white 
                                                         px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
                                                         outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
                                                         focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">

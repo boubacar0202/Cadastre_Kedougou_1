@@ -67,7 +67,7 @@ class Mutation extends Model
         'txt_typeActeMutation',
         'txt_nomNotaireMutation',
         'dt_dateMutation',
-        'txt_jugementMutation',
+        'txt_natureMutation',
         'txt_observationMutation',
             // Personne physique
         'slt_categoriePM_Mutation',

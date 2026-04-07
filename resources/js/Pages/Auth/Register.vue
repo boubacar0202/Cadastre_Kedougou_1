@@ -23,6 +23,7 @@ const form = useForm({
     email: '',
     password: '',
     password_confirmation: '',
+    role: ''
 });
 
 const submit = () => {
@@ -125,6 +126,32 @@ const submit = () => {
                         <span v-if="showPasswordConfirmer">👁️</span>
                         <span v-else>👁️‍🗨️</span>
                     </button> 
+                </div>
+
+                <InputError
+                    class="mt-2"
+                    :message="form.errors.password_confirmation"
+                />
+            </div>
+
+                        <div class="mt-4">
+                <InputLabel
+                    for="Role"
+                    value="Rôle"
+                    class="text-primary"
+                />
+
+                <div class="flex items-center mt-1 relative">   
+                    <TextInput
+                        id="role"
+                        type= 'text'
+                        class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-gray-900 
+                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
+                        v-model="form.role"
+                        required
+                        autocomplete="new-password"
+                    /> 
                 </div>
 
                 <InputError

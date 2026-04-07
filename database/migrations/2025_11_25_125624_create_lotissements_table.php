@@ -14,10 +14,7 @@ return new class extends Migration
         Schema::create('lotissements', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
-            $table->string('txt_denomination');
-            // $table->string('slt_departement');
-            // $table->string('slt_arrondissement');
-            // $table->string('slt_commune');
+            $table->string('txt_denomination'); 
             $table->string('txt_nombreParcelle');
             $table->string('txt_surfaceLotissement', 15, 2);
             $table->string('txt_documentsAfferants')->nullable();

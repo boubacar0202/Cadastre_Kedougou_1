@@ -273,7 +273,7 @@ async function updateMessage(message) {
                   v-for="u in otherUsersWithUnread"
                   :key="u.id"
                   @click="selectUser(u.id)"
-                  class="hover:bg-primary-only hover:text-primary-txt hover:font-semibold hover:border hover:text-white p-2 rounded flex items-center justify-between cursor-pointer"
+                  class="hover:bg-primary-only hover:text-primary-txt hover:font-semibold hover:border hover:text-white p-2 rounded-xl flex items-center justify-between cursor-pointer"
                   :class="activeUserClass(u.id)"
                 >
                   <!-- Avatar + Nom -->

@@ -97,8 +97,8 @@ class Terrain extends Model
     public function mutations()
     {
         return $this->hasMany(Mutation::class);
-    }
+    } 
 
-
+ 
  
 }

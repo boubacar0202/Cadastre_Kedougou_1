@@ -311,7 +311,7 @@ const submitForm = function () {
 
             <div class="flex justify-center">
                 <div class="w-full max-w-7xl">
-                    <div class="bg-white shadow-md rounded-lg">
+                    <div class="bg-white shadow-md rounded-xl">
                         <!-- En-tête du formulaire -->
                         <div   class="p-4 border-b bg-primary">
                             <h1 class="text-lg text-white font-semibold">Formulaire</h1>

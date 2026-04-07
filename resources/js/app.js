@@ -1,5 +1,6 @@
 import "../css/app.css";
 import "./bootstrap";
+import axios from 'axios'
 
 import { createInertiaApp } from "@inertiajs/vue3";
 import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
@@ -21,6 +22,17 @@ window.Echo = new Echo({
 });
  
  
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
+
+// ✅ CSRF TOKEN
+const token = document.querySelector('meta[name="csrf-token"]');
+
+if (token) {
+    axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
+} else {
+    console.error('CSRF token not found');
+}
+
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
 import "maz-ui/styles";

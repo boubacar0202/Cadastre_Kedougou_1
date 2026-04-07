@@ -102,7 +102,7 @@ onMounted(async () => {
             <!-- Navigation Links -->
             <div class="flex flex-col space-y-1">
                 <!-- Bouton d'ouverture/fermeture -->
-                <button @click="toggleMenu" class="p-2 bg-primary text-white rounded shadow-md">
+                <button @click="toggleMenu" class="p-2 bg-primary text-white rounded-xl shadow-md mb-5">
                     ☰ Menu
                 </button>
                 <transition name="slide">
@@ -112,7 +112,7 @@ onMounted(async () => {
                             <div class="flex flex-col space-y-1"> 
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')" 
                                     class="hover:bg-primary-dark hover:text-white hover:text-1xl hover:font-bold p-2 
-                                    rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('dashboard')}">
+                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('dashboard')}">
                                     <svg class="hover:white w-6 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#6d3500">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                             d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -121,7 +121,7 @@ onMounted(async () => {
                                 </NavLink>
                                 <NavLink :href="route('secretariat.create')" :active="route().current('secretariat.create')" 
                                     class="hover:bg-primary-dark hover:text-white hover:text-1xl hover:font-bold p-2 
-                                    rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('secretariat.create')}">
+                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('secretariat.create')}">
                                     <svg class="hover:white w-6 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#6d3500">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
@@ -132,7 +132,7 @@ onMounted(async () => {
                                 </NavLink>
                                 <NavLink :href="route('geometre.create')" :active="route().current('geometre.create')" 
                                     class="hover:bg-primary-dark hover:text-white hover:text-1xl hover:font-bold p-2 
-                                    rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('geometre.create')}">
+                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('geometre.create')}">
                                     <svg class="w-6 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -142,7 +142,7 @@ onMounted(async () => {
                                 </NavLink>
                                 <NavLink :href="route('matriceCadastrale.create')" :active="route().current('matriceCadastrale.create')" 
                                     class="hover:bg-primary-dark hover:text-white hover:text-1xl hover:font-bold p-2 
-                                    rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('matriceCadastrale.create')}">
+                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('matriceCadastrale.create')}">
                                     <svg class="w-6 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M4 6h16M4 10h16M4 14h16M4 18h16" />
@@ -153,7 +153,7 @@ onMounted(async () => {
                                 </NavLink>
                                 <NavLink :href="route('donnee.create')" :active="route().current('donnee.create')" 
                                     class="hover:bg-primary-dark hover:text-white hover:text-1xl hover:font-bold p-2 
-                                    rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('donnee.create')}">
+                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('donnee.create')}">
                                     <svg class="w-6 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
@@ -162,7 +162,7 @@ onMounted(async () => {
                                 </NavLink> 
                                 <NavLink :href="route('mutation.create')" :active="route().current('mutation.create')" 
                                     class="hover:bg-primary-dark hover:text-white hover:text-1xl hover:font-bold p-2 
-                                    rounded text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('mutation.create')}">
+                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('mutation.create')}">
                                     <svg class="w-6 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -173,7 +173,7 @@ onMounted(async () => {
                                 </NavLink>
                                 <NavLink :href="route('message.create')" :active="route().current('message.create')" 
                                     class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
-                                    rounded text-lg text-primary-txt border border-l-8 flex items-center" :class="{'border-primary-menu': route().current('message.create')}">
+                                    rounded-xl text-lg text-primary-txt border border-l-8 flex items-center" :class="{'border-primary-menu': route().current('message.create')}">
                                     <svg class="w-6 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 12H7v-2h10v2zm0-3H7V9h10v2zm0-3H7V6h10v2z"/>
                                     </svg>
@@ -186,7 +186,7 @@ onMounted(async () => {
                                 
                                 <div
                                     class="relative h-10 hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl 
-                                        p-2 rounded text-lg text-primary-txt border border-l-8 flex items-center justify-between"
+                                        p-2 rounded-xl text-lg text-primary-txt border border-l-8 flex items-center justify-between"
                                     :class="{'border-primary-menu': route().current().startsWith('parametre.') || isSettingsOpen}"
                                 >
                                     <NavLink 
@@ -215,14 +215,14 @@ onMounted(async () => {
                                     <NavLink
                                         :href="route('parametre.admin')" :active="route().current('parametre.admin')"
                                         class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
-                                        rounded text-lg text-primary-txt border border-l-8 flex items-center justify-between"
+                                        rounded-xl text-lg text-primary-txt border border-l-8 flex items-center justify-between"
                                     >
                                         Administrateur
                                     </NavLink>
  
                                     <NavLink :href="route('parametre.lotissement.create')" :active="route().current('parametre.lotissement.create')"
                                         class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
-                                        rounded text-lg text-primary-txt border border-l-8 flex items-center"
+                                        rounded-xl text-lg text-primary-txt border border-l-8 flex items-center"
                                     >
                                         Ajouter Lotissements
                                     </NavLink>
@@ -230,7 +230,7 @@ onMounted(async () => {
                                     <NavLink 
                                         :href="route('parametre.lotissement.index')" :active="(route().current() || '') === 'parametre.lotissement.index'"
                                         class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
-                                        rounded text-lg text-primary-txt border border-l-8 flex items-center"
+                                        rounded-xl text-lg text-primary-txt border border-l-8 flex items-center"
                                     >
                                         Liste lotissements
                                     </NavLink> 
@@ -238,9 +238,17 @@ onMounted(async () => {
                                     <NavLink 
                                         :href="route('parametre.mutation')" :active="route().current('parametre.mutation')"
                                         class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
-                                        rounded text-lg text-primary-txt border border-l-8 flex items-center"
+                                        rounded-xl text-lg text-primary-txt border border-l-8 flex items-center"
                                     >
                                         Registre Mutations
+                                    </NavLink> 
+
+                                    <NavLink 
+                                        :href="route('parametre.mutation')" :active="route().current('parametre.mutation')"
+                                        class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
+                                        rounded-xl text-lg text-primary-txt border border-l-8 flex items-center"
+                                    >
+                                        Registre Trimestre
                                     </NavLink> 
                                 </div>
 
@@ -265,7 +273,7 @@ onMounted(async () => {
                 <!-- User Dropdown (En haut à droite) -->
       
                     <div class="relative">
-                        <button @click="showingNavigationDropdown = !showingNavigationDropdown" class="flex items-center space-x-2 px-4 py-2 bg-primary rounded-md hover:bg-primary-dark">
+                        <button @click="showingNavigationDropdown = !showingNavigationDropdown" class="flex items-center space-x-2 px-4 py-2 bg-primary rounded-xl hover:bg-primary-dark">
                             <span class="text-white font-semibold">{{ user?.name }}</span>
                             <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -274,7 +282,7 @@ onMounted(async () => {
 
                         <!-- Dropdown -->
                         <transition name="slideUser">
-                            <div v-if="showingNavigationDropdown" class="absolute right-0 mt-2 w-48 bg-white border border-primary-dark rounded shadow-md z-10">
+                            <div v-if="showingNavigationDropdown" class="absolute right-0 mt-2 w-48 bg-white border border-primary-dark rounded-xl shadow-md z-10">
                                 <div class="px-4 py-2 text-gray-800">{{ user?.name }}</div>
                                 <hr>
                                 <Link :href="route('logout')" method="post" as="button" class="block w-full text-left px-4 py-2 text-primary hover:bg-primary-dark">

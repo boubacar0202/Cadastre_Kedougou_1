@@ -14,6 +14,7 @@ use App\Models\Terrain;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ParametreController extends Controller
@@ -349,8 +350,7 @@ class ParametreController extends Controller
         return redirect()
             ->route('parametre.admin')
             ->with('success', 'Utilisateur ' . $user->name . ' modifié avec succès');
-    }
-
+    } 
 
     // Suppression un utilisateur
     public function destroyUser(Request $request, $id)
@@ -375,7 +375,7 @@ class ParametreController extends Controller
         $user = User::findOrFail($id);
 
         // Interdire la suppression si est l'email
-        if ($user->email === 'mbengueboubacar095@gmail.com' || $user->email === 'fayesaliou196@gmail.com') {
+        if ($user->email === 'mbengueboubacar095@gmail.com' || $user->email === 'fayesaliou196@gmail.com' ) {
             return response()->json([
                 'success' => false,
                 'message' => "Impossible : {$user->name} est un administrateur principal."
@@ -390,5 +390,6 @@ class ParametreController extends Controller
             'message' => "{$user->name}; supprimé avec succès."
         ]);
     }
+ 
  
 }
