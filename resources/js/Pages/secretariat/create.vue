@@ -1,12 +1,11 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue"; 
-import BaseInput from "@/Components/BaseInput.vue"
-import BaseInput_2 from "@/Components/BaseInput.vue" 
-import BaseSelect from "@/Components/BaseSelect.vue"
+import BaseInput from "@/Components/BaseInput.vue";
+import BaseSelect from "@/Components/BaseSelect.vue";
 import { Head, useForm } from "@inertiajs/vue3";
 import MazBtn from "maz-ui/components/MazBtn";
 import MazRadio from "maz-ui/components/MazRadio";
-import { onMounted, ref, watch, watchEffect, computed  } from "vue";
+import { onMounted, ref, watch, watchEffect, computed } from "vue";
 import axios from "axios";
 import { toast } from "@/Components/AppToast";  
 import DefaultLayout from "@/Layouts/DefaultLayout.vue";
@@ -16,7 +15,7 @@ import { usePage } from '@inertiajs/vue3'
 const page = usePage() 
 
 defineOptions({ layout: DefaultLayout });
- 
+
 const slt_region = ref(); 
 const slt_departement = ref();
 const slt_arrondissement = ref();
@@ -26,14 +25,11 @@ const txt_lotissement = ref();
 const departements = ref(null);
 const arrondissements = ref(null);
 const communes = ref(null); 
-const lotissements = ref(null); 
+const lotissements = ref(null);  
 
-const txt_num_section = ref('');
-const txt_num_parcelle = ref('');
-const txt_appartement = ref(''); 
 const fichierPDF = ref(null); 
 const activeTab = ref("");   
-const show = ref(false);
+const showMorcellement = ref(false);
 const showSectionPP = ref(false); 
 const showSectionPM = ref(false); 
 const showSectionPA = ref(false); 
@@ -47,13 +43,13 @@ function handleFileUpload(event) {
 
     if (file.type !== "application/pdf") {
         toast.error("❌ Veuillez sélectionner un fichier PDF valide.");
-        event.target.value = ""; // reset input
+        event.target.value = "";
         return;
     }
 
-    if (file.size > 100 * 1024 * 1024) { // 100 Mo
+    if (file.size > 100 * 1024 * 1024) {
         toast.error("❌ Le fichier dépasse 100 Mo !");
-        event.target.value = ""; // reset input
+        event.target.value = "";
         return;
     }
 
@@ -62,7 +58,7 @@ function handleFileUpload(event) {
 
     console.log("Fichier PDF sélectionné :", fichierPDF.value);
 } 
- 
+
 const props = defineProps({
     regions: {
         type: Array,
@@ -70,11 +66,11 @@ const props = defineProps({
     }, 
     communes: Array,
     lotissements: Array
-
 });
- 
+
+// Formulaire 
 const form = useForm({
-    //  Dossier
+    // Dossier
     txt_num_dossier: "",
     txt_num_dordre: "",
     slt_service_rendu: "",
@@ -87,20 +83,22 @@ const form = useForm({
     slt_arrondissement: "",
     slt_commune: "",
     txt_lotissement: "",
-    txt_HorsLotissement:"",
+    txt_HorsLotissement: "",
     txt_num_lotissement: "", 
     txt_num_section: "",
     txt_num_parcelle: "",
-    txt_appartement:"",
+    txt_appartement: "",
     txt_nicad: "", 
+    txt_statut_nicad: "",
+    slt_motif_annulation_nicad: "",
     txt_num_titre: "",
-    txt_titre_mere: "", // Supprimez l'une des occurrences
+    slt_statut_nicad: "",
     nbr_surface: "",
     slt_document_admin: "",
     txt_num_deliberation: "",
     dt_date_deliberation: "",
-    //  ReferenceCadastrale
-    rd_immatriculation_terrain:"",
+    // ReferenceCadastrale
+    rd_immatriculation_terrain: "",
     slt_dependant_domaine: "",
     ussu_bornage: "",
     slt_lf: "",
@@ -108,7 +106,7 @@ const form = useForm({
     txt_surface_bornage: "",
     dt_date_bornage: "",
     txt_nom_geometre: "",
-    //  Titulaire
+    // Titulaire
     slt_titulaire: "",
     txt_nationalite: "",
     slt_civilite: "",
@@ -124,65 +122,55 @@ const form = useForm({
     eml_email: "",
     txt_representant: "",
     tel_telRepresentant: "", 
-        // Personne physique
-    slt_categoriePM:"",
-    txt_formJuridiquePM:"", 
-    txt_denominationPM:"", 
-    txt_nineaPM:"", 
-    txt_perssonneRepresentantPM:"", 
-    txt_fonctionPM:"", 
+    // Personne physique
+    slt_categoriePM: "",
+    txt_formJuridiquePM: "", 
+    txt_denominationPM: "", 
+    txt_nineaPM: "", 
+    txt_perssonneRepresentantPM: "", 
+    txt_fonctionPM: "", 
     txt_telephonePM: "", 
-    txt_emailPM:"", 
-    txt_adressePM:"", 
-        // Personne morale
-    slt_etablissementPA:"",
-    txt_personneResponsablePA:"",
-    txt_fonctionResponsablePA:"",
-    txt_telephonePA:"",
-    txt_emailPA:"",
-    txt_ministèreTutelePA:"",
-
+    txt_emailPM: "", 
+    txt_adressePM: "", 
+    // Personne morale
+    slt_etablissementPA: "",
+    txt_personneResponsablePA: "",
+    txt_fonctionResponsablePA: "",
+    txt_telephonePA: "",
+    txt_emailPA: "",
+    txt_ministèreTutelePA: "",
     fichierPDF: "",
 });
 
-// Vérifier l'existence du dossier avant d'afficher le formulaire
-// const verifierDossier = async () => {
-//     try {
-//         const { data } = await axios.post('/dossier/verifyDossier', {
-//             txt_num_lotissement: form.txt_num_lotissement,
-//             txt_lotissement: form.txt_lotissement,
-//         });
+// ✅ CORRIGÉ : Fonction pour réinitialiser TOUS les champs cadastraux
+const resetCadastralFields = () => {
+    // Champs communs aux deux sections
+    form.slt_dependant_domaine = '';
+    form.ussu_bornage = '';
+    form.txt_titre_mere = '';
+    form.txt_num_titre = '';
+    form.slt_lf = '';
+    form.txt_num_requisition = '';
+    form.txt_surface_bornage = '';
+    form.dt_date_bornage = '';
+    form.txt_appartement = '';
+    form.txt_nom_geometre = '';
+    showMorcellement.value = false;
+};
 
-//         // Si un terrain identique existe déjà
-//         if (data.duplicate) {
-//             formVisible.value = false;
-//             toast.success(data.message);
-//             return;
-//         }
+// ✅ CORRIGÉ : Watcher sur activeTab pour réinitialiser les champs
+watch(activeTab, (newVal, oldVal) => {
+    // Réinitialiser TOUS les champs cadastraux à chaque changement
+    resetCadastralFields();
+    
+    // Si on change de tab, on met à jour rd_immatriculation_terrain
+    form.rd_immatriculation_terrain = newVal || '';
+    
+    console.log(`🔄 Changement de tab : ${oldVal} → ${newVal}`);
+    console.log('✅ Champs réinitialisés');
+});
 
-//         // Afficher le formulaire
-//         formVisible.value = true; 
-//         toast.success(data.message);
-
- 
-
-//         // Remplir le dossier s'il existe
-//         if (data.dossier) {
-//             form.txt_num_dossier = data.dossier.txt_num_dossier ?? '';
-//         }
-
-//     } catch (err) {
-//         formVisible.value = false; 
-
-//         if (err.response) {  
-//             toast.error(err.response.data?.error || "Entrer le numéro lotissement et le lotissement.");
-//         } else if (err.request) { 
-//             toast.error("Aucune réponse du serveur");
-//         } else { 
-//             toast.error(err.message);
-//         }
-//     } 
-// };
+// Vérification de l'existence du dossier
 const verifierDossier = async () => {
     console.log("Vérification du dossier avec : ", {
         txt_num_lotissement: form.txt_num_lotissement,
@@ -209,9 +197,9 @@ const verifierDossier = async () => {
         }
 
     } catch (err) {
-        console.error(err.response?.data); // Pour debug
+        console.error(err.response?.data);
         formVisible.value = false;
-        toast.error("Erreur serveur");
+        toast.error("Terrain non trouvé. Veuillez vérifier les informations saisies.");
     }
 };
 
@@ -219,18 +207,34 @@ const verifierDossier = async () => {
 const selectedCommune = computed(() => {
     return props.communes.find(c => c.id == form.slt_commune);
 });
+
 const txt_nicad = computed(() => {
     const prefix = selectedCommune.value?.txt_codeCommune || "";
+    const section = String(form.txt_num_section || "").replace(/\s/g, "");
+    const parcelle = String(form.txt_num_parcelle || "").replace(/\s/g, "");
+    const appart = String(form.txt_appartement || "").replace(/\s/g, "");
 
-    const section = form.txt_num_section || "";
-    const parcelle = form.txt_num_parcelle || "";
-    const appart = form.txt_appartement || "";
-
-    const value = `${prefix}${section}${parcelle}${appart}`.trim();
+    const value = prefix + section + parcelle + appart;
+    const cleaned = value.replace(/\s/g, "");
     const MIN_LENGTH = 9;
-    return value.replace(/\s/g, "").length >= MIN_LENGTH ? value : "";
-}); 
+    return cleaned.length >= MIN_LENGTH ? cleaned : "";
+});
 
+// État
+const showAnnulationNICAD = ref(false);
+
+// Méthode
+const handleSelectChangeAnnulationNICAD = () => {
+    showAnnulationNICAD.value = form.slt_statut_nicad === 'Annulé';
+    if (!showAnnulationNICAD.value) {
+        form.slt_motif_annulation_nicad = '';
+    }
+};
+
+// Watch
+watch(() => form.slt_statut_nicad, handleSelectChangeAnnulationNICAD, { immediate: true });
+
+// Préremplire les champs N° dossier et N° d'ordre
 const fetchNextDossier = async () => {
     try {
         const response = await axios.get("/dossier/next");
@@ -240,8 +244,9 @@ const fetchNextDossier = async () => {
         console.error("Erreur lors de la récupération du numéro de dossier :", error);
     }
 };
+
 onMounted(fetchNextDossier);
-  
+
 const fetchDepartements = async () => {
     if (!slt_region.value) {
         departements.value = [];
@@ -256,7 +261,7 @@ const fetchDepartements = async () => {
         console.error("Erreur lors du chargement des départements :", error);
     }
 };
- 
+
 const fetchArrondissements = async () => {
     if (!slt_departement.value) {
         arrondissements.value = [];
@@ -264,9 +269,7 @@ const fetchArrondissements = async () => {
     }
 
     try {
-        const response = await axios.get(
-            `/arrondissements/${slt_departement.value}`
-        );
+        const response = await axios.get(`/arrondissements/${slt_departement.value}`);
         arrondissements.value = response.data.arrondissements;
         console.log("Arrondissements : ", arrondissements.value);
     } catch (error) {
@@ -281,9 +284,7 @@ const fetchCommunes = async () => {
     }
 
     try {
-        const response = await axios.get(
-            `/communes/${slt_arrondissement.value}`
-        );
+        const response = await axios.get(`/communes/${slt_arrondissement.value}`);
         communes.value = response.data.communes;
         console.log("communes : ", communes.value);
     } catch (error) {
@@ -292,23 +293,18 @@ const fetchCommunes = async () => {
 };
 
 const fetchlotissements = async () => {
-    if (!slt_commune.value) {   // ❗ correction ici
+    if (!slt_commune.value) {
         lotissements.value = [];
         return;
     }
 
     try {
-        const response = await axios.get(
-            `/lotissements/${slt_commune.value}`
-        );
-
+        const response = await axios.get(`/lotissements/${slt_commune.value}`);
         lotissements.value = response.data.lotissements;
-
         console.log("lotissements : ", lotissements.value);
     } catch (error) {
         console.error("Erreur lors du chargement des lotissements :", error);
-        toast.error(page.props.flash?.error || 
-            "❌ Erreur lors du chargement des lotissements");
+        toast.error(page.props.flash?.error || "❌ Erreur lors du chargement des lotissements");
     }
 };
 
@@ -316,7 +312,6 @@ watch(() => form.slt_region, fetchDepartements);
 watch(() => form.slt_departement, fetchArrondissements);
 watch(() => form.slt_arrondissement, fetchCommunes);
 watch(() => form.slt_commune, fetchlotissements);
-// watch(() => form.txt_lotissement, fetchlotissement);
 
 watchEffect(() => {
     form.slt_region = slt_region.value;
@@ -326,22 +321,50 @@ watchEffect(() => {
     form.txt_lotissement = txt_lotissement.value; 
 });
 
-// morcellement
-const handleSelectChange = () => {
-    show.value = form.ussu_bornage === "Morcellement de Copropriété";
-};
-watch(() => form.ussu_bornage, (newValue) => {
-    show.value = newValue === "Morcellement de Copropriété";
+// Nettoyage des champs selon le titulaire
+watch(() => form.slt_titulaire, (newVal, oldVal) => {
+    if (!newVal || newVal === oldVal) return;
+
+    const resetFields = (section) => {
+        const fields = {
+            PP: ['txt_nationalite', 'slt_civilite', 'txt_prenom', 'txt_nom', 'slt_piece',
+                'txt_numPiece', 'dt_date_delivrance', 'dt_date_naissance', 'txt_lieu_naissance',
+                'txt_adresse', 'tel_telephone', 'txt_representant', 'tel_telRepresentant',
+                'eml_email', 'txt_ninea'],
+            PM: ['slt_categoriePM', 'txt_formJuridiquePM', 'txt_denominationPM', 'txt_nineaPM',
+                'txt_perssonneRepresentantPM', 'txt_fonctionPM', 'txt_telephonePM',
+                'txt_emailPM', 'txt_adressePM'],
+            PA: ['slt_etablissementPA', 'txt_personneResponsablePA', 'txt_fonctionResponsablePA',
+                'txt_telephonePA', 'txt_emailPA', 'txt_ministèreTutelePA']
+        };
+        fields[section]?.forEach(field => { form[field] = ''; });
+    };
+
+    resetFields('PP');
+    resetFields('PM');
+    resetFields('PA');
+    handleSelectChangeTitulaire();
 });
 
-// charge titulaire Etat Perssone Morale Personne Physique 
+// morcellement
+const handleSelectChange = () => {
+    showMorcellement.value = form.ussu_bornage === "Morcellement de Copropriété";
+};
+watch(() => form.ussu_bornage, (newValue) => {
+    showMorcellement.value = newValue === "Morcellement de Copropriété";
+    if (newValue !== "Morcellement de Copropriété") {
+        form.txt_appartement = '';
+    }
+});
+
+// charge titulaire Etat Personne Morale Personne Physique 
 const handleSelectChangeTitulaire = () => {
     showSectionPP.value = form.slt_titulaire === "Personne Physique";
     showSectionPM.value = form.slt_titulaire === "Personne Morale";
     showSectionPA.value = form.slt_titulaire === "Etat";
 };
 watch(() => form.slt_titulaire, handleSelectChangeTitulaire);
- 
+
 const errorMessage = ref(""); 
 const validateInput = () => {
     const value = (form.txt_appartement || "").toString();
@@ -354,60 +377,78 @@ const validateInput = () => {
         errorMessage.value = "";
     }
 };
- 
+
 const errorMessageNumSection = ref(""); 
-const validateInputNumSection = (e) => {
-    const value = e.target.value;
+const validateInputNumSection = () => {
+    const value = (form.txt_num_section || "").toString();
+
     if (!/^\d*$/.test(value)) {
         errorMessageNumSection.value = "❌ Seulement des chiffres.";
-    } else if (value.length !== 3) {
+    } else if (value.length !== 3 && value.length > 0) {
         errorMessageNumSection.value = "❌ Exactement 3 chiffres.";
     } else {
         errorMessageNumSection.value = "";
     }
 };
- 
+
 const errorMessageNumParcelle = ref(""); 
 const validateInputNumParcelle = () => {
     const value = (form.txt_num_parcelle || "").toString();
 
     if (!/^\d+$/.test(value)) {
         errorMessageNumParcelle.value = "❌ Seulement des chiffres.";
-    } else if (value.length !== 5) {
+    } else if (value.length !== 5 && value.length > 0) {
         errorMessageNumParcelle.value = "❌ Exactement 5 chiffres.";
     } else {
         errorMessageNumParcelle.value = "";
     }
 };
- 
- 
-// Submit du formulaire
-const submitForm = function () {  
+
+const validatePhone = (event) => {
+    const value = event.target.value;
+    form.tel_telephone = value.replace(/[^0-9+]/g, '');
+};
+
+// ✅ CORRIGÉ : Submit du formulaire
+const submitForm = function () {
+    // 1. Récupérer la valeur du tab actif
     form.rd_immatriculation_terrain = activeTab.value || "";
+    
+    // 2. Récupérer les valeurs des sélecteurs
     form.slt_region = slt_region?.value || "";
     form.slt_departement = slt_departement?.value || ""; 
     form.slt_arrondissement = slt_arrondissement?.value || ""; 
     form.slt_commune = slt_commune?.value || "";
-    form.txt_nicad = txt_nicad?.value || ""; 
-    form.txt_num_section = txt_num_section?.value || ""; 
-    form.txt_num_parcelle = txt_num_parcelle?.value || ""; 
-    form.txt_appartement = txt_appartement?.value || ""; 
-  
-    // Formulaire Laravel
+    form.txt_nicad = txt_nicad?.value || "";
+
+    // 3. Validation : Vérifier que les champs requis sont remplis
+    if (!form.slt_region || !form.slt_departement || !form.slt_arrondissement || !form.slt_commune) {
+        toast.error("❌ Veuillez remplir toutes les informations de localisation.");
+        return;
+    }
+
+    // 4. Vérifier que le titulaire est sélectionné
+    if (!form.slt_titulaire) {
+        toast.error("❌ Veuillez sélectionner un titulaire.");
+        return;
+    }
+
+    // 5. Formulaire Laravel
     form.post(route('secretariat.store'), {
         onSuccess: (page) => { 
             toast.success(page.props.flash?.success || "✅ Dossier enregistré !");
             Inertia.visit(route("secretariat.create"), { replace: true });
         },
-        onError: (errors) => { 
-            Object.values(errors).forEach(msg => toast.error(msg)); 
+        onError: (errors) => {
+            const messages = Object.values(errors);
+            toast.error(messages.join('\n'));
         },
         onFinish: () => {
             console.log("🟡 Requête terminée");
         }
     }); 
 };
- 
+
 </script>
 
 <template>
@@ -427,33 +468,29 @@ const submitForm = function () {
                         <div class="p-4 border-b bg-primary rounded-t-xl">
                             <h1 class="text-lg text-white font-semibold">Formulaire</h1>
                         </div> 
-                        <form
-                            class="space-y-4" autocomplete="on" @submit.prevent="submitForm"
-                        >
-                            <div class="p-6">
-                                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2 relative">
-                                    <h5 class="text-lg text-primary-txt font-bold mb-4">
+                        <form class="space-y-4" autocomplete="on" @submit.prevent="submitForm">
+                            <div class="p-6"> 
+                                <div class="flex items-center justify-between mb-4">
+                                    <h5 class="text-lg text-primary-txt font-bold">
                                         Réferences Dossiers
                                     </h5> 
                                     <MazBtn 
-                                        type="submit" 
-                                        no-shadow no-hover-effect
-                                        class="w-28 h-8 text-white bg-gradient-to-r from-primary via-primary-dark to-primary
+                                        type="button" 
+                                        no-shadow 
+                                        no-hover-effect
+                                        class="w-36 h-8 text-white bg-gradient-to-r from-primary via-primary-dark to-primary
                                             hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
                                             dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg
-                                            dark:shadow-blue-800/80 font-medium rounded-lg text-xs px-3 py-1 text-center me-2 mb-2"
-                                            size="medium"
-                                            @click="verifierDossier"
+                                            dark:shadow-blue-800/80 font-medium rounded-lg text-xs px-3 py-1 text-center"
+                                        size="medium"
+                                        @click="verifierDossier"
                                     >
                                         Vérifier
                                     </MazBtn>
                                 </div>
                                 <div class="mb-6">
-                                    <div
-                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2"
-                                    >
-                                    
-                                        <BaseInput
+                                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                                        <BaseInput 
                                             label="N° Dossier"
                                             name="txt_num_dossier"
                                             required="on"
@@ -484,7 +521,7 @@ const submitForm = function () {
                                             ]"
                                             v-model="form.slt_service_rendu"
                                         />
- 
+
                                         <BaseInput
                                             label="Etat de cession"
                                             name="txt_etat_cession"
@@ -507,7 +544,6 @@ const submitForm = function () {
                                             required="on"
                                             v-model="form.dt_date_creation"
                                         />
-
                                     </div> 
 
                                     <!-- Parcelle -->
@@ -515,10 +551,7 @@ const submitForm = function () {
                                         Réferences Parcellelaires
                                     </h5>
                                     <br />
-                                    <div
-                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2"
-                                    >
-                                       
+                                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
                                         <BaseSelect
                                             label="Région"
                                             name="slt_region"
@@ -529,7 +562,6 @@ const submitForm = function () {
                                             v-model="slt_region"
                                             @change="fetchDepartements"
                                         />
- 
 
                                         <BaseSelect
                                             label="Département"
@@ -541,7 +573,7 @@ const submitForm = function () {
                                             v-model="slt_departement"
                                             @change="fetchArrondissements"
                                         />
-  
+
                                         <BaseSelect
                                             label="Arrondissement"
                                             name="slt_arrondissement"
@@ -563,16 +595,7 @@ const submitForm = function () {
                                             v-model="slt_commune"  
                                             @change="fetchlotissements"
                                         />   
-<!--                                         
-                                        <BaseSelect
-                                            label="Lotissement/Quartier"
-                                            :options="lotissements"
-                                            optionLabel="txt_denomination"
-                                            optionValue="id"
-                                            v-model="form.txt_lotissement"
-                                            @keyup.enter="verifierDossier" 
-                                        />  -->
-                                        
+
                                         <BaseSelect
                                             label="Lotissement/Quartier"
                                             :options="lotissements"
@@ -581,7 +604,7 @@ const submitForm = function () {
                                             v-model="form.txt_lotissement"
                                             @keyup.enter="verifierDossier"
                                         />
-  
+
                                         <BaseInput
                                             label="Hors Lotissement"
                                             name="txt_HorsLotissement" 
@@ -594,7 +617,7 @@ const submitForm = function () {
                                             name="txt_num_lotissement"
                                             v-model="form.txt_num_lotissement"
                                         />
-   
+
                                         <BaseInput
                                             label="Surface"
                                             name="nbr_surface"
@@ -643,8 +666,7 @@ const submitForm = function () {
                                             :minlength="3"
                                             v-model="form.txt_num_section" 
                                             :error="errorMessageNumSection" 
-                                            @input="() => validateInputNumSection()"
-
+                                            @input="validateInputNumSection"
                                         /> 
 
                                         <BaseInput
@@ -656,7 +678,7 @@ const submitForm = function () {
                                             @input="validateInputNumParcelle"
                                             :error="errorMessageNumParcelle" 
                                         />  
-  
+
                                         <BaseInput
                                             class="sm:col-span-2"
                                             label="NICAD"
@@ -665,24 +687,45 @@ const submitForm = function () {
                                             readonly 
                                         /> 
                                         
+                                       <BaseSelect
+                                            label="Statut NICAD"
+                                            name="slt_statut_nicad"   
+                                            v-model="form.slt_statut_nicad"
+                                            :options="[
+                                                {value:'Actif', label:'Actif'},
+                                                {value:'Désactivé', label:'Désactivé'},
+                                                {value:'Annulé', label:'Annulé'},
+                                                {value:'Supprimé', label:'Supprimé'},
+                                                {value:'Sans NICAD', label:'Sans NICAD'},
+                                            ]"  
+                                            @change="handleSelectChangeAnnulationNICAD"                                        
+                                        /> 
 
+                                        <BaseSelect
+                                            v-if="showAnnulationNICAD"
+                                            label="Motif d'Annulation NICAD"
+                                            name="slt_motif_annulation_nicad"   
+                                            v-model="form.slt_motif_annulation_nicad"
+                                            :options="[
+                                                {value:'Fusion', label:'Fusion'},
+                                                {value:'Division/Morcellement', label:'Division/Morcellement'},
+                                                {value:'Affecter par un Projet', label:'Affecter par un Projet'},
+                                                {value:'Règlement Judiciaire', label:'Règlement Judiciaire'},
+                                            ]" 
+                                        />
                                     </div>
                                 </div>
 
-                                <!-- exemple de tabs avec MazUi -->
-
+                                <!-- ✅ CORRIGÉ : Réferences Cadastrales -->
                                 <h5 class="text-lg text-primary-txt font-bold mt-4">
                                     Réferences Cadastrales
                                 </h5>
                                 <br />
 
                                 <div>
-                                    <!-- Exemple de tabs avec MazUi --> 
+                                    <!-- Nature Juridique -->
                                     <div class="sm:col-span-2">
-                                        <label
-                                            for="slt_dependant_domaine"
-                                            class="block font-medium text-primary-txt"
-                                        >
+                                        <label for="slt_dependant_domaine" class="block font-medium text-primary-txt">
                                             Nature Juridique
                                         </label>
                                         <div class="mt-2">
@@ -700,13 +743,12 @@ const submitForm = function () {
                                             />
                                         </div>
                                     </div>
-                                    <!-- Contenus de chaque section selon les checkboxes sélectionnées -->
-                                    <div v-if="activeTab.includes('Terrain Non Immatriculé')" class="maz-py-4">
-                                        <!-- Contenu du Tab 1 ici -->
+
+                                    <!-- Section Terrain Non Immatriculé -->
+                                    <div v-if="activeTab === 'Terrain Non Immatriculé'" class="maz-py-4">
                                         <br/>
                                         <div class="sm:col-span-12">
                                             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
-                                       
                                                 <BaseSelect
                                                     class="sm:col-span-2"
                                                     label="Dépendance Domaine"
@@ -719,18 +761,16 @@ const submitForm = function () {
                                                     ]" 
                                                     v-model="form.slt_dependant_domaine" 
                                                 /> 
-
                                             </div>
                                         </div>
                                     </div>
 
                                     <br/>
-                                    <div v-if="activeTab.includes('Terrain Immatriculé')" class="maz-py-4">
-                                        <!-- Contenu du Tab 2 ici -->
-                                         <br>
+                                    <!-- Section Terrain Immatriculé -->
+                                    <div v-if="activeTab === 'Terrain Immatriculé'" class="maz-py-4">
+                                        <br>
                                         <div class="sm:col-span-12">
                                             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
-                                                 
                                                 <BaseSelect
                                                     class="sm:col-span-2"
                                                     label="Ussu de bornage"
@@ -780,33 +820,31 @@ const submitForm = function () {
                                                     name="txt_surface_bornage"   
                                                     v-model="form.txt_surface_bornage" 
                                                 /> 
-  
+
                                                 <BaseInput 
                                                     label="Date Bornage"
                                                     name="dt_date_bornage"   
                                                     type="date"
                                                     v-model="form.dt_date_bornage" 
                                                 /> 
- 
+
                                                 <BaseInput 
-                                                    v-if="show" 
+                                                    v-if="showMorcellement" 
                                                     label="Appartement"
                                                     name="txt_appartement" 
                                                     @input="validateInput"
                                                     :maxlength="3"
                                                     :minlength="3"
                                                     v-model="form.txt_appartement"
-                                                    :error="errorMessageNumSection"  
+                                                    :error="errorMessage"  
                                                 /> 
- 
+
                                                 <BaseInput 
                                                     class="sm:col-span-2"
-                                                    label="ApparNom Géomètre"
+                                                    label="Nom Géomètre"
                                                     name="txt_nom_geometre" 
                                                     v-model="form.txt_nom_geometre" 
                                                 /> 
-
-
                                             </div>
                                         </div>
                                     </div>
@@ -818,30 +856,23 @@ const submitForm = function () {
                                 </h5>
                                 <br />
                                 <div class="mb-6">
-                                    <div
-                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2"
-                                    >
- 
+                                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
                                         <BaseSelect
                                             class="sm:col-span-2"
                                             label="Titulaire"
                                             name="slt_titulaire" 
                                             v-model="form.slt_titulaire" 
                                             @change="handleSelectChangeTitulaire"
-
                                             :options="[
-                                                {value: 'Personne Physique', label: 'Perssonne Physique'},
+                                                {value: 'Personne Physique', label: 'Personne Physique'},
                                                 {value: 'Personne Morale', label: 'Personne Morale'},
                                                 {value: 'Etat', label: 'Etat'},
                                             ]"
                                         /> 
-                                        
                                     </div>
                                     <br>
-                                    <div
-                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2"
-                                    >
- 
+                                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                                        <!-- Personne Physique -->
                                         <BaseInput 
                                             v-if="showSectionPP" 
                                             label="Nationalite"
@@ -849,7 +880,7 @@ const submitForm = function () {
                                             autocomplete="given-name"
                                             v-model="form.txt_nationalite" 
                                         /> 
- 
+
                                         <BaseSelect
                                             v-if="showSectionPP" 
                                             label="Civilité"
@@ -860,21 +891,21 @@ const submitForm = function () {
                                                 {value: 'Mme', label: 'Mme'},
                                             ]"
                                         /> 
- 
+
                                         <BaseInput 
                                             v-if="showSectionPP" 
                                             label="Prénom"
                                             name="txt_prenom"  
                                             v-model="form.txt_prenom" 
                                         />
- 
+
                                         <BaseInput 
                                             v-if="showSectionPP" 
                                             label="Nom"
                                             name="txt_nom"  
                                             v-model="form.txt_nom" 
                                         />
- 
+
                                         <BaseSelect
                                             v-if="showSectionPP" 
                                             label="Types de Piece"
@@ -885,7 +916,7 @@ const submitForm = function () {
                                                 {value: 'Passeport', label: 'Passeport'}
                                             ]"
                                         />
- 
+
                                         <BaseInput 
                                             v-if="showSectionPP" 
                                             label="N° Pièce"
@@ -901,7 +932,7 @@ const submitForm = function () {
                                             v-model="form.dt_date_delivrance" 
                                             :max="new Date().toISOString().split('T')[0]" 
                                         />
- 
+
                                         <BaseInput 
                                             v-if="showSectionPP" 
                                             type="date"
@@ -910,7 +941,7 @@ const submitForm = function () {
                                             v-model="form.dt_date_naissance" 
                                             :max="new Date().toISOString().split('T')[0]" 
                                         />
- 
+
                                         <BaseInput 
                                             v-if="showSectionPP"  
                                             label="Lieu de Naissance"
@@ -918,7 +949,7 @@ const submitForm = function () {
                                             autocomplete="given-name" 
                                             v-model="form.txt_lieu_naissance"  
                                         />
- 
+
                                         <BaseInput 
                                             v-if="showSectionPP"  
                                             label="Adresse"
@@ -959,8 +990,7 @@ const submitForm = function () {
                                             v-model="form.tel_telRepresentant"   
                                         />
 
-                                        <!-- Perssonne Morale -->
-                                                                                                                                                                                                
+                                        <!-- Personne Morale -->
                                         <BaseSelect
                                             v-if="showSectionPM"  
                                             label="Catégorie"
@@ -984,10 +1014,11 @@ const submitForm = function () {
                                                 {value: 'Securité', label: 'Securité'},
                                                 {value: 'Santé', label: 'Santé'},
                                                 {value: 'Mine', label: 'Mine'},
+                                                {value: 'Etablissement Financier', label: 'Etablissement Financier'},
                                                 {value: 'Autres', label: 'Autres'},
                                             ]"
                                         />
-                                                                                                                                                                                                    
+                                                                                                                                   
                                         <BaseInput 
                                             v-if="showSectionPM"  
                                             label="Forme Juridique"
@@ -1049,7 +1080,6 @@ const submitForm = function () {
                                         />
 
                                         <!-- Etat -->
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
                                         <BaseSelect
                                             v-if="showSectionPA"
                                             label="Etablissement"
@@ -1114,21 +1144,19 @@ const submitForm = function () {
                                             name="fichierPDF" 
                                             @change="handleFileUpload" 
                                         /> 
- 
                                     </div>
                                 </div>
                                 <br />
 
                                 <!-- Bouton de soumission -->
-
                                 <div class="sm:col-span-6 flex justify-center">
                                     <MazBtn type="submit" no-shadow no-hover-effect
-                                            class="w-64 h-10 text-white bg-gradient-to-r from-primary via-primary-dark to-primary
-                                                hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
-                                                dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg
-                                                dark:shadow-blue-800/80 font-medium rounded-lg text-xs px-3 py-1 text-center me-2 mb-2"
-                                                size="medium"
-                                            >
+                                        class="w-64 h-10 text-white bg-gradient-to-r from-primary via-primary-dark to-primary
+                                            hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                                            dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg
+                                            dark:shadow-blue-800/80 font-medium rounded-lg text-xs px-3 py-1 text-center me-2 mb-2"
+                                        size="medium"
+                                    >
                                         Enregistrer
                                     </MazBtn>
                                 </div>
@@ -1140,4 +1168,3 @@ const submitForm = function () {
         </div>
     </AuthenticatedLayout>
 </template>
-

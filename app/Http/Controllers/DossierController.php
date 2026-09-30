@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Dossier;
-use GuzzleHttp\Psr7\Request; 
+use Illuminate\Http\Request; 
 use App\Models\CodeAcces;
  
 class DossierController extends Controller
@@ -17,9 +17,7 @@ class DossierController extends Controller
             ->orderByRaw('CAST(SUBSTRING_INDEX(txt_num_dossier, "/", 1) AS UNSIGNED) DESC')
             ->first();
 
-        $lastOrdre = Dossier::max('txt_num_dordre');
-
-        // Si $lastOrdre est un entier simple
+        $lastOrdre = Dossier::max('txt_num_dordre'); 
         $nextOrdre = $lastOrdre ? $lastOrdre + 1 : 1;
  
         if ($last) {
@@ -31,15 +29,14 @@ class DossierController extends Controller
             $nextNumber = '00001';
         }
 
+        // Toujours 5 caractères
+        $nextNumber = str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+
         $numDossier = $nextNumber . '/' . $annee;
 
         return response()->json([
             'num_dossier' => $numDossier,
             'num_dordre'  => $nextOrdre,
         ]);
-    }
-
-  
+    } 
 }
- 
- 

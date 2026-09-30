@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
 
             $table->string('txt_numeroMutation');
-            $table->string('txt_num_lotissement');
-            $table->string('txt_lotissement');
+            $table->string('txt_num_lotissementMutation');
+            $table->string('txt_lotissementMutation');
             // information titulaire
             $table->string('slt_titulaireMT');
             $table->string('txt_nationaliteMT')->nullable();
@@ -61,7 +61,9 @@ return new class extends Migration
             $table->date('dt_date_naissanceMutation')->nullable();
             $table->string('txt_lieu_naissanceMutation')->nullable();
             $table->string('txt_adresseMutation')->nullable();
-            $table->string('tel_telephoneMutation')->nullable();  
+            $table->string('tel_telephoneMutation')->nullable();   
+            $table->string('txt_representantMutation')->nullable(); 
+            $table->string('tel_telRepresentantMutation')->nullable();    
             $table->string('txt_typeActeMutation');
             $table->string('txt_nomNotaireMutation')->nullable();
             $table->date('dt_dateMutation');
@@ -84,9 +86,14 @@ return new class extends Migration
             $table->string('txt_telephonePA_Mutation')->nullable();
             $table->string('txt_emailPA_Mutation')->nullable();
             $table->string('txt_ministèreTutelePA_Mutation')->nullable();
-            
+             
+            // $table->string('fichierPDFMutation')->nullable();
 
-            $table->string('fichierPDFMutation')->nullable();
+            // 🔑 Clés étrangères (colonnes)
+            $table->foreignId('terrain_id')->constrained('terrains')->onDelete('cascade');
+            $table->foreignId('dossier_id')->constrained('dossiers')->onDelete('cascade');
+            $table->string('txt_nicadMutation')->nullable();
+            $table->foreign('txt_nicadMutation')->references('txt_nicad')->on('terrains')->onDelete('cascade');
                 
             $table->timestamps();
         });

@@ -1,342 +1,472 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head } from '@inertiajs/vue3';
-import { defineProps, onMounted } from 'vue';
-import DefaultLayout from "@/Layouts/DefaultLayout.vue";
-import { computed } from 'vue'
-
-defineOptions({ layout: DefaultLayout });
+import { Head, router, Link } from '@inertiajs/vue3';
+import { ref, computed, onMounted, watch } from 'vue';
+import { debounce } from 'lodash';
+import { toast } from "@/Components/AppToast";
+import DeleteModal from "@/Components/DeleteModal.vue";
+import MazBtn from "maz-ui/components/MazBtn";
+import * as XLSX from 'xlsx';
 
 const props = defineProps({
-    terrain: Object,
-    terrains: Array,  
+    terrains: {
+        type: [Object, Array],
+        default: () => []
+    },
+    filters: {
+        type: Object,
+        default: () => ({})
+    }
 });
- 
-const sortedTerrains = computed(() => {
-    return [...(props.terrains ?? [])].sort((a, b) => {
-        // Récupération du texte complet du numéro de dossier
-        const dossierA = String(a.dossier?.txt_num_dossier || '0/0')
-        const dossierB = String(b.dossier?.txt_num_dossier || '0/0')
 
-        // Découper numéro et année
-        const [numA, yearA] = dossierA.split('/')
-        const [numB, yearB] = dossierB.split('/')
+// États pour les filtres
+const filters = ref({
+    numero: props.filters?.numero || '',
+    nicad: props.filters?.nicad || '',
+    titulaire: props.filters?.titulaire || '',
+    commune: props.filters?.commune || ''
+});
 
-        // Convertir les valeurs
-        const anA = parseInt(yearA, 10) || 0
-        const anB = parseInt(yearB, 10) || 0
-        const nA = parseInt(numA, 10) || 0
-        const nB = parseInt(numB, 10) || 0
+const showDeleteModal = ref(false);
+const selectedTerrain = ref(null);
+const loadingDelete = ref(false);
+const deleteCode = ref('');
 
-        // Comparer d’abord l’année, ensuite le numéro
-        if (anA !== anB) {
-        return anA - anB // années croissantes (2023 avant 2024)
-        }
-        return nA - nB // numéros croissants (00015 avant 00407)
-    })
-})
+// 🔥 Vérifier si c'est une collection (Array) ou une pagination (Object)
+const isCollection = computed(() => {
+    return Array.isArray(props.terrains);
+});
 
+// 🔥 Obtenir les données
+const displayData = computed(() => {
+    if (isCollection.value) {
+        return props.terrains || [];
+    }
+    return props.terrains?.data || [];
+});
 
- 
-function splitNomPrenom(fullName) {
-    if (!fullName) return { nom: '-', prenom: '-' }
+// 🔥 Total des enregistrements
+const totalEnregistrement = computed(() => {
+    if (isCollection.value) {
+        return props.terrains?.length || 0;
+    }
+    return props.terrains?.meta?.total || 0;
+});
 
-    const parts = fullName.trim().split(' ')
-    const prenom = parts[0] || '-'
-    const nom = parts.slice(1).join(' ') || '-'
+// 🔥 Vérifier si des données existent
+const hasData = computed(() => {
+    if (isCollection.value) {
+        return props.terrains && props.terrains.length > 0;
+    }
+    return props.terrains?.data && props.terrains.data.length > 0;
+});
 
-    return { nom, prenom }
-}
+// 🔥 Vérifier si la pagination est disponible
+const hasPagination = computed(() => {
+    if (isCollection.value) return false;
+    return hasData.value && 
+           props.terrains?.meta?.last_page && 
+           props.terrains.meta.last_page > 1;
+});
 
-function splitDateLieunaissance(fullDateLieu) {
-    if (!fullDateLieu) return { date: '-', lieunaissance: '-' }
+// 🔥 Numéro de ligne
+const getRowNumber = (index) => {
+    if (isCollection.value) {
+        return index + 1;
+    }
+    return ((props.terrains?.meta?.current_page || 1) - 1) * (props.terrains?.meta?.per_page || 15) + index + 1;
+};
 
-    const parts = fullDateLieu.trim().split(' à ' || ' a ')
-    const date = parts[0] || '-'
-    const lieunaissance = parts.slice(1).join(' ') || '-'
-
-    return { date, lieunaissance }
-}
-
-// Fonction pour formater la date
-const formatDate = (dateString) => {
-    if (!dateString) return 'Date inconnue';
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
+// Debounced search
+const debouncedSearch = debounce((page = 1) => {
+    router.get(route('matrice.create'), {
+        ...filters.value,
+        page: page
+    }, {
+        preserveState: true,
+        replace: true,
+        preserveScroll: true
     });
+}, 300);
+
+// Watcher sur les filtres
+watch(filters, () => {
+    debouncedSearch(1);
+}, { deep: true });
+
+// Pagination (uniquement si ce n'est pas une collection)
+const goToPage = (url) => {
+    if (!url || isCollection.value) return;
+    
+    try {
+        const urlParams = new URLSearchParams(url.split('?')[1]);
+        const page = urlParams.get('page');
+        
+        if (page) {
+            router.get(route('matrice.create'), {
+                ...filters.value,
+                page: page
+            }, {
+                preserveState: true,
+                replace: true,
+                preserveScroll: true
+            });
+        }
+    } catch (error) {
+        console.error('Erreur de pagination:', error);
+    }
+};
+
+const prevPage = () => {
+    if (!isCollection.value && props.terrains?.links?.prev) {
+        goToPage(props.terrains.links.prev);
+    }
+};
+
+const nextPage = () => {
+    if (!isCollection.value && props.terrains?.links?.next) {
+        goToPage(props.terrains.links.next);
+    }
+};
+
+// Suppression
+const supprimerTerrain = (terrain) => {
+    if (!terrain?.id) return;
+    selectedTerrain.value = terrain;
+    deleteCode.value = "";
+    showDeleteModal.value = true;
+};
+
+const confirmerSuppression = () => {
+    if (deleteCode.value !== 'SUPPRIMER') {
+        toast.error('Code incorrect');
+        return;
+    }
+
+    loadingDelete.value = true;
+    router.delete(route('matrice.destroy', selectedTerrain.value.id), {
+        onSuccess: () => {
+            showDeleteModal.value = false;
+            selectedTerrain.value = null;
+            toast.success('Terrain supprimé avec succès');
+            debouncedSearch(1);
+        },
+        onError: (errors) => {
+            toast.error('Erreur lors de la suppression');
+        },
+        onFinish: () => {
+            loadingDelete.value = false;
+        }
+    });
+};
+
+// Formatage date
+const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '-';
+        return date.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+    } catch {
+        return '-';
+    }
+};
+
+// Réinitialisation des filtres
+const resetFilters = () => {
+    filters.value = {
+        numero: '',
+        nicad: '',
+        titulaire: '',
+        commune: ''
+    };
+};
+
+// Chargement initial
+onMounted(() => {
+    if (!hasData.value) {
+        debouncedSearch(1);
+    }
+});
+
+
+// 🔥 Export Excel
+const exportToExcel = () => {
+    if (!hasData.value) {
+        toast.error('Aucune donnée à exporter');
+        return;
+    }
+
+    try {
+        // Préparer les données à exporter (mêmes colonnes que le tableau)
+        const exportData = displayData.value.map((terrain, index) => ({
+            'N°': getRowNumber(index),
+            'N° dossier': terrain.dossier?.txt_num_dossier || '-',
+            'Region': terrain.region?.slt_region || '-',
+            'Departement': terrain.departement?.slt_departement || '-',
+            'Commune': terrain.commune?.slt_commune || '-',
+            'Lotissement': terrain.txt_lotissement || '-',
+            'Section': terrain.txt_num_section || '-',
+            'N° Lot': terrain.txt_num_lotissement || '-',
+            'N° Parcelle': terrain.txt_num_parcelle || '-',
+            'NICAD': terrain.txt_nicad || 'NON',
+            'Surface': terrain.nbr_surface || '-',
+            'Type Batie': terrain.evaluations_batis?.currentCat || '-',
+            'Niveau': terrain.evaluations_batis?.nbr_niveauPR || '-',
+            'Titre Mere': terrain.references_cadastrales?.txt_titre_mere || '-',
+            'Titulaire': terrain.titulaire?.slt_titulaire || '-',
+            'Prénom': terrain.titulaire?.txt_prenom || '-',
+            'Nom': terrain.titulaire?.txt_nom || '-',
+            'Téléphone': terrain.titulaire?.tel_telephone || '-',
+            'Email': terrain.titulaire?.eml_email || '-',
+        }));
+
+        // Créer la feuille et le classeur
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Matrice Cadastrale');
+
+        // Ajuster la largeur des colonnes automatiquement
+        const columnWidths = Object.keys(exportData[0] || {}).map((key) => {
+            const maxLength = Math.max(
+                key.length,
+                ...exportData.map((row) => String(row[key] ?? '').length)
+            );
+            return { wch: Math.min(maxLength + 2, 40) };
+        });
+        worksheet['!cols'] = columnWidths;
+
+        // Nom du fichier avec la date
+        const dateStr = new Date().toISOString().slice(0, 10);
+        const fileName = `matrice_cadastrale_${dateStr}.xlsx`;
+
+        // Télécharger
+        XLSX.writeFile(workbook, fileName);
+
+        toast.success('Export Excel réussi');
+    } catch (error) {
+        console.error('Erreur export Excel:', error);
+        toast.error("Erreur lors de l'export");
+    }
 };
 
 </script>
 
 <template>
+    <Head title="Matrice Cadastrale">
+        <link rel="icon" sizes="512x512" href="/logo-01.png">
+    </Head>
 
-    <Head title="Matrice"/>
-    <AuthenticatedLayout>   
-
+    <AuthenticatedLayout>
         <template #header>
-            <h2
-                class="text-xl font-semibold leading-tight text-primary-txt"
-            >
+            <h2 class="text-xl font-semibold leading-tight text-primary-txt">
                 Matrice Cadastrale
             </h2>
-            <template v-if="!terrains || terrains.length === 0">
-                <p>Aucun terrain trouvé.</p>
-            </template>
-           
         </template>
-     
+
         <div class="py-12">
             <div class="flex justify-center">
-                <div class="w-full max-w-8xl">  
-                    <div class="bg-white shadow-md rounded-lg "> <br> 
-                        <div class="mx-auto max-w-8xl sm:px-8 lg:px-12 mt-4 mb-4">
-                            <div class="card-header">
-                                <div class="p-4 border-b bg-primary-only">
-                                    <h1 class="text-3xl text-primary-txt font-bold">Matrice Cadastrale</h1>
-                                </div>
+                <div class="w-full max-w-8xl">
+                    <div class="bg-white shadow rounded-xl">
+                        <!-- En-tête -->
+                        <div class="flex flex-wrap items-center justify-between gap-4 p-4 border-b rounded-t-xl bg-primary">
+                            <div class="flex flex-wrap items-center gap-4">
+                                <h1 class="text-lg text-white font-semibold">
+                                    Matrice Cadastrale
+                                </h1>
+                                <span class="text-white/80 text-sm">
+                                    Total : <span class="font-bold text-white">{{ totalEnregistrement }}</span>
+                                </span>
                             </div>
- 
-                            <div class="max-h-[600px] overflow-x-auto shadow-md sm:rounded-lg mt-8">
-                                <div class="container"> 
-                                    <div class="card"> 
-                                        <div class="card-body"> 
-                                            <table class="table table-sm table-strictped table-bordered">
-                                                
-                                                <thead class="sticky top-0 z-10">
-                                                    <tr> 
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center whitespace-nowrap">Numéro dordre</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Numéro dossier</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Region</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Departement</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Commune</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Village/Quartier</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Rue</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Section</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Lotissement</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Numéro Lot</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Numéro_Parcelle</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">NICAD</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Numéro_Prote</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Superfice Legale</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Superficie Batie</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Type_Batie</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Niveau</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Superfice_NBatie</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Type_Designation</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Cat_Occupant</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Source_Donnee</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Titre Mere</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Titre Parcelle</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Type_DocFoncier</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Nature_Juridique</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Prenom_Pro</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Nom_Pro</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">CIN_Pro</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Passport_Pro</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">DateDelivrance_Pro  /</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Date_Naissanc |</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Lieu_Naissance</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">NINEA_PRO</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Telephone1_Pro</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Telephone2_Pro</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Email_Pro</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Prenom_Occupant</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Nom_Occupant</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">CIN_Ocupant</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Passeport_Occupant</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Date_Delivrance</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">DateNaiss_Occupant</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">LieuNaiss_Occupant</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">NINEA_Occupant</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Tel_Occupant</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Email_Occupant</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Valeur_Locative</th>
-                                                        <th scope="col" class="px-6 py-6 border-l bg-primary text-white text-center font-bold whitespace-nowrap">Observations</th> 
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr v-for="terrain in sortedTerrains" :key="terrain.id ?? index" 
-                                                        class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
- 
-                                                        <th class="sticky left-0 z-0 border bg-white px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.dossier.txt_num_dordre || '-' }}</th>
-                                                        <th class="sticky left-0 z-0 border bg-white px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.dossier.txt_num_dossier || '-' }}</th>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.region?.slt_region || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.departement?.slt_departement || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.commune?.slt_commune || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.txt_lotissement || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Rue</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.txt_num_section || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.txt_lotissement || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.txt_num_lotissement || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.txt_num_parcelle || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.txt_nicad || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Numéro_Prote</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.nbr_surface || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.evaluations_terrains?.txt_superficie_bati_sol || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.evaluations_batis?.currentCat || 'Null' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.evaluations_batis?.nbr_niveauPR || '-'  }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.evaluations_terrains?.txt_superficie_bati_sol || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.evaluations_amenagements?.txt_designation_am  || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Cat_Occupant</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Source_Donnee</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.references_cadastrales.txt_titre_mere || '-' }}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.references_cadastrales?.txt_titre_mere || '-'}}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.slt_document_admin || '-'}}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.references_cadastrales?.rd_immatriculation_terrain}}</td>
-                                                        
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.txt_prenom || '-'}}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.txt_nom || '-'}}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.slt_piece || '-'}}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.slt_piece || '-'}}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{formatDate(terrain.titulaire?.dt_date_delivrance) || '-'}}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{formatDate(terrain.titulaire?.dt_date_naissance) || '-'}}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.txt_lieu_naissance || '-'}}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.txt_ninea || '-'}}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.tel_telephone || '-'}}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.tel_telRepresentant || '-'}}</td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">{{terrain.titulaire?.eml_email || '-'}}</td>
-                                                        
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
-                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
-                                                                <div v-for="(ref, index) in terrain.references_usages"
-                                                                    :key="index"
-                                                                    class="block"
-                                                                    > 
-                                                                    {{ splitNomPrenom(ref.txt_nomOccupantTG).prenom }}
-                                                                </div>
-                                                            </div>
-                                                            <div v-else>-</div>
-                                                        </td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
-                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
-                                                                    <div
-                                                                        v-for="(ref, index) in terrain.references_usages"
-                                                                        :key="index"
-                                                                        class="block"
-                                                                        >
-                                                                        {{ splitNomPrenom(ref.txt_nomOccupantTG).nom }}
-                                                            </div>
-                                                                </div>
-                                                            <div v-else>-</div>
-                                                        </td> 
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
-                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
-                                                                    <span
-                                                                        v-for="(ref, index) in terrain.references_usages"
-                                                                        :key="index"
-                                                                        class="block"
-                                                                        >
-                                                                        {{ ref.txt_cniPasseportTG }}
-                                                                    </span>
-                                                                </div>
-                                                            <div v-else>-</div>
-                                                        </td> 
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
-                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
-                                                                    <span
-                                                                        v-for="(ref, index) in terrain.references_usages"
-                                                                        :key="index"
-                                                                        class="block"
-                                                                        >
-                                                                        {{ ref.txt_cniPasseportTG }}
-                                                                    </span>
-                                                                </div>
-                                                            <div v-else>-</div>
-                                                        </td> 
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
-                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
-                                                                    <span
-                                                                        v-for="(ref, index) in terrain.references_usages"
-                                                                        :key="index"
-                                                                        class="block" splitDateLieunaissance
-                                                                        >
-                                                                        {{ ref.dt_dateDelivranceTG }}
-                                                                    </span>
-                                                                </div>
-                                                            <div v-else>-</div>
-                                                        </td>   
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
-                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
-                                                                    <span
-                                                                        v-for="(ref, index) in terrain.references_usages"
-                                                                        :key="index"
-                                                                        class="block"
-                                                                        >
-                                                                        {{ splitDateLieunaissance(ref.txt_dateLieuNaissanceTG).date }}
-                                                                    </span>
-                                                                </div>
-                                                            <div v-else>-</div>
-                                                        </td>  
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
-                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
-                                                                    <div
-                                                                        v-for="(ref, index) in terrain.references_usages"
-                                                                        :key="index"
-                                                                        class="block"
-                                                                        >
-                                                                          {{ splitDateLieunaissance(ref.txt_dateLieuNaissanceTG).lieunaissance }}
-                                                            </div>
-                                                                </div>
-                                                            <div v-else>-</div>
-                                                        </td> 
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
-                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
-                                                                    <span
-                                                                        v-for="(ref, index) in terrain.references_usages"
-                                                                        :key="index"
-                                                                        class="block"
-                                                                        >
-                                                                        {{ ref.txt_nineaTG }}
-                                                                    </span>
-                                                                </div>
-                                                            <div v-else>-</div>
-                                                        </td> 
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
-                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
-                                                                    <span
-                                                                        v-for="(ref, index) in terrain.references_usages"
-                                                                        :key="index"
-                                                                        class="block"
-                                                                        >
-                                                                        {{ ref.tel_telephoneTG }}
-                                                                    </span>
-                                                                </div>
-                                                            <div v-else>-</div>
-                                                        </td> 
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
-                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
-                                                                    <span
-                                                                        v-for="(ref, index) in terrain.references_usages"
-                                                                        :key="index"
-                                                                        class="block"
-                                                                        >
-                                                                        {{ ref.tel_telephoneTG }}
-                                                                    </span>
-                                                                </div>
-                                                            <div v-else>-</div>
-                                                        </td>
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">
-                                                            <div v-if="terrain.references_usages && terrain.references_usages.length > 0">
-                                                                    <span
-                                                                        v-for="(ref, index) in terrain.references_usages"
-                                                                        :key="index"
-                                                                        class="block"
-                                                                        >
-                                                                        {{ ref.nbr_montantLoyerTotal }}
-                                                                    </span>
-                                                                </div>
-                                                            <div v-else>-</div>
-                                                        </td> 
-                                                        <td class="px-6 py-3 text-center border-l border border-primary-only whitespace-nowrap">Observations</td> 
-                                                    </tr> 
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div><br>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <input 
+                                    v-model="filters.numero"
+                                    type="text"
+                                    class="h-8 w-32 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    placeholder="N° dossier"
+                                />
+                                <input 
+                                    v-model="filters.nicad"
+                                    type="text"
+                                    class="h-8 w-32 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    placeholder="NICAD"
+                                />
+                                <input 
+                                    v-model="filters.titulaire"
+                                    type="text"
+                                    class="h-8 w-40 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    placeholder="Titulaire"
+                                />
+                                <input 
+                                    v-model="filters.commune"
+                                    type="text"
+                                    class="h-8 w-32 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    placeholder="Commune"
+                                />
+                                <button 
+                                    @click="resetFilters"
+                                    class="h-8 px-4 bg-white/20 text-white rounded-xl text-sm hover:bg-white/30 transition font-medium"
+                                >
+                                    ✕ Réinitialiser
+                                </button>
+                                <button 
+                                    @click="exportToExcel"
+                                    :disabled="!hasData"
+                                    class="h-8 px-4 bg-green-600 text-white rounded-xl text-sm hover:bg-green-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                    title="Exporter en Excel"
+                                >
+                                    📥 Exporter Excel
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Delete Modal -->
+                        <DeleteModal 
+                            :show="showDeleteModal"
+                            :itemName="selectedTerrain?.txt_num_lotissement || ''"
+                            :loading="loadingDelete"
+                            @update:show="showDeleteModal = $event"
+                            @confirm="confirmerSuppression"
+                        />
+
+                        <!-- Tableau -->
+                        <div class="p-4">
+                            <div class="max-h-[600px] overflow-x-auto shadow-md rounded-xl">
+                                <table class="table table-auto w-full text-xs text-left text-gray-500">
+                                    <thead class="sticky top-0 z-10 bg-primary text-white whitespace-nowrap">
+                                        <tr>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">N°</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">N° dossier</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">Region</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">Departement</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">Commune</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">Lotissement</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">Section</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">N° Lot</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">N° Parcelle</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">NICAD</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">Surface</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">Type Batie</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">Niveau</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">Titre Mere</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">Titulaire</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">Prénom</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">Nom</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">Téléphone</th>
+                                            <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">Email</th>
+                                            <th class="px-2 py-2 text-center font-semibold">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr
+                                            v-for="(terrain, index) in displayData"
+                                            :key="terrain.id || index"
+                                            class="hover:bg-gray-50 transition-colors"
+                                        >
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">
+                                                {{ getRowNumber(index) }}
+                                            </td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.dossier?.txt_num_dossier || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.region?.slt_region || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.departement?.slt_departement || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.commune?.slt_commune || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.txt_lotissement || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.txt_num_section || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.txt_num_lotissement || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.txt_num_parcelle || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap font-bold">{{ terrain.txt_nicad || 'NON' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.nbr_surface || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.evaluations_batis?.currentCat || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.evaluations_batis?.nbr_niveauPR || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.references_cadastrales?.txt_titre_mere || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.titulaire?.slt_titulaire || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.titulaire?.txt_prenom || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.titulaire?.txt_nom || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.titulaire?.tel_telephone || '-' }}</td>
+                                            <td class="px-2 py-1 text-center border border-gray-200 whitespace-nowrap">{{ terrain.titulaire?.eml_email || '-' }}</td>
+                                            <td class="px-2 py-1 border border-gray-200 whitespace-nowrap">
+                                                <div class="flex justify-center gap-1">
+                                                    <Link :href="`/secretariat/edit/${terrain.id}`">
+                                                        <MazBtn 
+                                                            size="small"
+                                                            class="h-7 w-16 text-white bg-gradient-to-r from-green-500 via-green-600 to-green-700 hover:bg-gradient-to-br font-medium rounded-lg text-[9px] px-2 py-1"
+                                                        >
+                                                            ✏️
+                                                        </MazBtn>
+                                                    </Link>
+                                                    <MazBtn 
+                                                        size="small"
+                                                        color="danger"
+                                                        @click="supprimerTerrain(terrain)"
+                                                        :disabled="loadingDelete"
+                                                        class="h-7 w-16 text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:bg-gradient-to-br font-medium rounded-lg text-[9px] px-2 py-1"
+                                                    >
+                                                        🗑️
+                                                    </MazBtn>
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        <tr v-if="!hasData">
+                                            <td colspan="20" class="text-center py-12 text-gray-500 text-base">
+                                                Aucun terrain trouvé
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Pagination - Masquée si c'est une collection -->
+                        <div v-if="!isCollection && hasPagination" class="p-4 border-t flex flex-wrap justify-between items-center gap-4 bg-gray-50 rounded-b-xl">
+                            <div class="text-sm text-gray-700 font-medium">
+                                <template v-if="hasData">
+                                    Affichage de <span class="font-bold text-gray-900">{{ props.terrains?.meta?.from ?? 0 }}</span> 
+                                    à <span class="font-bold text-gray-900">{{ props.terrains?.meta?.to ?? 0 }}</span> 
+                                    sur <span class="font-bold text-gray-900">{{ props.terrains?.meta?.total ?? 0 }}</span> enregistrements
+                                </template>
+                                <template v-else>
+                                    <span class="text-gray-500">Aucun enregistrement trouvé</span>
+                                </template>
+                            </div>
+                            
+                            <div class="flex gap-1 flex-wrap">
+                                <button 
+                                    @click="prevPage"
+                                    :disabled="!props.terrains?.links?.prev"
+                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-200 hover:bg-gray-300 text-gray-700"
+                                >
+                                    ← Précédent
+                                </button>
+                                
+                                <button 
+                                    v-for="link in (props.terrains?.links || [])" 
+                                    :key="link.label"
+                                    @click="goToPage(link.url)"
+                                    :disabled="!link.url"
+                                    :class="[
+                                        'px-3.5 py-1.5 rounded-lg text-sm font-medium transition',
+                                        link.active 
+                                            ? 'bg-primary text-white shadow-md' 
+                                            : 'bg-gray-200 hover:bg-gray-300 text-gray-700',
+                                        !link.url ? 'opacity-40 cursor-not-allowed' : ''
+                                    ]"
+                                    v-html="link.label"
+                                >
+                                </button>
+                                
+                                <button 
+                                    @click="nextPage"
+                                    :disabled="!props.terrains?.links?.next"
+                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-200 hover:bg-gray-300 text-gray-700"
+                                >
+                                    Suivant →
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -344,3 +474,61 @@ const formatDate = (dateString) => {
         </div>
     </AuthenticatedLayout>
 </template>
+
+<style scoped>
+table tr td,
+table tr th {
+    white-space: nowrap !important;
+    padding: 4px 6px !important;
+    font-size: 0.70rem !important;
+}
+
+thead th {
+    white-space: nowrap !important;
+    padding: 6px 8px !important;
+    font-size: 0.65rem !important;
+}
+
+.overflow-x-auto {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+    height: 6px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+tr:hover td {
+    background-color: #f8fafc;
+}
+
+button:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.h-7 {
+    height: 1.75rem;
+}
+
+.w-16 {
+    width: 4rem;
+}
+
+.text-\[9px\] {
+    font-size: 9px;
+}
+</style>

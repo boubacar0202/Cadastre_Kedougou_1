@@ -2,9 +2,10 @@
 import { ref, watch } from "vue"
 import MazBtn from "maz-ui/components/MazBtn"
 import { router } from '@inertiajs/vue3';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
-  modelValue: { type: Boolean, default: false }, // ouvrir / fermer
+  modelValue: { type: Boolean, default: false },
   loading: { type: Boolean, default: false },
   title: {
     type: String,
@@ -15,17 +16,17 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue", "confirm"])
 
 const code = ref("")
+const showPassword = ref(false)
 
 watch(
   () => props.modelValue,
   (val) => {
-    if (!val) code.value = ""
+    if (!val) {
+      code.value = ""
+      showPassword.value = false
+    }
   }
 )
-  
-// const close = () => {
-//   emit("update:modelValue", false)
-// }
 
 const confirm = () => {
   emit("confirm", code.value)
@@ -33,6 +34,10 @@ const confirm = () => {
 
 const close = () => {
   router.visit(document.referrer || '/')
+}
+
+const togglePassword = () => {
+  showPassword.value = !showPassword.value
 }
 </script>
 
@@ -52,16 +57,28 @@ const close = () => {
 
       <!-- Body -->
       <div class="p-6">
-        <input
-          v-model="code"
-          type="password"
-          autocomplete="off"
-          placeholder="Entrez votre code d'accès"
-          class="h-10 w-full rounded-lg px-3 text-primary-txt
-                 outline outline-1 outline-primary-only
-                 focus:outline-2 focus:outline-primary-only mb-6"
-          @keyup.enter="confirm"
-        />
+        <!-- Input avec toggle à l'intérieur -->
+        <div class="relative mb-6">
+          <input
+            v-model="code"
+            :type="showPassword ? 'text' : 'password'"
+            autocomplete="off"
+            placeholder="Entrez votre code d'accès"
+            class="h-10 w-full rounded-lg px-3 text-primary-txt
+                   outline outline-1 outline-primary-only
+                   focus:outline-2 focus:outline-primary-only
+                   pr-12"
+            @keyup.enter="confirm"
+          />
+          <button
+            type="button"
+            @click="togglePassword"
+            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+          >
+            <EyeIcon v-if="!showPassword" class="h-5 w-5" />
+            <EyeSlashIcon v-else class="h-5 w-5" />
+          </button>
+        </div>
 
         <div class="flex justify-center gap-4">
           <MazBtn

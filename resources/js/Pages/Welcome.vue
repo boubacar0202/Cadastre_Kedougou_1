@@ -1,5 +1,6 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
+ 
 
 defineProps({
     canLogin: {
@@ -17,8 +18,7 @@ defineProps({
         required: true,
     },
 });
- 
- 
+  
 
 </script>
 
@@ -43,7 +43,8 @@ defineProps({
                 >
                     <div class="flex lg:col-start-2 lg:justify-center">
 
-                        <img src="/logo.jpg" alt="Logo" class="h-auto w-auto">
+                        <!-- <img src="/logo.jpg" alt="Logo" class="h-auto w-auto"> -->
+                        <img src="/logo.jpg" alt="Logo">
                         
                     </div>
                     <nav v-if="canLogin" class="-mx-3 flex flex-1 justify-end">
@@ -126,7 +127,7 @@ defineProps({
                 </main> 
             </div> 
             <footer class="py-16 text-center text-sm text-primary-txt font-bold mt-8">
-                Programme de Gestion de Base de données v-1   
+                Programme de Gestion de Base de données MB-1   
             </footer>
         </div>
 

@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import laravel from "laravel-vite-plugin";
 import vue from "@vitejs/plugin-vue";
-
+import fs from 'fs';
 import Components from "unplugin-vue-components/vite";
 import {
     UnpluginVueComponentsResolver,
@@ -9,6 +9,7 @@ import {
     UnpluginModulesResolver,
 } from "maz-ui/resolvers";
 
+ 
 export default defineConfig({
     plugins: [
         laravel({
@@ -34,10 +35,11 @@ export default defineConfig({
     ],
     server: {
         host: '0.0.0.0',
-        port: 5174,
+        port: 5176,
         hmr: {
             host: 'cadastrekdg.sn',
         },
         cors: true,
-    },
-});
+    }, 
+}); 
+ 

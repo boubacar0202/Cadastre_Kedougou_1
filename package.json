@@ -6,11 +6,12 @@
         "dev": "vite"
     },
     "devDependencies": {
-        "@inertiajs/vue3": "^2.0.2",
+        "@inertiajs/vue3": "^2.3.27",
         "@tailwindcss/forms": "^0.5.3",
-        "@vitejs/plugin-vue": "^5.0.0",
+        "@vitejs/plugin-basic-ssl": "^2.3.0",
+        "@vitejs/plugin-vue": "^5.2.4",
         "autoprefixer": "^10.4.12",
-        "axios": "^1.8.4",
+        "axios": "^1.18.1",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^1.0",
         "postcss": "^8.4.31",
@@ -18,18 +19,28 @@
         "tailwindcss": "^3.2.1",
         "unplugin-vue-components": "^0.28.0",
         "vite": "^6.0.7",
-        "vue": "^3.5.13"
+        "vue": "^3.5.34"
     },
     "dependencies": {
+        "@heroicons/vue": "^2.2.0",
         "@inertiajs/inertia": "^0.11.1",
         "@inertiajs/inertia-vue3": "^0.6.0",
+        "@turf/turf": "^7.3.5",
+        "chart.js": "^4.5.1",
         "flowbite": "^2.5.2",
         "laravel-echo": "^2.1.7",
+        "leaflet": "^1.9.4",
+        "leaflet-control-geocoder": "^4.0.0",
+        "leaflet.fullscreen": "^5.3.1",
+        "lodash": "^4.18.1",
         "maz-ui": "^3.50.1",
+        "proj4": "^2.21.0",
+        "proj4leaflet": "^1.0.2",
         "pusher-js": "^8.4.0",
         "react-hook-form": "^7.54.2",
         "vue-toastification": "^2.0.0-rc.5",
         "vue3-toastify": "^0.2.8",
+        "xlsx": "^0.18.5",
         "ziggy-js": "^2.6.0"
     }
 }

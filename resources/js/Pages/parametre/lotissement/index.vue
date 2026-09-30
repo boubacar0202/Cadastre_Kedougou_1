@@ -116,12 +116,12 @@ const confirmerSuppression = async (code) => {
           <div class="bg-white shadow rounded-xl">
             <div class="flex items-center justify-between p-4 border-b rounded-t-xl bg-primary">
               <h1 class="flex items-start space-x-1 text-lg text-white font-semibold">
-                Liste des lotissements :
+                Liste des lotissements :  
                 <span v-if="totalEnregistrement>0" class="text-white font-semibold">
-                    ({{ totalEnregistrement }})
+                  {{ totalEnregistrement }}
                 </span>
                 <span v-else class="text-white font-semibold">
-                    Aucun enregistrement
+                  Aucun enregistrement
                 </span> 
               </h1>
    
@@ -199,24 +199,24 @@ const confirmerSuppression = async (code) => {
                               <MazBtn 
                                   size="large"  
                                   :loading="loading"
-                                  class="h-8 w-36 text-white bg-gradient-to-r from-green-500 via-green-600 
-                                  to-green-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
-                                  focus:ring-green-300 dark:focus:ring-green-800 shadow-lg shadow-green-500/50 
-                                  dark:shadow-lg dark:shadow-green-800/80 font-medium rounded-lg text-xs px-5 
-                                  py-2.5 text-center me-2 mb-2">
-                                  Modifier
+                                  class="h-6 w-6 text-white bg-gradient-to-r from-green-500 via-green-600 
+                                    to-green-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
+                                    focus:ring-green-300 dark:focus:ring-green-800 shadow-lg shadow-green-500/50 
+                                    dark:shadow-lg dark:shadow-green-800/80 font-medium rounded-lg text-xs px-5 
+                                    py-2.5 text-center me-2 mb-2">
+                                  ✏️
                               </MazBtn>
                             </Link> 
 
  
                             <!-- Delete -->
                             <MazBtn size="large" color="danger" @click="supprimerLotissement(lot)" :disabled="loadingDelete"
-                                class="h-8 w-36 text-white bg-gradient-to-r from-danger-500 via-danger-600 
-                                to-danger-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
-                                focus:ring-danger-300 dark:focus:ring-danger-800 shadow-lg shadow-danger-500/50 
-                                dark:shadow-lg dark:shadow-danger-800/80 font-medium rounded-lg text-xs px-5 
-                                py-2.5 text-center me-2 mb-2">
-                              Supprimer
+                                class="h-6 w-6 text-white bg-gradient-to-r from-red-500 via-red-600 
+                                  to-red-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
+                                  focus:ring-red-300 dark:focus:ring-red-800 shadow-lg shadow-red-500/50 
+                                  dark:shadow-lg dark:shadow-red-800/80 font-medium rounded-lg text-xs px-5 
+                                  py-2.5 text-center me-2 mb-2">
+                              🗑 
                             </MazBtn>
                           </td>
                         </tr>

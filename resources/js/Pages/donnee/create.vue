@@ -1,249 +1,334 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { ref, computed  } from 'vue';
-import { Head } from '@inertiajs/vue3';
-import { defineProps, onMounted } from 'vue';
-import { router, usePage  } from '@inertiajs/vue3';
-import { Link as InertiaLink } from '@inertiajs/vue3';
-import { toast } from "@/Components/AppToast";  
+import { ref, computed, watch, onMounted } from 'vue';
+import { Head, router, Link } from '@inertiajs/vue3';
+import { toast } from "@/Components/AppToast";
 import DeleteModal from "@/Components/DeleteModal.vue";
-import axios from 'axios' 
+import MazBtn from "maz-ui/components/MazBtn";
+import { debounce } from 'lodash'; 
+import { Inertia } from '@inertiajs/inertia';
 
 const props = defineProps({
-    terrain: Object,
-    terrains: Array,  
+    terrains: {
+        type: Object,
+        default: () => ({
+            data: [],
+            links: [],
+            meta: { 
+                current_page: 1, 
+                last_page: 1, 
+                total: 0,  
+                per_page: 15 
+            }
+        })
+    },
+    uniqueServices: {
+        type: Array,
+        default: () => []
+    },
+    totalGeneral: {
+        type: Number,
+        default: 0
+    },
+    terrainsSansNicad: {
+        type: Number,
+        default: 0
+    },
+    filters: {
+        type: Object,
+        default: () => ({})
+    }
 });
 
-const mois = ref(''); 
-const annee = ref('');
-const numero = ref('');
-const prenomNom = ref('');
-const numeroRecherche = ref('');
-const refServiceRendu = ref(''); 
-const loadingDelete = ref(false); 
-const showDeleteModal = ref(false)
-const deleteCode = ref("")
-const selectedTerrain = ref(null) 
-const selectedDate = ref(null);
- 
-const supprimerTerrain = (terrain) => {
-    if (!terrain || !terrain.id) return
-
-    selectedTerrain.value = terrain
-    deleteCode.value = ""
-    showDeleteModal.value = true
-}
- 
-const uniqueServices = computed(() => {
-    return Array.from(
-        new Set(
-            props.terrains
-                .filter(t => {
-                    if (!selectedDate.value) return true;
-
-                    const date = t.dossier?.dt_date_creation;
-                    if (!date) return false;
-
-                    return date.startsWith(selectedDate.value);
-                })
-                .map(t => t.dossier?.slt_service_rendu)
-                .filter(Boolean)
-        )
-    );
+// États
+const filters = ref({
+    mois: props.filters.mois || '',
+    annee: props.filters.annee || '',
+    numero: props.filters.numero || '',
+    prenomNom: props.filters.prenomNom || '',
+    refServiceRendu: props.filters.refServiceRendu || ''
 });
- 
-// Au clic sur "Rechercher"
-function searchDossier() {
-  numeroRecherche.value = numero.value.trim()
-}
 
-// Normalise une chaîne pour la comparaison
-function normalize(str) {
-  return str?.toString().trim().toLowerCase()
-}
- 
-// // Filtre et tri des terrains
-// const terrains = computed(() => {
-//     const searchMois = normalize(mois.value || '')
-//     const searchNumero = normalize(numero.value || '')
-//     const searchAnnee  = normalize(annee.value || '')
-//     const searchService = normalize(refServiceRendu.value || '')
-//     const searchPrenomNom = normalize(prenomNom.value || '')
+const showDeleteModal = ref(false);
+const selectedTerrain = ref(null);
+const loadingDelete = ref(false);
+const deleteCode = ref(''); 
+const adminCode = ref('');  
 
-//     // 1️⃣ Filtrage
-//     const filtered = props.terrains.filter(terrain => {
-//         const dossier = normalize(terrain.dossier?.txt_num_dossier || '')
-//         const service = normalize(terrain.dossier?.slt_service_rendu || '')
-//         const nomPrenom = normalize([terrain.titulaire?.txt_prenom && terrain.titulaire?.txt_nom && terrain.titulaire?.txt_denominationPM ] || '')
+// Debounced search
+const debouncedSearch = debounce((page = 1) => {
+    router.get(route('donnees.create'), {
+        ...filters.value,
+        page: page
+    }, {
+        preserveState: true,
+        replace: true,
+        preserveScroll: true
+    });
+}, 300);
 
-//         const matchMois = !searchMois || dossier.includes(searchMois)
-//         const matchNumero = !searchNumero || dossier.includes(searchNumero)
-//         const matchAnnee  = !searchAnnee  || dossier.includes(searchAnnee)
-//         const matchServiceRendu = !searchService || service.includes(searchService) 
-//         const matchPrenomNom = !searchPrenomNom || nomPrenom.includes(searchPrenomNom)
+// Watcher sur les filtres
+watch(filters, () => {
+    debouncedSearch(1);
+}, { deep: true });
 
-//         return matchNumero && matchAnnee && matchServiceRendu && matchPrenomNom
-//     })
-
-//     // 2️⃣ Tri par année puis numéro
-//     const sorted = filtered.sort((a, b) => {
-//         const [numA = '0', yearA = '0'] = (a.dossier?.txt_num_dossier || '0/0').split('/')
-//         const [numB = '0', yearB = '0'] = (b.dossier?.txt_num_dossier || '0/0').split('/')
-
-
-//         if (parseInt(yearA, 10) !== parseInt(yearB, 10)) {
-//             return parseInt(yearA, 10) - parseInt(yearB, 10)
-//         }
-
-//         return parseInt(numA, 10) - parseInt(numB, 10)
-//     })
-
-//     // 3️⃣ Ajout du flag NICAD manquant
-//     return sorted.map(terrain => ({
-//         ...terrain,
-//         hasNoNicad: !terrain.txt_nicad || terrain.txt_nicad.trim() === ''
-//     }))
-// })
-
-const terrains = computed(() => {
-    const searchMois = normalize(mois.value || '') // ex: "01", "02", ..., "12"
-    const searchNumero = normalize(numero.value || '')
-    const searchAnnee  = normalize(annee.value || '')
-    const searchService = normalize(refServiceRendu.value || '')
-    const searchPrenomNom = normalize(prenomNom.value || '')
-
-    const filtered = props.terrains.filter(terrain => {
-        const dossier = normalize(terrain.dossier?.txt_num_dossier || '')
-        const service = normalize(terrain.dossier?.slt_service_rendu || '')
-
-        const nomPrenom = normalize(
-            `${terrain.titulaire?.txt_prenom || ''} ${terrain.titulaire?.txt_nom || ''} ${terrain.titulaire?.txt_denominationPM || ''}`
-        )
-
-        // 🔥 récupération du mois depuis la date
-        const date = terrain.dossier?.dt_date_creation
-        const moisTerrain = date ? new Date(date).getMonth() + 1 : null // 1 à 12
-
-        const matchMois = !searchMois || moisTerrain == parseInt(searchMois)
-
-        const matchNumero = !searchNumero || dossier.includes(searchNumero)
-        const matchAnnee  = !searchAnnee  || dossier.includes(searchAnnee)
-        const matchServiceRendu = !searchService || service.includes(searchService)
-        const matchPrenomNom = !searchPrenomNom || nomPrenom.includes(searchPrenomNom)
-
-        return matchMois && matchNumero && matchAnnee && matchServiceRendu && matchPrenomNom
-    })
-
-    // 🔽 TRI
-    const sorted = filtered.sort((a, b) => {
-        const [numA = '0', yearA = '0'] = (a.dossier?.txt_num_dossier || '0/0').split('/')
-        const [numB = '0', yearB = '0'] = (b.dossier?.txt_num_dossier || '0/0').split('/')
-
-        if (parseInt(yearA, 10) !== parseInt(yearB, 10)) {
-            return parseInt(yearA, 10) - parseInt(yearB, 10)
-        }
-
-        return parseInt(numA, 10) - parseInt(numB, 10)
-    })
-
-    return sorted.map(terrain => ({
-        ...terrain,
-        hasNoNicad: !terrain.txt_nicad || terrain.txt_nicad.trim() === ''
-    }))
-})
-
-// Compter les has nicad
+// totalSansNicad
 const totalSansNicad = computed(() => {
-    return terrains.value.filter(t => t.hasNoNicad).length
-})
- 
-// Fonction pour formater la date
-const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
+    return props.terrainsSansNicad || 0;
+});
+
+// Nombre total d'enregistrements
+const totalEnregistrement = computed(() => {
+    return props.totalGeneral || 0;
+});
+
+// Nombre total d'enregistrements de la page actuelle
+const totalPageActuelle = computed(() => {
+    return props.terrains.data?.length || 0;
+});
+
+// Nombre total filtré (pour l'affichage "sur X enregistrements")
+const totalFiltre = computed(() => {
+    return props.terrains.meta?.total || 0;
+});
+
+// Ajoutez un computed pour vérifier si des données existent 
+// Vérifier si des données existent
+const hasData = computed(() => {
+    return props.terrains?.data && props.terrains.data.length > 0;
+});
+
+// Vérifier si la pagination est disponible
+const hasPagination = computed(() => {
+    return hasData.value && 
+        props.terrains?.meta?.last_page && 
+        props.terrains.meta.last_page > 1;
+});
+
+// Pagination simplifiée
+const goToPage = (url) => {
+    if (!url) return;
+    
+    try {
+        const urlParams = new URLSearchParams(url.split('?')[1]);
+        const page = urlParams.get('page');
+        
+        if (page) {
+            router.get(route('donnees.create'), {
+                ...filters.value,
+                page: page
+            }, {
+                preserveState: true,
+                replace: true,
+                preserveScroll: true
+            });
+        }
+    } catch (error) {
+        console.error('Erreur de pagination:', error);
+    }
+};
+
+const prevPage = () => {
+    if (props.terrains.links?.prev) {
+        goToPage(props.terrains.links.prev);
+    }
+};
+
+const nextPage = () => {
+    if (props.terrains.links?.next) {
+        goToPage(props.terrains.links.next);
+    }
+};
+
+
+// Ouvrir le modal de suppression
+const supprimerTerrain = (terrain) => {
+    if (!terrain?.id) return;
+    selectedTerrain.value = terrain;
+    deleteCode.value = "";
+    adminCode.value = "";
+    showDeleteModal.value = true;
+};
+
+// Confirmer la suppression
+const confirmerSuppression = (codes) => {
+    loadingDelete.value = true;
+    
+    router.delete(route('terrain.destroy', selectedTerrain.value.id), {
+        data: {
+            code: codes.adminCode
+        },
+        onSuccess: () => {
+            showDeleteModal.value = false;
+            selectedTerrain.value = null;
+            toast.success('Terrain supprimé avec succès');
+            debouncedSearch(props.terrains.meta?.current_page || 1);
+        },
+        onError: (errors) => {
+            toast.error('Erreur lors de la suppression');
+        },
+        onFinish: () => {
+            loadingDelete.value = false;
+        }
     });
 };
-    
-// total enregistrements
-const totalEnregistrement = computed(() => terrains.value.length)
-   
-const confirmerSuppression = async (code) => {
 
-    if (!selectedTerrain.value || loadingDelete.value) return;
-
-    if (!code?.trim()) {
-        toast.error("Veuillez entrer le code administrateur.");
-        return;
-    }
-
+// Formatage date
+const formatDate = (dateString) => {
+    if (!dateString) return '';
     try {
-        loadingDelete.value = true;
-
-        const url = route('terrain.destroyTerrain', selectedTerrain.value.id);
-
-        const { data } = await axios.post(url, { code });
-
-        if (data.success) {
-            toast.success(data.message);
-            showDeleteModal.value = false;
-            Inertia.reload({ preserveState: false });
-        } else {
-            toast.error(data.message || "Code invalide.");
-        }
-
-    } catch (error) {
-        console.error("Erreur suppression :", error);
-
-        if (error.response?.status === 403) {
-            toast.error(error.response.data.message);
-        } else if (error.response?.status === 422) {
-            toast.error("Code administrateur requis.");
-        } else {
-            toast.error("Impossible de supprimer l'enregistrement.");
-        }
-    } finally {
-        loadingDelete.value = false;
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+        return date.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+    } catch {
+        return '-';
     }
 };
 
- 
+// Réinitialisation
+const resetFilters = () => {
+    filters.value = {
+        mois: '',
+        annee: '',
+        numero: '',
+        prenomNom: '',
+        refServiceRendu: ''
+    };
+};
+
+// Chargement initial
+onMounted(() => {
+    if (!props.terrains.data?.length) {
+        debouncedSearch(1);
+    }
+});
+
+// ✅ Fonction pour la classe de la cellule N° Dossier
+const getCellClass = (terrain) => {
+    const nicad = terrain?.txt_nicad;
+
+    // Cas 1 : NICAD est "NON" ou "null"
+    if (nicad === 'NON' || nicad === 'null' || String(nicad).toLowerCase() === 'non') {
+        return 'bg-blue-300 text-white font-bold rounded';
+    }
+
+    // Cas 2 : NICAD est null, undefined ou vide
+    if (!nicad || String(nicad).trim() === '') {
+        return 'bg-blue-100 text-blue-800 font-bold rounded';
+    }
+
+    // Cas 3 : NICAD valide
+return 'text-primary-txt';
+};
+
+// ✅ Fonction pour le badge NICAD (optionnel)
+const getNicadBadgeClass = (terrain) => {
+    const nicad = terrain?.txt_nicad;
+
+    if (!nicad || nicad === 'NON' || nicad === 'null' || String(nicad).toLowerCase() === 'non') {
+        return 'px-2 py-0.5 bg-red-100 text-red-800 rounded-full text-xs';
+    }
+
+    if (String(nicad).length < 9) {
+        return 'px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs';
+    }
+
+    return 'px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs';
+
+};
+
 </script>
 
 <template>
-    <Head title="Donnee">
+    <Head title="Base de données">
         <link rel="icon" sizes="512x512" href="/logo-01.png">
     </Head>
 
     <AuthenticatedLayout>
         <template #header>
-            <h2
-                class="text-xl font-semibold leading-tight text-primary-txt"
-            >
+            <h2 class="text-xl font-semibold leading-tight text-primary-txt">
                 Base de données
             </h2>
-            
-            <!-- Vérification pour afficher un message si aucune donnée -->
-            <template v-if="!terrains || terrains.length === 0">
-                <p>Aucun terrain trouvé.</p>
-            </template> 
         </template>
 
-        <div  class="py-12">
-            <div class="flex justify-center">   
+        <div class="py-12">
+            <div class="flex justify-center">
                 <div class="w-full max-w-8xl">
-                    <div class="bg-white shadow-md rounded-xl "> <br> 
-                        <div class="mx-auto   sm:px-8 lg:px-12 mt-4 mb-4">  
-                            <div class="card-header">
-                                <div class="p-4 border-b bg-primary-only rounded-xl">
-                                    <h1 class="text-4xl text-primary-txt font-bold">Base de données</h1>
-                                </div> 
-                            </div><br>
+                    <div class="bg-white shadow rounded-xl">
+                        <!-- En-tête avec stats et filtres -->
+                        <div class="flex flex-wrap items-center justify-between gap-4 p-4 border-b rounded-t-xl bg-primary">
+                            <div class="flex flex-wrap items-center gap-4">
+                                <h1 class="text-lg text-white font-semibold">
+                                    Base de données
+                                </h1>
+                                <!-- 🔥 TOTAL GÉNÉRAL (toute la base) -->
+                                <span class="text-white/80 text-sm">
+                                    Total : <span class="font-bold text-white">{{ totalEnregistrement }}</span>
+                                </span>
+                                <span class="text-yellow-300 text-sm font-semibold">
+                                    Sans NICAD : {{ totalSansNicad }}
+                                </span>
+                                <!-- 🔥 Affichage du nombre filtré -->
+                                <span class="text-white/60 text-xs" v-if="totalFiltre !== totalEnregistrement">
+                                    ({{ totalFiltre }} avec filtres)
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-1">
+                                <input 
+                                    v-model="filters.mois"
+                                    type="number"
+                                    min="1"
+                                    max="12"
+                                    class="h-8 w-20 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    placeholder="Mois"
+                                />
+                                <input 
+                                    v-model="filters.annee"
+                                    type="number"
+                                    min="2000"
+                                    max="2100"
+                                    class="h-8 w-20 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    placeholder="Année"
+                                />
+                                <input 
+                                    v-model="filters.numero"
+                                    type="text"
+                                    class="h-8 w-32 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    placeholder="N° dossier"
+                                />
+                                <input 
+                                    v-model="filters.prenomNom"
+                                    type="text"
+                                    class="h-8 w-40 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    placeholder="Prénom Nom"
+                                />
+                                <select
+                                    v-model="filters.refServiceRendu"
+                                    class="h-8 w-44 rounded-xl bg-white text-gray-900 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                >
+                                    <option value="">Tous les services</option>
+                                    <option 
+                                        v-for="service in uniqueServices" 
+                                        :key="service" 
+                                        :value="service"
+                                    >
+                                        {{ service }}
+                                    </option>
+                                </select>
+                                <button 
+                                    @click="resetFilters"
+                                    class="h-8 px-4 bg-white/20 text-white rounded-xl text-sm hover:bg-white/30 transition font-medium"
+                                >
+                                    ✕ Réinitialiser
+                                </button>
+                            </div>
                         </div>
-                    </div> 
-                    <div>
+
+                        <!-- Delete Modal -->
                         <DeleteModal 
                             :show="showDeleteModal"
                             :itemName="selectedTerrain?.txt_num_lotissement || ''"
@@ -251,411 +336,221 @@ const confirmerSuppression = async (code) => {
                             @update:show="showDeleteModal = $event"
                             @confirm="confirmerSuppression"
                         />
-                    </div>
-                    <div class="bg-white shadow-md rounded-xl "><br> 
-                        <div class="mx-auto max-w-8xl sm:px-8 lg:px-12 mt-4">  
-                            <div class="card-header"> 
-                                <div class="relative overflow-x-auto p-4 border-b bg-primary-form rounded-xl">
-                                    <div class="flex justify-between items-center">  
-                                        <h1 class="text-xl font-bold text-primary-txt">
-                                            Enregistrements : 
-                                            <span v-if="totalEnregistrement>0" class="text-gray-600">
-                                                ({{ totalEnregistrement }})
-                                            </span>
-                                            <span v-else class="text-bleu-600">
-                                                Aucun enregistrement
-                                            </span> 
-                                        </h1> 
-  
-                                        <span class="text-blue-600 font-bold">
-                                            Sans NICAD : {{ totalSansNicad }}
-                                        </span>
 
-                                        <form @submit.prevent="searchDossier" class="flex items-center space-x-2">
-                                            <div  class="flex items-start space-x-1">    
-                                                <div class="flex w-full items-start space-x-1">  
-                                                    <div>
-                                                        <input 
-                                                            v-model="mois"
-                                                            type="search"
-                                                            maxlength="4"
-                                                            id="default-search"
-                                                            aria-label="Rechercher"
-                                                            class="h-8 block w-20 rounded-xl bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                border border-primary-menu  placeholder:text-gray-400 
-                                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                            placeholder="mois"
-                                                        /> 
-                                                    </div>
-                                                    <div>
-                                                        <input 
-                                                            v-model="annee"
-                                                            type="search"
-                                                            maxlength="4"
-                                                            id="default-search"
-                                                            aria-label="Rechercher"
-                                                            class="h-8 block w-20 rounded-xl bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                border border-primary-menu  placeholder:text-gray-400 
-                                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                            placeholder="année"
-                                                        /> 
-                                                    </div>
-                                                    <div>
-                                                        <input 
-                                                            v-model="numero"
-                                                            type="search"
-                                                            id="default-search"
-                                                            aria-label="Rechercher"
-                                                            class="h-8 w-24 rounded-xl bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                outline outline-1 -outline-offset-1 outline-primary-menu placeholder:text-gray-400 
-                                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                            placeholder="N° dossier"
-                                                            required
-                                                        />  
-                                                    </div>
-                                                    <div>
-                                                        <input 
-                                                            v-model="prenomNom"
-                                                            type="search"
-                                                            id="default-search"
-                                                            aria-label="Rechercher"
-                                                            class="h-8 block w-25 rounded-xl bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                outline outline-1 -outline-offset-1 outline-primary-menu placeholder:text-gray-400 
-                                                                focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                            placeholder="Prénom Nom"
-                                                            required
-                                                        />  
-                                                    </div>
-                                                    <div>
-                                                        <select
-                                                            v-model="refServiceRendu"
-                                                            class="h-8 block w-25 rounded-xl bg-white px-3 py-1.5 text-base text-gray-900
-                                                                border border-primary-menu placeholder:text-gray-400
-                                                                focus:outline focus:outline-2 focus:outline-primary sm:text-sm/6"
+                        <!-- Tableau -->
+                        <div class="p-4">
+                            <div class="max-h-[600px] overflow-x-auto shadow-md rounded-xl">
+                                <table class="table table-auto w-full text-base text-left text-gray-500">
+                                    <thead 
+                                        class="sticky top-0 z-10 text-primary-txt text-font-bold text-center uppercase bg-primary-form bg-gray-50 dark:bg-gray-700 dark:text-gray-400 whitespace-nowrap bg-primary-only"
+                                    >
+                                        <tr class="h-10">
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N°</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° dossier</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Region</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Depart.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Arrond.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Commune</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Service Rendue</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Etat Cession.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Cession. définitive.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Date création</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° Parcelle</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Lotissement</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Hors lotissement</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° lotissement</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° Section</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Appartement</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° titre</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Surface</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Doc admin</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° délib.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Date délib.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">NICAD</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Statut NICAD</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Motif Annulation NICAD</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Immatric,.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Dép. domaine</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Ussu born.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Titre mère</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Livre Fon.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° réquis.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Surf. born.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Date born.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Nom géom.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Titulaire</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">National.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Civilité</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Prénom - Nom - Dénomination</th> 
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Pièce</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° Pièce</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Date déliv.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Date naiss.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Lieu naiss.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Adresse</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Tél.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Email</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Représ.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Tél Rép.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Date éval.</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">PDF</th>
+                                            <th class="px-2 py-2 text-xs text-center bg-primary-only font-semibold whitespace-nowrap">ACTIONS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr
+                                            v-for="(terrain, index) in terrains.data"
+                                            :key="terrain.id"
+                                            class="h-8 text-xs hover:bg-primary hover:text-primary font-semibold text-primary-txt text-center"  
+                                        >
+                                            <td class="sticky left-0 z-8 text-xs border bg-white px-2 py-1 whitespace-nowrap">
+                                                {{ ((terrains.meta?.current_page || 1) - 1) * (terrains.meta?.per_page || 15) + index + 1 }}
+                                            </td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap transition-colors duration-200" :class="getCellClass(terrain)"><span class="font-mono">{{ terrain.dossier?.txt_num_dossier  || ''}}</span></td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.region?.slt_region || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.departement?.slt_departement || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.arrondissement?.slt_arrondissement || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.commune?.slt_commune || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.dossier?.slt_service_rendu || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.dossier?.txt_etat_cession || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.dossier?.txt_cession_definitive || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ formatDate(terrain.dossier?.dt_date_creation) || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.txt_num_parcelle || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.txt_lotissement || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.txt_HorsLotissement || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.txt_num_lotissement || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.txt_num_section || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.txt_appartement || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.txt_num_titre || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.nbr_surface || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.slt_document_admin || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.txt_num_deliberation || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ formatDate(terrain.dt_date_deliberation) || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap font-bold">
+                                                <span :class="getNicadBadgeClass(terrain)">
+                                                    {{ terrain.txt_nicad || 'NON' }}
+                                                </span>
+                                            </td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.slt_statut_nicad || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.slt_motif_annulation_nicad || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.references_cadastrales?.rd_immatriculation_terrain || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.references_cadastrales?.slt_dependant_domaine || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.references_cadastrales?.ussu_bornage || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.references_cadastrales?.txt_titre_mere || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.references_cadastrales?.slt_lf || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.references_cadastrales?.txt_num_requisition || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.references_cadastrales?.txt_surface_bornage || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ formatDate(terrain.references_cadastrales?.dt_date_bornage) || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.references_cadastrales?.txt_nom_geometre || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.slt_titulaire || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.txt_nationalite || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.slt_civilite || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.txt_prenom || '' }} {{ terrain.titulaire?.txt_denominationPM || '' }} {{ terrain.titulaire?.txt_nom || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.slt_piece || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.txt_numPiece || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ formatDate(terrain.titulaire?.dt_date_delivrance) || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ formatDate(terrain.titulaire?.dt_date_naissance) || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.txt_lieu_naissance || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.txt_adresse || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.tel_telephone || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.eml_email || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.txt_representant || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.tel_telRepresentant || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ formatDate(terrain.evaluations_terrains?.dt_dateEvaluation) || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">
+                                                <a 
+                                                    v-if="terrain.titulaire?.fichierPDF"
+                                                    :href="`/storage/${terrain.titulaire.fichierPDF}?t=${Date.now()}`"
+                                                    target="_blank"
+                                                    class="text-blue-600 underline"
+                                                >
+                                                    Voir PDF
+                                                </a>
+                                                <span v-else class="text-gray-400 italic">Aucun PDF</span>
+                                            </td>
+                                            <td class="sticky right-0 z-8 px-2 py-1 border bg-white whitespace-nowrap">
+                                                <div class="flex justify-center gap-2">
+                                                    <!-- Edit -->  
+                                                    <Link :href="`/secretariat/edit/${terrain.id}`">
+                                                        <MazBtn 
+                                                            size="large"  
+                                                            class="h-6 w-6 text-white bg-gradient-to-r from-green-500 via-green-600 
+                                                            to-green-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
+                                                            focus:ring-green-300 dark:focus:ring-green-800 shadow-lg shadow-green-500/50 
+                                                            dark:shadow-lg dark:shadow-green-800/80 font-medium rounded-lg text-xs px-5 
+                                                            py-2.5 text-center me-2 mb-2"
                                                         >
-                                                            <option value="">Tous</option> 
-                                                            <option
-                                                                v-for="service in uniqueServices"
-                                                                :key="service"
-                                                                :value="service"
-                                                            >
-                                                                {{ service }}
-                                                            </option>
-                                                        </select>
-                                                    </div> 
-                                                </div> 
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div> 
-                            </div>
-                                
-                            <div class="max-h-[600px] overflow-x-auto shadow-md rounded-xl mt-4">
-                                <div class="container">
-                                    <div class="card">    
-                                        <div class="card-body">
-                                            <table 
-                                                class="table table-auto w-full text-base text-left rtl:text-right text-gray-400 dark:text-gray-400">
-                                                <thead class="sticky top-0 z-10 text-primary-txt text-center border-l border-primary-only uppercase 
-                                                    bg-primary-form bg-gray-50 dark:bg-gray-700 dark:text-gray-400 whitespace-nowrap">
-                                                    <tr class="h-10">
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-r bg-primary font-bold whitespace-nowrap">N°</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">N° dossier</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Region</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Departement</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Arrondisssement</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Commune</th> 
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Service dendu</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Etat Cession</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Cession définitive</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Date création</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Numéro Parcelle</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Lotissement</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Hors lotissement</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">N° lot</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">N° section</th> 
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Appartement</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">N° titre</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Surface</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Document admin</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">N° déliberation</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Date déeliberation</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Nicad</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Immatricalation terrain</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Dépendant domaine</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Ussu bornage</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Titre mére</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Livre Foncière</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">N° réquisition</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Surface bornage</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Date bornage</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Nom géometre</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Titulaire</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Nationalite</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Civilité</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Prénom</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Nom</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Pièce</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">N° Pièce</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Date délivrance</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Date naissance</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Lieu naissance</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Adresse</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Télephone</th> 
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Email</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Representant</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border bg-primary font-bold whitespace-nowrap">Telephone Répresentant</th>  
-                                                        
-                                                        <!-- <table class="border-b border-primary text-sm">
-                                                            <thead>  
-                                                                <tr>
-                                                                    <th colspan="12" class="px-6 py-3 whitespace-nowrap border-l border bg-primary text-white text-center">
-                                                                        Références Usages
-                                                                    </th>
-                                                                </tr>
-                                                                <tr> 
-                                                                    <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Occupant</th>
-                                                                    <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Usage</th>
-                                                                    <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Résidence</th>
-                                                                    <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">N° Appartement</th>
-                                                                    <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Activité</th>
-                                                                    <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">NINEA</th>
-                                                                    <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Téléphone</th>
-                                                                    <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Loyer</th>
-                                                                    <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Date/Lieu Naissance</th>
-                                                                    <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">CNI/Passeport</th>
-                                                                    <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Date Délivrance</th>
-                                                                    <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">Loyer Total</th>
-                                                                    <th scope="col" class="px-6 py-3 text-primary-txt border-l border bg-primary-only font-bold text-center">TVA Total</th>
-                                                                </tr>
-                                                            </thead> 
-                                                        </table>
+                                                            ✏️
+                                                        </MazBtn>
+                                                    </Link> 
 
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Surface bati_sol</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Prix mètre carré</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Superficie totale</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Secteur</th> 
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur terrain</th> 
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">CurrentCat</th>   
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur terrain_bati</th> 
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Dépendant domaine PR</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Categorie PR</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Prix mètre carré PR</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Surface bati_sol PR</th>    
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Niveau PR</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Surface utile PR</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Coefficient PR</th>        
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Surface corriger PR</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Valeur PR</th> 
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Dependant domaine TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Categorie TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Prix mètre carre TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Surface bati_sol TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Niveau TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Surface utile TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Coefficient TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Surface corriger TG</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur TG</th>   
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Valeur total AM</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Cours amenager totale AM</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Surface total AM</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Categorie total AM</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Prix mètre carre total AM</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Coefficient total AM</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l bprder bg-primary font-bold whitespace-nowrap">Valeur total AM</th> 
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Cours amenager CL</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Longueur avant CL</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Categorie  CL</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Prix mètre carre CL</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Coefficient CL</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur CL</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur total CL</th> 
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Désignation AP</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur unitaire AP</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Quantile AP</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Coeficien AP</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur AP</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur totale AP</th> 
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur venale de l'imeuble</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Valeur locative</th> -->
-
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Date d'évaluation</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-white text-center border-l border bg-primary font-bold whitespace-nowrap">Voir le PDF</th>
-                                                        <th scope="col" class="px-6 py-3 text-sm text-primary-txt text-center border-b bg-primary-only font-bold whitespace-nowrap">
-                                                            ACTIONS
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody> 
-                                                    <tr v-for="(terrain , index) in terrains" :key="terrain.id ?? index"
-                                                        class="h-10 bg-white text-primary-txt text-center font-bold whitespace-nowrap hover:bg-primary-form dark:hover:bg-primary-form"
+                                                    <!-- Delete -->
+                                                    <MazBtn 
+                                                        size="large" 
+                                                        color="danger" 
+                                                        @click="supprimerTerrain(terrain)" 
+                                                        :disabled="loadingDelete"
+                                                        class="h-6 w-6 text-white bg-gradient-to-r from-red-500 via-red-600 
+                                                        to-red-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
+                                                        focus:ring-red-300 dark:focus:ring-red-800 shadow-lg shadow-red-500/50 
+                                                        dark:shadow-lg dark:shadow-red-800/80 font-medium rounded-lg text-xs px-5 
+                                                        py-2.5 text-center me-2 mb-2"
                                                     >
-                                                        <th class="sticky left-0 z-0 border bg-white px-6 py-4 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ index + 1 || '-' }}</th>
-                                                        <td class="px-4 py-2 font-bold whitespace-nowrap border border-primary-only" :class="{ 'text-blue-600': terrain.hasNoNicad }">{{ terrain.dossier?.txt_num_dossier || '-' }}</td> 
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.region ? terrain.region.slt_region : '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.departement ? terrain.departement.slt_departement : '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.arrondissement ? terrain.arrondissement.slt_arrondissement : '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.commune ? terrain.commune.slt_commune : '-' }}</td> 
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain?.dossier.slt_service_rendu || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.dossier.txt_etat_cession || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.dossier.txt_cession_definitive || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ formatDate(terrain.dossier.dt_date_creation) || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_num_parcelle || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_lotissement || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_HorsLotissement || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_num_lotissement || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_num_section || '-'}}</td> 
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_appartement || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_num_titre || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.nbr_surface || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.slt_document_admin || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_num_deliberation || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ formatDate(terrain.dt_date_deliberation) || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.txt_nicad || '-'}}</td> 
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.references_cadastrales?.rd_immatriculation_terrain || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.references_cadastrales?.slt_dependant_domaine || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.references_cadastrales?.ussu_bornage || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.references_cadastrales?.txt_titre_mere || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.references_cadastrales?.slt_lf || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.references_cadastrales?.txt_num_requisition || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.references_cadastrales?.txt_surface_bornage || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{formatDate(terrain.references_cadastrales?.dt_date_bornage) || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.references_cadastrales?.txt_nom_geometre || '-'}}</td>
-                                                        <!-- Titulaire -->
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.slt_titulaire || '-' }} </td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_nationalite || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.slt_civilite || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_prenom || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_nom || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.slt_piece || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_numPiece || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{formatDate(terrain.titulaire?.dt_date_delivrance) || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{formatDate(terrain.titulaire?.dt_date_naissance) || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_lieu_naissance || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_adresse || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.tel_telephone || '-'}}</td> 
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.eml_email || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.txt_representant || '-'}}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.titulaire?.tel_telRepresentant || '-'}}</td>
-                                                         
-                                                        <!-- <template v-if="terrain.references_usages && terrain.references_usages.length > 0">
-                                                            <tr v-for="usage in terrain.references_usages" :key="usage.id"  class="border-b border-primary text-sm"> 
-                                                                <td class="px-4 py-2 text-primary-txt border border-primary-only text-center">{{usage.txt_nomOccupantTG || '-' }}</td> 
-                                                                <td class="px-4 py-2 text-primary-txt border border-primary-only text-center">{{usage.slt_usage || '-' }}</td>
-                                                                <td class="px-4 py-2 text-primary-txt border border-primary-only text-center">{{usage.slt_residence || '-' }}</td>
-                                                                <td class="px-4 py-2 text-primary-txt border border-primary-only text-center">{{usage.txt_numAppartementTG || '-' }}</td>
-                                                                <td class="px-4 py-2 text-primary-txt border border-primary-only text-center">{{usage.txt_activiteTG || '-' }}</td>
-                                                                <td class="px-4 py-2 text-primary-txt border border-primary-only text-center">{{usage.txt_nineaTG || '-' }}</td>
-                                                                <td class="px-4 py-2 text-primary-txt border border-primary-only text-center">{{usage.tel_telephoneTG || '-' }}</td>
-                                                                <td class="px-4 py-2 text-primary-txt border border-primary-only text-center">{{usage.nbr_montantLoyerTG || '-' }}</td>
-                                                                <td class="px-4 py-2 text-primary-txt border border-primary-only text-center">{{usage.txt_dateLieuNaissanceTG || '-' }}</td>
-                                                                <td class="px-4 py-2 text-primary-txt border border-primary-only text-center">{{usage.txt_cniPasseportTG || '-' }}</td>
-                                                                <td class="px-4 py-2 text-primary-txt border border-primary-only text-center">{{usage.dt_dateDelivranceTG || '-' }}</td>
-                                                                <td class="px-4 py-2 text-primary-txt border border-primary-only text-center">{{usage.nbr_montantLoyerTotal || '-' }}</td>
-                                                                <td class="px-4 py-2 text-primary-txt border border-primary-only text-center">{{usage.nbr_TVATotal || '-' }}</td>
-                                                            </tr>
-                                                        </template> 
-                                                        <template v-else>
-                                                                <td class="text-center text-gray-500 italic">Aucune donnée d’usage enregistrer</td>
-                                                        </template>
- 
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_terrains?.txt_superficie_bati_sol || '-' }}</td> 
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_terrains?.nbr_prix_metre_carre || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_terrains?.nbr_surface || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_terrains?.slt_secteur || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_terrains?.txt_date_devaluation  || '-'   }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_terrains?.nbr_valeur_terrain || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_batis?.currentCat || '-' }}</td>   
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_batis?.txt_valeur_terrain_bati || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_batis?.txt_dependant_domainePR || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_batis?.slt_categoriePR || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_batis?.nbr_prix_metre_carrePR || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_batis?.nbr_surface_bati_solPR || '-' }}</td>    
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_batis?.nbr_niveauPR || '-'  }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_batis?.nbr_surface_utilePR  || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_batis?.slt_coeffPR || '-' }}</td>        
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_batis?.nbr_surface_corrigerPR ||  '-'  }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_batis?.nbr_valeurPR || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.evaluations_batis?.slt_dependant_domaineTG || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.evaluations_batis?.slt_categorieTG || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.evaluations_batis?.nbr_prix_metre_carreTG || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.evaluations_batis?.nbr_surface_bati_solTG || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.evaluations_batis?.nbr_niveauTG || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.evaluations_batis?.nbr_surface_utileTG || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.evaluations_batis?.slt_coeffTG || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.evaluations_batis?.nbr_surface_corrigerTG || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{ terrain.evaluations_batis?.nbr_valeurTG || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_cours_amenagees?.nbr_valeur_total_ca || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_cours_amenagees?.slt_cours_amenager_totale || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_cours_amenagees?.nbr_surface_ca_total ||  '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_cours_amenagees?.slt_categorie_ca_total || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_cours_amenagees?.nbr_prix_metre_carre_ca_total  || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_cours_amenagees?.nbr_coefficient_ca_total ||  '-'  }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_cours_amenagees?.nbr_valeur_ca_total || '-'  }}</td> 
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_clotures?.slt_cours_amenager_clo || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_clotures?.nbr_longueur_avant_clo  ||  '-'  }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_clotures?.slt_categorie_clo   ||  '-'  }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_clotures?.nbr_prix_metre_carre_clo || '-'  }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_clotures?.nbr_coefficient_clo ||  '-'  }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_clotures?.nbr_valeur_clo || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_clotures?.nbr_valeur_total_clotur || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_amenagements?.txt_designation_am  || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_amenagements?.nbr_valeur_unitaire_am  ||  '-'  }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_amenagements?.nbr_quantile_am || '-' }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_amenagements?.slt_coeficien_am    ||  '-'  }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_amenagements?.nbr_valeur_am   ||  '-'  }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_amenagements?.nbr_valeur_totale_ap    ||  '-'  }}</td>
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_terrains?.nbr_valeurVenaleLimeuble || '-' }}</td> 
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{terrain.evaluations_terrains?.nbr_valeurLocative || '-' }}</td>  -->
+                                                        🗑 
+                                                    </MazBtn>
+                                                </div>
+                                            </td>
+                                        </tr>
 
-                                                        <td class="px-4 py-2 font-bold text-primary-txt whitespace-nowrap border border-primary-only">{{formatDate(terrain.evaluations_terrains?.dt_dateEvaluation) || '-' }}</td> 
-                                                        <td class="px-4 py-2 text-center border border-primary-only font-bold whitespace-nowrap"> 
-                                                            <div v-if="terrain && terrain.titulaire.fichierPDF">
-                                                                <a :href="`/storage/${terrain.titulaire.fichierPDF}?t=${Date.now()}`" target="_blank" class="text-blue-600 underline">
-                                                                    Voir PDF
-                                                                </a>
-                                                            </div>
-                                                            <div v-else class="text-gray-400 italic">Aucun fichier PDF</div>
-                                                        </td>
-                                                        <td class="flex items px-4 py-2 border-b border-primary-only">
-                                                            <div class="mt-2 ml-4">
-                                                                <InertiaLink :href="`/secretariat/edit/${terrain.id}`">
-                                                                    <MazBtn 
-                                                                        color="white" pastel size="sm"
-                                                                        class="h-8 w-28 text-white bg-gradient-to-r from-green-500 via-green-600 
-                                                                        to-green-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
-                                                                        focus:ring-green-300 dark:focus:ring-green-800 shadow-lg shadow-green-500/50 
-                                                                        dark:shadow-lg dark:shadow-green-800/80 font-medium rounded-lg text-sm px-5 
-                                                                        py-2.5 text-center me-2 mb-2"
-                                                                    >
-                                                                        Modifier
-                                                                    </MazBtn>
-                                                                </InertiaLink> 
-                                                            </div>
-                                                           
-                                                            <div class="mt-2 ml-2">
-                                                                <MazBtn 
-                                                                    color="danger" size="sm"   
-                                                                    @click="supprimerTerrain(terrain)"
-                                                                    class="h-8 w-28 text-white bg-gradient-to-r from-danger-500 via-danger-600 
-                                                                    to-danger-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none 
-                                                                    focus:ring-danger-300 dark:focus:ring-danger-800 shadow-lg shadow-danger-500/50 
-                                                                    dark:shadow-lg dark:shadow-danger-800/80 font-medium rounded-lg text-sm px-5 
-                                                                    py-2.5 text-center me-2 mb-2"
-                                                                >
-                                                                    Supprimer
-                                                                </MazBtn>
-                                                            </div>
-                                                        </td> 
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div><br>
+                                        <!-- Message si aucun résultat -->
+                                        <tr v-if="!terrains.data?.length">
+                                            <td colspan="49" class="text-center py-12 text-gray-500 text-base">
+                                                Aucun terrain trouvé
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div> 
+
+                        <!-- Pagination -->
+                        <div class="p-4 border-t flex flex-wrap justify-between items-center gap-4 bg-gray-50 rounded-b-xl">  
+                            <!-- Pagination -->
+                            <div class="flex gap-1 flex-wrap">
+                                <button 
+                                    @click="prevPage"
+                                    :disabled="!terrains.links?.prev"
+                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-200 hover:bg-gray-300 text-gray-700"
+                                >
+                                    ← Précédent
+                                </button>
+                                
+                                <button 
+                                    v-for="link in terrains.links" 
+                                    :key="link.label"
+                                    @click="goToPage(link.url)"
+                                    :disabled="!link.url"
+                                    :class="[
+                                        'px-3.5 py-1.5 rounded-lg text-sm font-medium transition',
+                                        link.active 
+                                            ? 'bg-primary text-white shadow-md' 
+                                            : 'bg-gray-200 hover:bg-gray-300 text-gray-700',
+                                        !link.url ? 'opacity-40 cursor-not-allowed' : ''
+                                    ]"
+                                    v-html="link.label"
+                                >
+                                </button>
+                                
+                                <button 
+                                    @click="nextPage"
+                                    :disabled="!terrains.links?.next"
+                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-200 hover:bg-gray-300 text-gray-700"
+                                >
+                                    Suivant →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -663,16 +558,94 @@ const confirmerSuppression = async (code) => {
 </template>
 
 <style scoped>
- 
-
-table tr td {
-  padding-top: 0.25rem; /* équivaut à py-1 */
-  padding-bottom: 0.25rem;
-  line-height: 1rem; /* équivaut à leading-3 */
-  font-size: 0.80rem; /* équivaut à text-xs */
+/* Toutes les cellules sur une seule ligne */
+table tr td,
+table tr th {
+white-space: nowrap !important;
+padding: 4px 8px !important;
+font-size: 0.75rem !important;
 }
 
+thead th {
+white-space: nowrap !important;
+padding: 6px 8px !important;
+font-size: 0.70rem !important;
+}
 
+/* Scroll horizontal */
+.overflow-x-auto {
+scrollbar-width: thin;
+scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+height: 6px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+background: #f1f5f9;
+border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+background: #cbd5e1;
+border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+background: #94a3b8;
+}
+
+/* Survol des lignes */
+tr:hover td {
+background-color: #f8fafc;
+}
+
+/* Animation des boutons */
+button:active:not(:disabled) {
+transform: scale(0.95);
+}
+
+/* Couleurs pour la cellule N° Dossier */
+.bg-blue-100 {
+background-color: #dbeafe !important;
+}
+.bg-blue-200 {
+background-color: #bfdbfe !important;
+}
+.bg-blue-300 {
+background-color: #93c5fd !important;
+}
+.text-blue-800 {
+color: #1e40af !important;
+}
+.text-white {
+color: #ffffff !important;
+}
+.rounded {
+border-radius: 0.25rem;
+}
+
+/* Badges */
+.bg-red-100 {
+background-color: #fee2e2 !important;
+}
+.text-red-800 {
+color: #991b1b !important;
+}
+.bg-yellow-100 {
+background-color: #fef9c3 !important;
+}
+.text-yellow-800 {
+color: #854d0e !important;
+}
+.bg-green-100 {
+background-color: #dcfce7 !important;
+}
+.text-green-800 {
+color: #166534 !important;
+}
+.rounded-full {
+border-radius: 9999px !important;
+}
 </style>
-
- 

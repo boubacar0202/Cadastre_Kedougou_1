@@ -1,8 +1,7 @@
 import "../css/app.css";
 import "./bootstrap";
-import axios from 'axios'
-
-import { createInertiaApp } from "@inertiajs/vue3";
+import axios from 'axios'   
+import { createInertiaApp, Head, Link } from "@inertiajs/vue3"; // ✅ Ajout de Head et Link
 import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import { createApp, h } from "vue";
 import { ZiggyVue } from "../../vendor/tightenco/ziggy";
@@ -11,6 +10,7 @@ import DefaultLayout from "./Layouts/DefaultLayout.vue";
 import { installToaster } from 'maz-ui'; 
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import proj4 from "proj4"; 
 
 window.Pusher = Pusher;
 
@@ -21,17 +21,21 @@ window.Echo = new Echo({
     forceTLS: true
 });
  
- 
-axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
-
-// ✅ CSRF TOKEN
-const token = document.querySelector('meta[name="csrf-token"]');
-
-if (token) {
-    axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
-} else {
-    console.error('CSRF token not found');
+function gpsToUtm(latitude, longitude) {
+    const wgs84 = "EPSG:4326";
+    const utm28n = "+proj=utm +zone=28 +datum=WGS84 +units=m +no_defs";
+    const [x, y] = proj4(wgs84, utm28n, [longitude, latitude]);
+    return { x, y };
 }
+ 
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+
+document.addEventListener('DOMContentLoaded', () => {
+    const token = document.querySelector('meta[name="csrf-token"]');
+    if (token) {
+        axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
+    }
+});
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
@@ -59,14 +63,18 @@ createInertiaApp({
     
         // Gestion globale des erreurs
         app.config.errorHandler = (err, vm, info) => {
-            console.error('Erreur Vue attrapée:', err,vm, info)
-            alert('Une erreur est survenue. Vérifie la console.')
+            console.error('Erreur Vue attrapée:', err, vm, info);
+            alert('Une erreur est survenue. Vérifie la console.');
         }
+
+        // ✅ Enregistrer Head et Link globalement
+        app.component('Head', Head);
+        app.component('Link', Link);
 
         // Configuration de MazUI avec la couleur personnalisée
         app.use(MazUI, {
             colors: {
-                primary: '#FE5835',  // 🔥 Définit la couleur principale pour MazUI
+                primary: '#FE5835',
             },
         });
     
@@ -80,5 +88,4 @@ createInertiaApp({
     progress: {
         color: "#FE5835",
     },
-
 });

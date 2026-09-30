@@ -4,7 +4,7 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 
 defineProps({
     status: {
@@ -23,17 +23,18 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Forgot Password" />
+        <Head title="Mot de passe oublié" />
 
         <div class="mb-4 text-sm text-primary">
             Vous avez oublié votre mot de passe ?
-            Indiquez votre adresse e-mail et nous vous enverrons un 
-            lien de réinitialisation qui vous permettra d’en choisir un nouveau. 
+            Indiquez votre adresse e-mail et nous vous enverrons un
+            lien de réinitialisation qui vous permettra d'en choisir un nouveau.
         </div>
 
+        <!-- Message de succès renvoyé par Laravel -->
         <div
             v-if="status"
-            class="mb-4 text-sm font-medium text-green-600"
+            class="mb-4 text-sm font-medium text-green-600 bg-green-50 border border-green-200 rounded-md p-3"
         >
             {{ status }}
         </div>
@@ -45,8 +46,9 @@ const submit = () => {
                 <TextInput
                     id="email"
                     type="email"
-                    class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-gray-900 
-                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 
+                    placeholder="votre@email.com"
+                    class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-gray-900
+                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400
                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
                     v-model="form.email"
                     required
@@ -63,9 +65,19 @@ const submit = () => {
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
                 >
-                    Lien de réinitialisation du mot de passe par e-mail
+                    Envoyer le lien
                 </PrimaryButton>
             </div>
         </form>
+
+        <!-- Lien retour vers la connexion -->
+        <div class="mt-6 text-center text-sm">
+            <Link
+                :href="route('login')"
+                class="text-primary-dark hover:underline"
+            >
+                ← Retour à la connexion
+            </Link>
+        </div>
     </GuestLayout>
 </template>

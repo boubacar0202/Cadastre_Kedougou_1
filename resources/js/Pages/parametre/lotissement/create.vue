@@ -14,13 +14,17 @@ defineOptions({ layout: DefaultLayout });
   
 // Form
 const form = useForm({
-    txt_denomination: "",
-    txt_nombreParcelle: "", 
-    slt_departement: "",
-    slt_arrondissement: "",
-    slt_commune: "",
-    txt_surfaceLotissement: "",
-    txt_documentsAfferants: ""
+    txt_nomPoint: "",
+    txt_dateCreationPoint: "",
+    slt_departement: null,
+    slt_arrondissement: null,
+    slt_commune: null,
+    txt_descriptionPoint: "",
+    txt_situationPoint: "",
+    txt_estPoint: "",
+    txt_nordPoint: "",
+    txt_hauteurPoint: "",
+    txt_documentsAfferantsPoint: ""
 });
 
 // Sélections
@@ -93,7 +97,7 @@ onMounted(fetchDepartements);
 // Fichier PDF 
 const handleFileUpload = (event) => {
     fichierPDF.value = event.target.files[0];
-    form.txt_documentsAfferants = fichierPDF.value; // lier directement au formulaire
+    form.txt_documentsAfferantsPoint = fichierPDF.value; // lier directement au formulaire
 };
  
 // Submit

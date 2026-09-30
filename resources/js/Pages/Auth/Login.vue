@@ -113,7 +113,7 @@ const submit = () => {
                                 class="rounded-md text-sm text-primary underline hover:text-primary-dark focus:outline-none focus:ring-primary focus:ring-indigo-500 focus:ring-offset-2"
                             >
                                 Mot de passe oublié ?
-                            </Link>
+                            </Link> 
 
                             <PrimaryButton
                                 class="ms-4 bg-primary-dark text-white hover:bg-primary-dark focus:ring-primary-dark disabled:opacity-25"

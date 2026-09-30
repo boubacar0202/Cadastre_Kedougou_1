@@ -14,8 +14,8 @@ class Mutation extends Model
     protected $fillable = [ 
         'txt_numeroMutation',
         'txt_nicadMutation', 
-        'txt_num_lotissement',
-        'txt_lotissement',
+        'txt_num_lotissementMutation',
+        'txt_lotissementMutation',
         // information titulaire
         'slt_titulaireMT',
         'txt_nationaliteMT',
@@ -64,6 +64,8 @@ class Mutation extends Model
         'tel_telephoneMutation', 
         'txt_representantMutation',
         'tel_telRepresentantMutation',
+        'txt_representantMutation',
+        'tel_telRepresentantMutation',   
         'txt_typeActeMutation',
         'txt_nomNotaireMutation',
         'dt_dateMutation',
@@ -90,14 +92,15 @@ class Mutation extends Model
         'fichierPDFMutation',
     ];
 
-    public function terrain()
-    {
-        return $this->belongsTo(Terrain::class);
-    }
-
+  
     public function dossier()
     {
         return $this->belongsTo(Dossier::class);
+    }
+
+    public function terrain()
+    {
+        return $this->belongsTo(Terrain::class, 'terrain_id');
     }
 
 }

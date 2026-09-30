@@ -57,4 +57,20 @@ class CodeAccesController extends Controller
             'error' => 'Code invalide.'
         ]);
     }
+ 
+    // verifier point
+    public function verifyPoint(Request $request)
+    {
+        $request->validate(['code' => 'required|string']);
+
+        $code = CodeAcces::where('code', $request->code)->first();
+
+        if (!$code) {
+            return response()->json(['exists' => false, 'error' => 'Code invalide.']);
+        } 
+
+        return response()->json(['exists' => true, 'success' => 'Code confirmé.']);
+    }
+
+
 }

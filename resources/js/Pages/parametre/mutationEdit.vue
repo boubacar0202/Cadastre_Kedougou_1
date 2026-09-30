@@ -25,10 +25,11 @@ const { mutation } = defineProps({
  
 // Formulaire
 const form = useForm({  
-    txt_num_lotissement: mutation?.txt_num_lotissement || "",
-    txt_lotissement: mutation?.txt_lotissement || "",
+    txt_num_lotissementMutation: mutation?.txt_num_lotissementMutation || "",
+    txt_lotissementMutation: mutation?.txt_lotissementMutation || "",
     txt_numeroMutation: mutation?.txt_numeroMutation || "",
-    // txt_nicadMutation: mutation?.txt_nicadMutation || "",
+    txt_nicadMutation: mutation?.txt_nicadMutation || "",
+
     slt_titulaireMT: mutation?.slt_titulaireMT || "",
     txt_nationaliteMT: mutation?.txt_nationaliteMT || "",
     slt_civiliteMT: mutation?.slt_civiliteMT || "",
@@ -92,6 +93,7 @@ const form = useForm({
     txt_telephonePA_Mutation: mutation?.txt_telephonePA_Mutation || "",
     txt_emailPA_Mutation: mutation?.txt_emailPA_Mutation || "",
     txt_ministèreTutelePA_Mutation: mutation?.txt_ministèreTutelePA_Mutation || "",
+    fichierPDFMutation: mutation?.fichierPDFMutation || null,
 
 });
  
@@ -126,10 +128,10 @@ function handleFileUpload(event) {
         return;
     }
 
-    fichierPDF.value = file;
-    form.fichierPDF = file;
+    fichierPDFMutation.value = file;
+    form.fichierPDFMutation = file;
 
-    console.log("Fichier PDF sélectionné :", fichierPDF.value);
+    console.log("Fichier PDF sélectionné :", fichierPDFMutation.value);
 } 
  
 // charge titulaire selon le type de Proprietaire 
@@ -226,6 +228,14 @@ onMounted(async () => {
     }
 });
 
+// Si referencesLot est un tableau de chaînes
+const referencesLotOptions = computed(() =>
+    referencesLot.value.map(ref => ({
+        label: ref,
+        value: ref,
+    }))
+)
+
 // Rechercher le dossier
 const codeDaccees = async (code) => { 
     if (!code) {
@@ -265,29 +275,49 @@ const codeDaccees = async (code) => {
 }
  
 // Submit du formulaire
-const submitForm = function () {   
-    form.post(route('mutation.store'), { 
-        onSuccess: (page) => {
-            console.log("✅ Enregistré !", page);
-            toast.success(page.props.flash?.success || "✅ Dossier enregistré !");
-            Inertia.visit(route("mutation.create"), { replace: true });
-        },  
-        onError: (errors) => {
-            console.error("❌ Erreurs de validation :", errors);
+// const submitForm = function () {   
+//     form.post(route('mutation.store'), { 
+//         onSuccess: (page) => {
+//             console.log("✅ Enregistré !", page);
+//             toast.success(page.props.flash?.success || "✅ Dossier enregistré !");
+//             Inertia.visit(route("mutation.mutation"), { replace: true });
+//         },  
+//         onError: (errors) => {
+//             console.error("❌ Erreurs de validation :", errors);
 
-            Object.entries(errors).forEach(([key, message]) => {
+//             Object.entries(errors).forEach(([key, message]) => {
  
-                if (Array.isArray(message)) {
-                    message.forEach(msg => toast.error(msg));
-                }  
-                else {
-                    toast.error(message);
-                }
-            });
-        }, 
-    }); 
-};
- 
+//                 if (Array.isArray(message)) {
+//                     message.forEach(msg => toast.error(msg));
+//                 }  
+//                 else {
+//                     toast.error(message);
+//                 }
+//             });
+//         }, 
+//     }); 
+// };
+async function submitForm() {
+  try {
+    if (form.fichierPDFMutation instanceof File) {
+      const pdfForm = new FormData();
+      pdfForm.append("fichierPDFMutation", form.fichierPDFMutation);
+      await axios.post(route("mutation.uploadPDF", mutation.id), pdfForm, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    }
+    await form.put(route("mutation.update", mutation.id), form.data(), {
+      forceFormData: true,
+      preserveScroll: true,
+      onSuccess: () => console.log("✅ Update réussi !"),
+      onError: (errors) => console.error(errors),
+    });
+  } catch (error) {
+    console.error("❌ Erreur submit :", error);
+    toast.error("❌ Erreur lors de la modification");
+  }
+}
+
 </script>
 
 <template>
@@ -319,42 +349,36 @@ const submitForm = function () {
                         <!-- Corps du formulaire -->
                         <form @submit.prevent="submitForm">
                             <div class="p-6"> 
-                                <div class="flex justify-center"> 
-                                    <div
-                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full max-w-xl "
-                                    > 
-                                        <div class="flex relative sm:col-span-4">
-                                            <div class="sm:col-span-1 mr-2"> 
-                                                <input
-                                                    type="text"
-                                                    name="txt_num_lotissement"
-                                                    v-model="form.txt_num_lotissement" 
-                                                    required
-                                                    aria-label="Rechercher"
-                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                        placeholder="Numéro Lot" 
-                                                > 
-                                            </div>
-                                            <div class="sm:col-span-1 mr-2"> 
-                                                <select
-                                                    type="text"
-                                                    name="txt_lotissement"
-                                                    v-model="form.txt_lotissement" 
-                                                    autocomplete="off" 
-                                                    class="h-8 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                        placeholder="Entrer le numéro dossier conserné"
-                                                > 
-                                                    <option value="">Choisir le lotissement</option>
-                                                    <option v-for="(ref, index) in referencesLot" :key="index" :value="ref">
-                                                        {{ ref }}
-                                                    </option> 
-                                                </select>
-                                            </div>
-                                        </div>   
+                                <div class="flex justify-center">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full mt-0">
+                                        <BaseInput
+                                            label="Numéro dossier"
+                                            v-model="form.txt_numeroMutation"
+                                            name="txt_numeroMutation"
+                                            type="text"
+                                        />
+
+                                        <BaseInput 
+                                            label="Numéro Lot"
+                                            v-model="form.txt_num_lotissementMutation"
+                                            name="txt_num_lotissementMutation"
+                                            type="text"
+                                        />
+
+                                        <BaseSelect
+                                            label="Lotissement"
+                                            v-model="form.txt_lotissementMutation"
+                                            name="txt_lotissementMutation"
+                                            placeholder="Choisir le lotissement"
+                                            :options="referencesLotOptions"
+                                        />
+ 
+                                        <BaseInput
+                                            label="N° Nicad"
+                                            v-model="form.txt_nicadMutation"
+                                            name="txt_nicadMutation"
+                                            type="text"
+                                        />
                                     </div>
                                 </div>
 
@@ -947,29 +971,16 @@ const submitForm = function () {
                                             v-model="form.txt_observationMutation"
                                             type="text"
                                         />
- 
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="fichierPDFMutation"
-                                                class="block text-sm font-medium text-primary-txt"
-                                                >Importer fichier</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="file"
-                                                    name="fichierPDFMutation"
-                                                    accept="application/pdf"
-                                                    @change="handleFileUpload"
-                                                    id="fichierPDFMutation"
-                                                    autocomplete="off"
-                                                    class="h-7 block w-full rounded-md bg-white 
-                                                        px-3 py-1.5 text-base text-primary-txt outline outline-1 
-                                                        -outline-offset-1 outline-primary-only placeholder:text-gray-400 
-                                                        focus:outline focus:outline-2 focus:-outline-offset-2 
-                                                        focus:outline-indigo-600 sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
+  
+                                        <BaseInput  
+                                            label="Importer fichier"
+                                            type="file" 
+                                            name="fichierPDFMutation"
+                                            accept="application/pdf"
+                                            @change="handleFileUpload"
+                                            id="fichierPDFMutation"
+                                            autocomplete="off"
+                                        />
 
                                     </div>  
                                 </div> 
