@@ -128,6 +128,13 @@ const annulationNICADOptions = [
   {value:'Affecté par un Projet', label:'Affecté par un Projet'},
   {value:'Règlement Judiciaire', label:'Règlement Judiciaire'},
 ]
+
+const signalementOptions = [
+  { value: 'Néant', label: 'Néant' },
+  { value: 'Litige', label: 'Litige' },
+  { value: 'Anomalie', label: 'Anomalie' },
+]
+ 
 const dependantDomaineOptions = [
   { value: 'Domaine National', label: 'Domaine National' },
   { value: 'Domaine Public', label: 'Domaine Public' },
@@ -460,6 +467,8 @@ const form = useForm({
   dt_date_deliberation: terrain?.dt_date_deliberation || "",
   slt_statut_nicad: terrain?.slt_statut_nicad || "",
   slt_motif_annulation_nicad: terrain?.slt_motif_annulation_nicad || "",
+  slt_signalement: terrain?.slt_signalement || "",
+  slt_designationSignalement: terrain?.slt_designationSignalement || "",
   // Ref. cadastrales
   rd_immatriculation_terrain: terrain?.references_cadastrales?.rd_immatriculation_terrain || "",
   slt_dependant_domaine: terrain?.references_cadastrales?.slt_dependant_domaine || "",
@@ -500,7 +509,7 @@ const form = useForm({
   txt_fonctionResponsablePA: terrain?.titulaire?.txt_fonctionResponsablePA || "",
   txt_telephonePA: terrain?.titulaire?.txt_telephonePA || "",
   txt_emailPA: terrain?.titulaire?.txt_emailPA || "",
-  txt_ministèreTutelePA: terrain?.titulaire?.txt_ministèreTutelePA || "",
+  txt_ministereTutelePA: terrain?.titulaire?.txt_ministereTutelePA || "",
   fichierPDF: terrain?.titulaire?.fichierPDF || null,
   // Muration  
  
@@ -540,7 +549,7 @@ const form = useForm({
   txt_fonctionResponsablePA_Mutation: mutationSource.txt_fonctionResponsablePA_Mutation || "",
   txt_telephonePA_Mutation: mutationSource.txt_telephonePA_Mutation || "",
   txt_emailPA_Mutation: mutationSource.txt_emailPA_Mutation || "",
-  txt_ministèreTutelePA_Mutation: mutationSource.txt_ministèreTutelePA_Mutation || "",
+  txt_ministereTutelePA_Mutation: mutationSource.txt_ministereTutelePA_Mutation || "",
 
   fichierPDFMutation: mutationSource.fichierPDFMutation || null,
   // Références usage
@@ -601,7 +610,7 @@ watch(() => form.slt_titulaire, (newVal, oldVal) => {
            'txt_perssonneRepresentantPM', 'txt_fonctionPM', 'txt_telephonePM',
            'txt_emailPM', 'txt_adressePM'],
       PA: ['slt_etablissementPA', 'txt_personneResponsablePA', 'txt_fonctionResponsablePA',
-           'txt_telephonePA', 'txt_emailPA', 'txt_ministèreTutelePA']
+           'txt_telephonePA', 'txt_emailPA', 'txt_ministereTutelePA']
     };
     fields[section]?.forEach(field => { form[field] = ''; });
   };
@@ -626,7 +635,7 @@ watch(() => form.slt_titulaireMutation, (newVal, oldVal) => {
            'txt_perssonneRepresentantPM_Mutation', 'txt_fonctionPM_Mutation', 'txt_telephonePM_Mutation',
            'txt_emailPM_Mutation', 'txt_adressePM_Mutation'],
       PA_M: ['slt_etablissementPA_Mutation', 'txt_personneResponsablePA_Mutation', 'txt_fonctionResponsablePA_Mutation',
-           'txt_telephonePA_Mutation', 'txt_emailPA_Mutation', 'txt_ministèreTutelePA_Mutation']
+           'txt_telephonePA_Mutation', 'txt_emailPA_Mutation', 'txt_ministereTutelePA_Mutation']
     };
     fields[section]?.forEach(field => { form[field] = ''; });
   };
@@ -717,15 +726,12 @@ watch(() => form.rd_immatriculation_terrain, (newVal) => {
 });
 
 // ================= NICAD CALCULÉ =================
-const codesCommunes = {
-  1: "13110100", 2: "13120101", 3: "13120102", 4: "13120103", 5: "13120104",
-  6: "13120202", 7: "13120201", 8: "13210100", 9: "13220101", 10: "13220102",
-  11: "13220201", 12: "13220202", 13: "13220103", 14: "13310100", 15: "13320102",
-  16: "13320101", 17: "13320203", 18: "13320202", 19: "13320201"
-};
+const selectedCommune = computed(() =>
+  (communes || []).find((commune) => commune.id == form.slt_commune)
+);
 
 const calculerNicad = () => {
-  const prefix = codesCommunes[Number(form.slt_commune)] || '';
+  const prefix = String(selectedCommune.value?.txt_codeCommune || '').replace(/\s/g, '');
   const section = String(form.txt_num_section || '').replace(/\s/g, '');
   const parcelle = String(form.txt_num_parcelle || '').replace(/\s/g, '');
   const appartement = String(form.txt_appartement || '').replace(/\s/g, '');
@@ -783,6 +789,36 @@ const handleSelectChangeAnnulationNICAD = () => {
         form.slt_motif_annulation_nicad = '';
     }
 };
+watch(() => form.slt_statut_nicad, handleSelectChangeAnnulationNICAD);
+ 
+// Statut Signalement 
+const showDesignationSignalement = ref(false); 
+
+// Méthode
+const handleSelectChangeDesignationSignalement = () => {
+  showDesignationSignalement.value = (form.slt_signalement === 'Litige') || (form.slt_signalement === 'Anomalie');
+    if(!showDesignationSignalement.value) {
+        form.slt_designationSignalement = '';
+    }
+}  
+watch(() => form.slt_signalement, handleSelectChangeDesignationSignalement);
+
+// Designation Signalement
+const designationsSignalementOptions = { 
+    'Litige': ['Pluralité de titres', 'Cession multiple', 'Instance judiciaire','Contestation de propriété','Contestation de limites',
+            'Contentieux entre ayants droit','Revendication de propriété','Succession litigieuse','Autre litige'
+    ], 
+    'Anomalie': ['Absence de document justificatif','Dossier incomplet','Document irrégulier',
+            'Document non conforme','Empiètement','Limites incertaines','Limites non matérialisées','Superficie à vérifier',
+            'Géométrie à corriger','Données cadastrales incohérentes','Situation foncière à régulariser','Autre anomalie'
+    ]
+};  
+const designationsSignalement = ref(designationsSignalementOptions[form.slt_signalement] || []);
+handleSelectChangeDesignationSignalement();
+watch(() => form.slt_signalement, (newCategorie) => {
+    designationsSignalement.value = designationsSignalementOptions[newCategorie] || [];
+    form.slt_designationSignalement = '';
+});
 
 // Gestion fichier PDF
 function handleFileChangePDF(event) {
@@ -1270,7 +1306,7 @@ async function submit() {
                     </h1>
                   </div>
 
-                  <form @submit.prevent="submit" class="space-y-6"> 
+                  <form @submit.prevent="submit" class="space-y-4"> 
                     <div class="p-6">
                       <div class="sm:col-span-12">
                         <!-- Reference Dossier -->
@@ -1301,11 +1337,16 @@ async function submit() {
                           <BaseInput v-model="form.dt_date_deliberation" id="dt_date_deliberation" type="date" label="Date Déliberation" :error="form.errors.dt_date_deliberation" />
                           <BaseInput v-model="form.txt_num_section" id="txt_num_section" label="N° section" :error="errorMessageNumSection || form.errors.txt_num_section" maxlength="3" minlength="3" @input="validateInputNumSection" />
                           <BaseInput v-model="form.txt_num_parcelle" id="txt_num_parcelle" label="N° Parcelle" :error="errorMessageNumParcelle || form.errors.txt_num_parcelle" maxlength="5" minlength="5" @input="validateInputNumParcelle" />
-                          <div class="sm:col-span-2">
-                            <BaseInput v-model="form.txt_nicad" id="txt_nicad" label="NICAD" readonly :error="form.errors.txt_nicad" />
-                          </div>
+                          <BaseInput v-model="form.txt_nicad" id="txt_nicad" name="txt_nicad" label="NICAD" readonly input-class="text-primary-txt font-bold italic" :error="form.errors.txt_nicad" />
                           <BaseSelect v-model="form.slt_statut_nicad" id="slt_statut_nicad" label="Statut NICAD" :error="form.errors.slt_statut_nicad" :options="statutNicadOptions" @change="handleSelectChangeAnnulationNICAD"/>
-                          <BaseSelect v-if="!showAnnulationNICAD" v-model="form.slt_motif_annulation_nicad" name="slt_motif_annulation_nicad" id="slt_motif_annulation_nicad" label="Motif Annulation NICAD" :error="form.errors.slt_motif_annulation_nicad" :options="annulationNICADOptions"/>
+                          <BaseSelect v-if="showAnnulationNICAD" v-model="form.slt_motif_annulation_nicad" name="slt_motif_annulation_nicad" id="slt_motif_annulation_nicad" label="Motif Annulation NICAD" :error="form.errors.slt_motif_annulation_nicad" :options="annulationNICADOptions" @change="handleSelectChangeMotifAnnulationNICAD" />
+                          <BaseSelect v-model="form.slt_signalement" id="slt_signalement" label="Signalement" :error="form.errors.slt_signalement" :options="signalementOptions" @change="handleSelectChangeDesignationSignalement" />
+                          <BaseSelect v-if="showDesignationSignalement" v-model="form.slt_designationSignalement" id="slt_designationSignalement" label="Designation Signalement" :error="form.errors.slt_designationSignalement" 
+                            :options="(designationsSignalement || []).map(designation => ({
+                              value: designation,
+                              label: designation
+                            }))" 
+                          />
                         </div>
                         <br/>
 
@@ -1393,7 +1434,7 @@ async function submit() {
                             <BaseInput v-model="form.txt_fonctionResponsablePA" id="txt_fonctionResponsablePA" label="Fonction" />
                             <BaseInput v-model="form.txt_telephonePA" id="txt_telephonePA" label="Téléphone" />
                             <BaseInput v-model="form.txt_emailPA" id="txt_emailPA" type="email" label="Email" />
-                            <BaseInput v-model="form.txt_ministèreTutelePA" id="txt_ministèreTutelePA" label="Ministère Tutelle" />
+                            <BaseInput v-model="form.txt_ministereTutelePA" id="txt_ministereTutelePA" label="Ministère Tutelle" />
                           </template>
                         </div>
                         <br/> 
@@ -1461,7 +1502,7 @@ async function submit() {
                             <BaseInput v-model="form.txt_fonctionResponsablePA_Mutation" id="txt_fonctionResponsablePA" label="Fonction" :error="form.errors.txt_fonctionResponsablePA_Mutation" />
                             <BaseInput v-model="form.txt_telephonePA_Mutation" id="txt_telephonePA" label="Téléphone" :error="form.errors.txt_telephonePA_Mutation" />
                             <BaseInput v-model="form.txt_emailPA_Mutation" id="txt_emailPA" type="email" label="Email" :error="form.errors.txt_emailPA_Mutation" />
-                            <BaseInput v-model="form.txt_ministèreTutelePA_Mutation" id="txt_ministèreTutelePA" label="Ministère Tutelle" :error="form.errors.txt_ministèreTutelePA_Mutation" />
+                            <BaseInput v-model="form.txt_ministereTutelePA_Mutation" id="txt_ministereTutelePA" label="Ministère Tutelle" :error="form.errors.txt_ministereTutelePA_Mutation" />
                           </template> 
 
                           <!-- Acte et autres champs -->
