@@ -8,6 +8,7 @@
     optionValue: { type: String, default: "value" },
     required: Boolean,
     customError: String,
+    placeholder: { type: String, default: "" },
     fontSize: { type: String, default: "0.875rem" },
   })
 
@@ -19,7 +20,7 @@
     <label
       :for="name"
       class="block text-sm font-medium text-primary-txt mb-2 transition-colors duration-200"
-      :style="{ fontFamily: 'Arial, sans-serif', fontWeight: 'bold-medium', fontSize: fontSize }"
+      :style="{ fontSize: fontSize }"
     >
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
@@ -32,7 +33,7 @@
         :required="required"
         :value="modelValue"
         :class="[
-          'h-10 block w-full rounded-xl bg-white px-3.5 pr-10 py-2 text-base text-primary-dark',
+          'h-10 block w-full rounded-xl bg-white px-3.5 pr-10 py-2 text-base text-primary-txt',
           'border border-gray-300 shadow-sm appearance-none cursor-pointer',
           'transition-all duration-200 ease-in-out',
           'hover:border-gray-400 hover:shadow',
@@ -45,7 +46,7 @@
         @change="$emit('update:modelValue', $event.target.value)"
       >
         <option v-if="!modelValue" value="" disabled selected>
-          
+          {{ placeholder }}
         </option>
         <option
           v-for="option in options"
@@ -57,7 +58,7 @@
       </select>
 
       <!-- Flèche personnalisée -->
-      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
+      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-primary-txt">
         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
         </svg>

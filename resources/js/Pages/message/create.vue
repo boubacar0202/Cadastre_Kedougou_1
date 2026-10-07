@@ -398,172 +398,143 @@ async function updateMessage() {
             </h2>
         </template>
 
-        <!-- 🔔 NOTIFICATION TOAST -->
-        <div v-if="showNotification" 
-             class="fixed top-20 right-5 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl 
-                    flex items-center gap-3 animate-slide-in-right transition-all duration-500"
-             style="max-width: 400px; min-width: 300px;">
-            <div class="text-2xl animate-bounce">🔔</div>
-            <div class="flex-1">
-                <p class="font-semibold text-sm">Nouveau message</p>
-                <p class="text-xs opacity-90">{{ notificationMessage }}</p>
+        <div v-if="showNotification"
+             class="fixed top-20 right-5 z-50 flex max-w-sm items-start gap-3 rounded-2xl bg-primary px-5 py-4 text-white shadow-2xl animate-slide-in-right">
+            <div class="text-xl">🔔</div>
+            <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold">Nouveau message</p>
+                <p class="text-xs text-white/80">{{ notificationMessage }}</p>
             </div>
-            <button @click="showNotification = false" class="text-white/70 hover:text-white text-xl">✕</button>
+            <button type="button" @click="showNotification = false" class="text-white/70 hover:text-white" aria-label="Fermer">✕</button>
         </div>
 
-        <div class="py-12" v-if="user">
-            <div class="flex justify-center">
-                <div class="w-full max-w-8xl">
-                    <div class="h-[700px] bg-white border shadow-md flex rounded-xl">
+        <div class="px-4 py-6" v-if="user">
+            <div class="mx-auto w-full max-w-8xl">
+                <div class="flex h-[calc(100vh-9rem)] min-h-[560px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
 
-                        <!-- Sidebar utilisateurs -->
-                        <div class="w-1/3 border-r bg-white flex flex-col rounded-xl">
-                            <div class="p-4 border-b bg-primary text-white font-semibold rounded-tl-xl">
-                                Utilisateurs : {{ user.name }}
+                    <aside class="flex w-full max-w-xs flex-col border-r border-gray-100 bg-gray-50">
+                        <div class="bg-primary px-5 py-4 text-white">
+                            <p class="text-xs uppercase tracking-wide text-white/70">Connecté</p>
+                            <p class="truncate text-lg font-semibold">{{ user.name }}</p>
+                        </div>
+                        <ul class="flex-1 space-y-1 overflow-y-auto p-3">
+                            <li
+                                v-for="u in otherUsersWithUnread"
+                                :key="u.id"
+                                @click="selectUser(u.id)"
+                                class="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-primary-only hover:text-primary-txt hover:shadow-sm"
+                                :class="activeUserClass(u.id)"
+                            >
+                                <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
+                                    {{ (u.name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() }}
+                                </div>
+                                <span class="min-w-0 flex-1 truncate">{{ u.name }}</span>
+                                <span v-if="u.unread > 0"
+                                      class="inline-flex min-w-[22px] items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-bold text-white">
+                                    {{ u.unread }}
+                                </span>
+                            </li>
+                        </ul>
+                    </aside>
+
+                    <section class="flex min-w-0 flex-1 flex-col">
+                        <div class="flex items-center gap-3 border-b border-white/10 bg-primary px-5 py-4 text-white">
+                            <div v-if="receiverUser" class="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-sm font-bold">
+                                {{ receiverUser.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() }}
                             </div>
-                            <ul class="overflow-y-auto flex-1">
-                                <li
-                                    v-for="u in otherUsersWithUnread"
-                                    :key="u.id"
-                                    @click="selectUser(u.id)"
-                                    class="hover:bg-primary-only hover:text-primary-txt hover:font-semibold hover:border hover:text-white p-2 rounded-xl flex items-center justify-between cursor-pointer"
-                                    :class="activeUserClass(u.id)"
-                                >
-                                    <div class="flex items-center">
-                                        <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center mr-3 rounded-full bg-primary text-white font-bold">
-                                            {{ u.name.split(' ').map(n => n[0]).join('').toUpperCase() }}
-                                        </div>
-                                        <span>{{ u.name }}</span>
-
-                                        <!-- 🔔 Badge avec animation -->
-                                        <span v-if="u.unread > 0" 
-                                              class="bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full ml-2 animate-pulse">
-                                            {{ u.unread }}
-                                        </span>
-                                    </div>
-                                </li>
-                            </ul>
+                            <div>
+                                <p class="text-xs uppercase tracking-wide text-white/70">Discussion</p>
+                                <p class="font-semibold">{{ receiverUser ? receiverUser.name : 'Sélectionnez un utilisateur' }}</p>
+                            </div>
                         </div>
 
-                        <!-- Zone discussion -->
-                        <div class="w-2/3 flex flex-col">
-                            <!-- Header discussion -->
-                            <div class="p-4 border-b bg-primary text-white font-semibold rounded-tr-xl">
-                                <span v-if="receiverUser">Discussion avec {{ receiverUser.name }}</span>
-                                <span v-else>Sélectionnez un utilisateur</span>
+                        <div class="messages-container flex flex-1 flex-col space-y-3 overflow-y-auto p-5" @scroll="handleScroll">
+                            <div v-if="!receiverId" class="m-auto max-w-sm rounded-2xl bg-white/90 px-6 py-8 text-center text-primary-txt shadow-sm">
+                                <p class="text-lg font-semibold">Aucune discussion ouverte</p>
+                                <p class="mt-1 text-sm text-primary-txt">Choisissez un utilisateur pour commencer.</p>
+                            </div>
+                            <div v-else-if="messages.length === 0" class="m-auto max-w-sm rounded-2xl bg-white/90 px-6 py-8 text-center text-primary-txt shadow-sm">
+                                <p class="text-lg font-semibold">Conversation vide</p>
+                                <p class="mt-1 text-sm text-primary-txt">Aucun message avec {{ receiverUser.name }}.</p>
                             </div>
 
-                            <!-- Liste messages -->
-                            <div class="messages-container flex-1 p-4 overflow-y-auto flex flex-col space-y-2 bg-gray-50"
-                                 style="background-image: url('/discut.jpg'); background-size: cover; background-position: center; padding-bottom: 1rem;"
-                                 @scroll="handleScroll">
+                            <div v-for="msg in filteredMessages" :key="msg?.id" class="flex w-full"
+                                 :class="msg.sender_id === user.id ? 'justify-end' : 'justify-start'">
+                                <div
+                                    :class="[
+                                        'relative max-w-[75%] px-4 py-2.5 shadow-sm',
+                                        msg.sender_id === user.id
+                                            ? 'rounded-2xl rounded-br-md bg-primary-only text-primary-txt'
+                                            : 'rounded-2xl rounded-bl-md border border-gray-100 bg-white text-primary-txt',
+                                        isNewMessage(msg) ? 'ring-2 ring-primary-only' : ''
+                                    ]"
+                                >
+                                    <span v-if="isNewMessage(msg)"
+                                          class="absolute -top-2 -right-2 rounded-full bg-primary-only px-1.5 py-0.5 text-[10px] font-bold text-primary-txt">
+                                        Nouveau
+                                    </span>
 
-                                <div v-if="!receiverId" class="text-gray-500 text-center mt-10">
-                                    Choisissez un utilisateur pour commencer la discussion
-                                </div>
-                                <div v-else-if="messages.length === 0" class="text-primary-txt text-center mt-10">
-                                    Aucun message avec {{ receiverUser.name }}
-                                </div>
+                                    <p class="whitespace-pre-wrap break-words text-sm leading-relaxed">{{ msg.content }}</p>
 
-                                <div v-for="msg in filteredMessages" :key="msg?.id" class="flex w-full items-center relative"
-                                     :class="msg.sender_id === user.id ? 'justify-end' : 'justify-start'">
-                                    <div 
-                                        :class="[
-                                            'px-3 py-2 max-w-xs rounded-xl relative', 
-                                            msg.sender_id === user.id 
-                                                ? 'bg-green-200 text-gray-800' 
-                                                : 'bg-gray-200 text-gray-800',
-                                            isNewMessage(msg) ? 'border-2 border-blue-400 animate-pulse' : ''
-                                        ]"
-                                    >
-                                        <!-- 🔔 Indicateur nouveau message -->
-                                        <span v-if="isNewMessage(msg)" 
-                                              class="absolute -top-2 -right-2 bg-blue-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full animate-bounce">
-                                            NEW
-                                        </span>
-
-                                        <p class="text-sm">{{ msg.content }}</p>
-
-                                        <div class="w-full flex justify-between items-end mt-1">
-                                            <span class="text-xs opacity-70">
-                                                {{ msg.created_at ? new Date(msg.created_at).toLocaleTimeString() : '' }}
-                                            </span>
-
-                                            <span v-if="msg.sender_id === user.id" 
-                                                  class="text-xs"
-                                                  :class="msg.is_read ? 'text-blue-500' : 'text-blue-400'">
-                                                {{ msg.is_read ? '✓✓' : '✓' }}
-                                            </span>
-                                        </div>
-
-                                        <!-- Trois points et menu uniquement pour tes messages -->
-                                        <template v-if="isMine(msg)">
-                                            <span 
-                                                @click="toggleMenu(msg.id)" 
-                                                class="absolute top-0 right-0 cursor-pointer text-black font-bold hover:text-primary-txt
-                                                       w-6 h-6 flex items-center justify-center rounded-full hover:bg-primary-only transition-colors duration-200"
-                                                title="Options"
-                                            >
-                                                ⋮
-                                            </span>
-                                            <div 
-                                                v-if="activeMenuId === msg.id" 
-                                                class="absolute top-1 right-10 bg-white p-2 shadow-lg border rounded-lg z-20 w-32 animate-fade-in"
-                                            >
-                                                <ul class="text-xs">
-                                                    <li 
-                                                        @click="deleteMessage(msg.id)" 
-                                                        class="px-3 py-2 hover:bg-red-100 cursor-pointer border-b border-primary-only text-red-500 flex items-center gap-2 rounded-md transition"
-                                                    >
-                                                        🗑 Supprimer
-                                                    </li>
-                                                    <li 
-                                                        @click="editMessage(msg)" 
-                                                        class="px-3 py-2 hover:bg-green-100 cursor-pointer text-green-600 flex items-center gap-2 rounded-md transition"
-                                                    >
-                                                        ✏️ Modifier
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </template>
+                                    <div class="mt-1 flex items-center justify-end gap-2 text-[11px]"
+                                         class="text-primary-txt/70">
+                                        <span>{{ msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '' }}</span>
+                                        <span v-if="msg.sender_id === user.id">{{ msg.is_read ? '✓✓' : '✓' }}</span>
                                     </div>
+
+                                    <template v-if="isMine(msg)">
+                                        <button
+                                            type="button"
+                                            @click="toggleMenu(msg.id)"
+                                            class="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full text-white/80 hover:bg-white/20"
+                                            title="Options"
+                                        >
+                                            ⋮
+                                        </button>
+                                        <div
+                                            v-if="activeMenuId === msg.id"
+                                            class="absolute top-8 right-0 z-20 w-36 animate-fade-in rounded-xl border border-gray-100 bg-white p-1 text-primary-txt shadow-lg"
+                                        >
+                                            <button type="button" @click="editMessage(msg)" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs hover:bg-gray-50">
+                                                Modifier
+                                            </button>
+                                            <button type="button" @click="deleteMessage(msg.id)" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50">
+                                                Supprimer
+                                            </button>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
-
-                            <!-- Formulaire -->
-                            <form v-if="receiverId" @submit.prevent="handleSubmit" class="p-4 border-primary-only flex space-x-2 bg-white rounded-br-xl">
-                                <input 
-                                    v-model="newMessage" 
-                                    type="text" 
-                                    class="h-8 flex-1 border border-primary-only rounded px-3 py-2"
-                                    placeholder="Écrire un message..."
-                                />
-                                <button 
-                                    type="submit" 
-                                    class="w-36 h-8 text-white bg-gradient-to-r from-primary via-primary-dark to-primary
-                                           hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
-                                           dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg
-                                           dark:shadow-blue-800/80 font-medium rounded-lg text-xs px-3 py-1 text-center me-2 mb-2"
-                                >
-                                    {{ editingMessageId ? 'Mettre à jour' : 'Envoyer' }}
-                                </button>
-
-                                <button 
-                                    v-if="editingMessageId" 
-                                    type="button" 
-                                    @click="cancelEdit" 
-                                    class="bg-gray-400 text-white px-3 py-2 rounded"
-                                >
-                                    Retour
-                                </button>
-                            </form>
                         </div>
-                    </div>
+
+                        <form v-if="receiverId" @submit.prevent="handleSubmit" class="flex items-center gap-2 border-t border-gray-100 bg-white px-4 py-3">
+                            <input
+                                v-model="newMessage"
+                                type="text"
+                                class="h-11 flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 text-sm text-primary-txt outline-none transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
+                                placeholder="Écrire un message..."
+                            />
+                            <button
+                                v-if="editingMessageId"
+                                type="button"
+                                @click="cancelEdit"
+                                class="h-11 rounded-full border border-gray-200 px-4 text-sm font-medium text-primary-txt hover:bg-gray-50"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                type="submit"
+                                class="h-11 rounded-full bg-primary px-5 text-sm font-semibold text-white shadow-md transition hover:brightness-110"
+                            >
+                                {{ editingMessageId ? 'Mettre à jour' : 'Envoyer' }}
+                            </button>
+                        </form>
+                    </section>
                 </div>
             </div>
         </div>
 
-        <div v-else class="text-center py-20 text-gray-500">
+        <div v-else class="py-20 text-center text-primary-txt">
             Chargement de l'utilisateur...
         </div>
     </AuthenticatedLayout>
@@ -599,6 +570,10 @@ async function updateMessage() {
 
 .messages-container {
     scroll-behavior: smooth;
+    background-color: #f4f7fb;
+    background-image:
+        radial-gradient(circle at 15% 20%, rgba(255, 122, 24, 0.10), transparent 42%),
+        radial-gradient(circle at 85% 0%, rgba(106, 17, 203, 0.08), transparent 36%);
 }
 
 /* Scrollbar personnalisée */

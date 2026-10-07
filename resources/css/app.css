@@ -45,5 +45,90 @@ select {
     background: #bd7b00; /* Couleur sur hover */
   }
 
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
 
-  
+    body {
+        font-family: Figtree, ui-sans-serif, system-ui, sans-serif;
+        color: #66380a;
+        background-color: #faefe6;
+        text-rendering: optimizeLegibility;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+        font-family: inherit;
+        color: inherit;
+    }
+}
+
+.bg-primary-layout {
+    background-color: #faefe6;
+    background-image:
+        radial-gradient(circle at 0% 0%, rgba(199, 129, 46, 0.16), transparent 32%),
+        radial-gradient(circle at 100% 0%, rgba(230, 197, 162, 0.55), transparent 28%);
+}
+
+main .bg-white.rounded-xl.shadow-md,
+main .bg-white.rounded-lg.shadow-md,
+main .bg-white.rounded-xl.shadow,
+main .bg-white.shadow.rounded-lg {
+    border: 1px solid rgba(230, 197, 162, 0.9);
+    box-shadow: 0 14px 36px rgba(97, 49, 4, 0.08);
+}
+
+main table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+main table thead th {
+    letter-spacing: 0.04em;
+    font-weight: 700;
+}
+
+main table td.border,
+main table th.border {
+    border-color: #f0e2d4;
+}
+
+main table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+main table tbody tr:hover td {
+    background-color: #fff8f1;
+}
+
+header h1,
+header h2 {
+    letter-spacing: -0.02em;
+    color: #613104;
+}
+
+nav.app-sidebar a {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+nav.app-sidebar a:hover {
+    transform: none;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #e6c5a2;
+    border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #c7812e;
+}
+

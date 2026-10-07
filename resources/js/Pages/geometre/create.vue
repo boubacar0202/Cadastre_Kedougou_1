@@ -728,7 +728,7 @@ const submitForm = async () => {
                                                             name = "slt_usage"
                                                             id="Occupant"
                                                             class="h-8 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                             @change="handleSelectChange"
                                                         >
@@ -781,7 +781,7 @@ const submitForm = async () => {
                                                             required
                                                             name="slt_residence" id="Residence" 
                                                             class="h-8 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                         >
                                                             <option selected disabled></option>
@@ -819,7 +819,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.txt_nomOccupantTG"
                                                                     :id="'NomOccupant_${i}'"  
                                                                     class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>   
                                                             </div> 
@@ -833,7 +833,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.txt_numAppartementTG"
                                                                     :id="'NunAppartement_${i}'"  
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -847,7 +847,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.txt_activiteTG"
                                                                     :id="'Activite_${i}'"  
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -861,7 +861,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.txt_nineaTG"
                                                                     :id="'Ninea_${i}'"  
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -875,7 +875,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.tel_telephoneTG"
                                                                     :id="'Telephone_${i}'"  
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -888,7 +888,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.nbr_montantLoyerTG"
                                                                     :id="'Montant_loyer_${i}'"  
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -901,7 +901,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.txt_dateLieuNaissanceTG"
                                                                     :id="'DateNaissnace_${i}'"  
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -914,7 +914,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.txt_cniPasseportTG"
                                                                     :id="'CNIPasseport_${i}'"  
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -927,7 +927,7 @@ const submitForm = async () => {
                                                                     v-model="occupant.dt_dateDelivranceTG"
                                                                     :id="'DateDelivrance_${i}'"  
                                                                     class="h-8 block w-30 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -994,7 +994,7 @@ const submitForm = async () => {
                                 <h5 class="text-lg text-primary-txt font-bold mt-8">Evaluation de l'immeuble</h5><br>
                                 <div class="mb-6">
                                     <div class="border-b">
-                                        <ul class="flex justify-center text-sm font-medium text-gray-500 divide-x divide-gray-200 dark:divide-gray-700">
+                                        <ul class="flex justify-center text-sm font-medium text-primary-txt divide-x divide-gray-200 dark:divide-gray-700">
 
                                             <li class="w-1/3 text-center">
                                                 <button
@@ -1086,7 +1086,7 @@ const submitForm = async () => {
                                                                     readonly
                                                                     id="nbr_surface" 
                                                                     class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                             </div>
  
@@ -1106,7 +1106,7 @@ const submitForm = async () => {
                                                                 :min="0"
                                                                 :max="form.nbr_surface" 
                                                                 class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                             </div>
                                                         </div>
@@ -1123,7 +1123,7 @@ const submitForm = async () => {
                                                                 id="Superficie_non_bati" 
                                                                 :min="0" 
                                                                 class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                             </div>
                                                         </div>
@@ -1140,7 +1140,7 @@ const submitForm = async () => {
                                                                 name="slt_secteur" 
                                                                 id="Secteur" 
                                                                 class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                     <option selected desabled></option>
                                                                     <option :value="1">1 (3000 FCFA/m²)</option>
@@ -1161,7 +1161,7 @@ const submitForm = async () => {
                                                                 readonly
                                                                 id="Prix_metre_carre"  
                                                                 class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                             </div>
                                                         </div>
@@ -1177,7 +1177,7 @@ const submitForm = async () => {
                                                                 readonly
                                                                 id="Valeur_terrain"  
                                                                 class="h-9 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                             </div>
                                                         </div>
@@ -1228,7 +1228,7 @@ const submitForm = async () => {
                                                                         readonly
                                                                         id="Dependant_domaine" 
                                                                         class="h-8 block w-36 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-dark 
+                                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"> 
                                                                     </input>
                                                                     </div>
@@ -1243,7 +1243,7 @@ const submitForm = async () => {
                                                                         name="slt_categoriePR" 
                                                                         id="Dependant_domaine" 
                                                                         class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-dark 
+                                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desable></option> 
                                                                             <option value="1">1</option>
@@ -1260,7 +1260,7 @@ const submitForm = async () => {
                                                                         </select>
                                                                     </div>
                                                                 </div>
-                                                                <div v-else-if="currentCat === 'Immeuble collectif'" class="block text-sm/6 font-medium text-gray-900">
+                                                                <div v-else-if="currentCat === 'Immeuble collectif'" class="block text-sm/6 font-medium text-primary-txt">
                                                                     <!-- Vous avez sélectionné une autre catégorie. -->
                                                                     <label for="Dependant_domaine" class="block text-sm/6 font-medium text-primary-txt">CAT</label>
                                                                     <select 
@@ -1268,7 +1268,7 @@ const submitForm = async () => {
                                                                     name="slt_categoriePR" 
                                                                     id="Dependant_domaine" 
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-dark 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desable></option>  
                                                                         <option value="A">A</option>   
@@ -1296,7 +1296,7 @@ const submitForm = async () => {
                                                                     type="number" 
                                                                     id="Prix_mettre_carre"  
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-dark 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>  
@@ -1311,7 +1311,7 @@ const submitForm = async () => {
                                                                     type="number" 
                                                                     id="Surface_bati_sol"  
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-primary-dark 
+                                                                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-primary-txt/50 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1324,7 +1324,7 @@ const submitForm = async () => {
                                                                     type="number" 
                                                                     id="nbr_niveauPR" 
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-dark 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1337,8 +1337,8 @@ const submitForm = async () => {
                                                                     type="number" 
                                                                     id="Surface_utile" 
                                                                     readonly
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1411,7 +1411,7 @@ const submitForm = async () => {
                                                                         name="slt_dependant_domaine" 
                                                                         id="Dependant_domaine" 
                                                                         class="h-8 block w-36 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"> 
                                                                             <option value="Secondaire">Secondaire</option>
                                                                             <option value="Tertiaire">Tertiaire</option>
@@ -1432,7 +1432,7 @@ const submitForm = async () => {
                                                                         name="slt_categorieTG" 
                                                                         id="Dependant_domaine" 
                                                                         class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                                outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                                 focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desable></option>
                                                                             <option value="1">1</option>
@@ -1457,7 +1457,7 @@ const submitForm = async () => {
                                                                     name="slt_categorieTG" 
                                                                     id="Dependant_domaine" 
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desable></option>
                                                                         <option value="A">A</option>   
@@ -1485,7 +1485,7 @@ const submitForm = async () => {
                                                                     type="number" 
                                                                     id="Prix_mettre_carre"  
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>  
@@ -1499,8 +1499,8 @@ const submitForm = async () => {
                                                                     @blur="arrondirOccupantValeur(occupant)"
                                                                     type="number" 
                                                                     id="Surface_bati_sol"  
-                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1513,7 +1513,7 @@ const submitForm = async () => {
                                                                     type="number" 
                                                                     id="Niveau" 
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1527,7 +1527,7 @@ const submitForm = async () => {
                                                                     id="Surface_utile" 
                                                                     readonly
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1539,7 +1539,7 @@ const submitForm = async () => {
                                                                     name="slt_coeffTG"
                                                                     id="Coeff"  
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desabled></option>
                                                                         <option value="0.1">0.1</option>
@@ -1564,7 +1564,7 @@ const submitForm = async () => {
                                                                     id="Surface_corriger" 
                                                                     readonly
                                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1580,7 +1580,7 @@ const submitForm = async () => {
                                                                     readonly
                                                                     id="Valeur"  
                                                                     class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1626,7 +1626,7 @@ const submitForm = async () => {
                                                         id="Valeur_terrain_bati"
                                                         class="block w-64 rounded-md bg-white 
                                                             px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
-                                                            outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                            outline-primary-only placeholder:text-primary-txt/50 focus:outline focus:outline-2 
                                                             focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                                 </div>
                                             </div>
@@ -1652,7 +1652,7 @@ const submitForm = async () => {
                                                                     name="slt_dependant_domaine" 
                                                                     id="Dependant_domaine" 
                                                                     class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desable></option>
                                                                         <option value="Cours Amenagées Totale">Cours Amenagées Totale</option>
@@ -1674,7 +1674,7 @@ const submitForm = async () => {
                                                                     @input="verifierSurfaceOccupant(occupant)"
                                                                     name="nbr_surface_ca_total" id="Surface_ca_total"  
                                                                     class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">                         
                                                                 </div>
                                                             </div>  
@@ -1686,7 +1686,7 @@ const submitForm = async () => {
                                                                     name="slt_categorie_ca_total"  
                                                                     id="Categorie_ca_total"  
                                                                     class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected disabled></option>
                                                                             <option :value="1">1</option>
@@ -1705,7 +1705,7 @@ const submitForm = async () => {
                                                                     name="nbr_prix_metre_carre_ca_total" 
                                                                     id="Prix_metre_carre_ca_total"
                                                                     class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1717,7 +1717,7 @@ const submitForm = async () => {
                                                                     name="nbr_coefficient_ca_total" 
                                                                     id="Coefficient_ca_total"  
                                                                     class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desabled></option>
                                                                             <option value="0.1">0.1</option>
@@ -1740,7 +1740,7 @@ const submitForm = async () => {
                                                                     name="nbr_valeur_ca_total" 
                                                                     id="Valeur_ca_total"  
                                                                     class="h-8 block w-72 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1781,7 +1781,7 @@ const submitForm = async () => {
                                                     readonly
                                                     name="nbr_valeur_total_cours" id="Valeur_total_cours"  class="block w-72 rounded-md bg-white 
                                                         px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
-                                                        outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                        outline-primary-only placeholder:text-primary-txt/50 focus:outline focus:outline-2 
                                                         focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                                 </div>
                                             </div> 
@@ -1807,7 +1807,7 @@ const submitForm = async () => {
                                                                     name="slt_dependant_domaine" 
                                                                     id="Dependant_domaine" 
                                                                     class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected desable></option>
                                                                         <option value="Longueur Totale">Longueur Totale</option>
@@ -1827,7 +1827,7 @@ const submitForm = async () => {
                                                                     name="nbr_longueur_avant_clo" 
                                                                     id="Longueur_avant_clo"  
                                                                     class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">                         
                                                                 </div>
                                                             </div>  
@@ -1839,7 +1839,7 @@ const submitForm = async () => {
                                                                     name="slt_categorie_clo" 
                                                                     id="Categorie_clo"  
                                                                     class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                         <option selected sesabled></option>
                                                                         <option :value="1">1</option>
@@ -1860,7 +1860,7 @@ const submitForm = async () => {
                                                                     name="nbr_prix_metre_carre_clo" 
                                                                     id="Prix_metre_carre_clo"  
                                                                     class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1872,7 +1872,7 @@ const submitForm = async () => {
                                                                     name="nbr_coefficient_clo" 
                                                                     id="Coefficient_clo"  
                                                                     class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desabled></option>
                                                                             <option value="0.1">0.1</option>
@@ -1895,7 +1895,7 @@ const submitForm = async () => {
                                                                     name="nbr_valeur_clo" 
                                                                     id="Valeur_clo"  
                                                                     class="h-8 block w-72 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -1941,7 +1941,7 @@ const submitForm = async () => {
                                                         id="Valeur_total_clotur"  
                                                         class="block w-72 rounded-md bg-white 
                                                         px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
-                                                        outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                        outline-primary-only placeholder:text-primary-txt/50 focus:outline focus:outline-2 
                                                         focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                                 </div>
                                             </div>
@@ -1961,45 +1961,45 @@ const submitForm = async () => {
 
                                                             <div  class="sm:col-span-1">
                                                                 <div>
-                                                                    <label for="Designation_1" class="ms-2 text-sm font-medium text-primary-txt dark:text-gray-300">Designeation</label>
+                                                                    <label for="Designation_1" class="ms-2 text-sm font-medium text-primary-txt">Designeation</label>
                                                                     <input id="Designation_1"          
                                                                     v-model="occupant.txt_designation_am" 
                                                                     type="text" 
                                                                     class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6" />
                                                                 </div>
                                                             </div>
                                                             <div  class="sm:col-span-1"> 
                                                                 <div>
-                                                                    <label for="Valeur_unitaire_1" class="ms-2 text-sm font-medium text-primary-txt dark:text-gray-300">Valeur Unitaire</label>
+                                                                    <label for="Valeur_unitaire_1" class="ms-2 text-sm font-medium text-primary-txt">Valeur Unitaire</label>
                                                                     <input type="number"           
                                                                     v-model="occupant.nbr_valeur_unitaire_am"
                                                                     id="Valeur_unitaire_1"  
                                                                     class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">                         
                                                                 </div>
                                                             </div>  
                                                             <div  class="sm:col-span-1">
                                                                 <div> 
-                                                                    <label for="Quantile_1" class="ms-2 text-sm font-medium text-primary-txt dark:text-gray-300">Quantité</label>
+                                                                    <label for="Quantile_1" class="ms-2 text-sm font-medium text-primary-txt">Quantité</label>
                                                                     <input type="number"            
                                                                     v-model="occupant.nbr_quantile_am" 
                                                                     id="Quantile_1" 
                                                                     class="h-8 block w-38 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div> 
                                                             <div  class="sm:col-span-1">
                                                                 <div> 
-                                                                    <label for="Coeficien_1" class="ms-2 text-sm font-medium text-primary-txt dark:text-gray-300">Coeficien</label>
+                                                                    <label for="Coeficien_1" class="ms-2 text-sm font-medium text-primary-txt">Coeficien</label>
                                                                     <select type="select"             
                                                                     v-model="occupant.slt_coeficien_am" 
                                                                     id="Coeficien_1"  
                                                                     class="h-8 block w-40 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                             <option selected desabled></option>
                                                                             <option value="0.1">0.1</option>
@@ -2017,12 +2017,12 @@ const submitForm = async () => {
                                                             </div>
                                                             <div  class="sm:col-span-1">
                                                                 <div> 
-                                                                    <label for="Valeur" class="ms-2 text-sm font-medium text-primary-txt dark:text-gray-300">Valeur</label>
+                                                                    <label for="Valeur" class="ms-2 text-sm font-medium text-primary-txt">Valeur</label>
                                                                     <input type="number"              
                                                                     v-model="occupant.nbr_valeur_am"  
                                                                     id="Valeur"  
                                                                     class="h-8 block w-72 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6">
                                                                 </div>
                                                             </div>
@@ -2068,7 +2068,7 @@ const submitForm = async () => {
                                                         id="valeur_totale_ap"  
                                                         class="block w-72 rounded-md bg-white 
                                                         px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
-                                                        outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                        outline-primary-only placeholder:text-primary-txt/50 focus:outline focus:outline-2 
                                                         focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                                 </div>
                                             </div>
@@ -2094,7 +2094,7 @@ const submitForm = async () => {
                                                             @blur="nbr_valeurVenaleLimeuble = arrondirDeuxDecimales(nbr_valeurVenaleLimeuble)" 
                                                             class="block w-64 rounded-md bg-white 
                                                             px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
-                                                            outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                            outline-primary-only placeholder:text-primary-txt/50 focus:outline focus:outline-2 
                                                             focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                                     </div>
                                                 </div>
@@ -2109,7 +2109,7 @@ const submitForm = async () => {
                                                             step="0.01"
                                                             @blur="nbr_valeurLocative = arrondirDeuxDecimales(nbr_valeurLocative)"                                                           class="block w-64 rounded-md bg-white 
                                                             px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
-                                                            outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                            outline-primary-only placeholder:text-primary-txt/50 focus:outline focus:outline-2 
                                                             focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                                     </div>
                                                     <!-- <p>Taux détecté : {{ occupant.tauxValeurLocative }}</p> -->
@@ -2125,7 +2125,7 @@ const submitForm = async () => {
                                                             id="Date_devaluation" 
                                                             class="block w-64 rounded-md bg-white 
                                                                 px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
-                                                                outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                                outline-primary-only placeholder:text-primary-txt/50 focus:outline focus:outline-2 
                                                                 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                                     </div>
                                                 </div> 

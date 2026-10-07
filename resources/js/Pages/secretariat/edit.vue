@@ -1301,7 +1301,7 @@ async function submit() {
               <div class="p-6">
                 <template v-if="terrain">
                   <div class="flex justify-center">
-                    <h1 class="text-2xl text-gray-400 font-bold italic">
+                    <h1 class="text-lg text-primary-txt font-bold">
                       Modifier la parcelle de numéro dossier : {{ terrain.dossier.txt_num_dossier }}
                     </h1>
                   </div>
@@ -1579,7 +1579,7 @@ async function submit() {
                         <h5 class="text-lg font-bold mt-8">Evaluation de l'immeuble</h5><br />
                         <div class="mb-6">
                           <div class="border-b">
-                            <ul class="flex justify-center text-sm font-medium text-gray-500 divide-x divide-gray-200 dark:divide-gray-700">
+                            <ul class="flex justify-center text-sm font-medium text-primary-txt divide-x divide-gray-200 dark:divide-gray-700">
                               <li class="w-1/5 text-center">
                                 <button type="button" @click="setActiveTab('terrain')"
                                   :class="{ 'text-primary border-b-8 border border-primary': activeTab === 'terrain', 'hover:text-lg text-primary-txt hover:border-primary': activeTab !== 'terrain' }"
@@ -1880,9 +1880,9 @@ async function submit() {
                                   <div class="sm:col-span-1">
                                     <label for="fichierPDF" class="block font-medium text-primary-txt">Importer le Fichier PDF</label>
                                     <input type="file" name="fichierPDF" accept=".pdf" id="fichierPDF" @change="handleFileChangePDF"
-                                      class="block w-64 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6" />
+                                      class="block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6" />
                                     <div v-if="form.fichierPDF && typeof form.fichierPDF === 'string'" class="mt-2">
-                                      <a :href="`/storage/${form.fichierPDF}`" target="_blank" class="text-blue-600 underline">Voir le fichier</a>
+                                      <a :href="`/storage/${form.fichierPDF}`" target="_blank" class="text-primary underline">Voir le fichier</a>
                                     </div>
                                   </div>
                                 </div>
