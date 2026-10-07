@@ -92,18 +92,6 @@ const totalFiltre = computed(() => {
     return props.terrains.meta?.total || 0;
 });
 
-// Ajoutez un computed pour vérifier si des données existent 
-// Vérifier si des données existent
-const hasData = computed(() => {
-    return props.terrains?.data && props.terrains.data.length > 0;
-});
-
-// Vérifier si la pagination est disponible
-const hasPagination = computed(() => {
-    return hasData.value && 
-        props.terrains?.meta?.last_page && 
-        props.terrains.meta.last_page > 1;
-});
 
 // Pagination simplifiée
 const goToPage = (url) => {
@@ -210,20 +198,31 @@ onMounted(() => {
 // ✅ Fonction pour la classe de la cellule N° Dossier
 const getCellClass = (terrain) => {
     const nicad = terrain?.txt_nicad;
+    const signalement = String(terrain?.slt_signalement ?? '').trim().toLowerCase();
 
-    // Cas 1 : NICAD est "NON" ou "null"
-    if (nicad === 'NON' || nicad === 'null' || String(nicad).toLowerCase() === 'non') {
+    // NICAD explicitement absent
+    if (nicad === 'NON' || nicad === 'null' || String(nicad ?? '').toLowerCase() === 'non') {
         return 'bg-blue-300 text-white font-bold rounded';
     }
 
-    // Cas 2 : NICAD est null, undefined ou vide
+    // NICAD vide
     if (!nicad || String(nicad).trim() === '') {
         return 'bg-blue-100 text-blue-800 font-bold rounded';
     }
 
-    // Cas 3 : NICAD valide
-return 'text-primary-txt';
+    // Litige ou Anomalie
+    if (signalement === 'litige' || signalement === 'anomalie') {
+        return 'bg-red-300 text-red-800 font-bold rounded';
+    }
+
+    // Néant, vide ou null
+    if (!signalement || signalement === 'néant' || signalement === 'neant' || signalement === 'non' || signalement === 'null') {
+        return 'bg-green-100 text-green-800 font-bold rounded';
+    }
+
+    return 'text-primary-txt';
 };
+
 
 // ✅ Fonction pour le badge NICAD (optionnel)
 const getNicadBadgeClass = (terrain) => {
@@ -273,8 +272,8 @@ const getNicadBadgeClass = (terrain) => {
                                     Sans NICAD : {{ totalSansNicad }}
                                 </span>
                                 <!-- 🔥 Affichage du nombre filtré -->
-                                <span class="text-white/60 text-xs" v-if="totalFiltre !== totalEnregistrement">
-                                    ({{ totalFiltre }} avec filtres)
+                                <span class="text-white/60 text-xs" v-if="totalPageActuelle !== totalEnregistrement">
+                                    ({{ totalPageActuelle }} avec filtres)
                                 </span>
                             </div>
                             <div class="flex flex-wrap items-center gap-1">
@@ -369,6 +368,7 @@ const getNicadBadgeClass = (terrain) => {
                                             <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">NICAD</th>
                                             <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Statut NICAD</th>
                                             <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Motif Annulation NICAD</th>
+                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Signalement/Désignation</th>
                                             <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Immatric,.</th>
                                             <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Dép. domaine</th>
                                             <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Ussu born.</th>
@@ -406,7 +406,7 @@ const getNicadBadgeClass = (terrain) => {
                                             <td class="sticky left-0 z-8 text-xs border bg-white px-2 py-1 whitespace-nowrap">
                                                 {{ ((terrains.meta?.current_page || 1) - 1) * (terrains.meta?.per_page || 15) + index + 1 }}
                                             </td>
-                                            <td class="px-2 py-1 text-xs border whitespace-nowrap transition-colors duration-200" :class="getCellClass(terrain)"><span class="font-mono">{{ terrain.dossier?.txt_num_dossier  || ''}}</span></td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap transition-colors duration-200" :class="(getCellClass(terrain))"><span class="font-mono">{{ terrain.dossier?.txt_num_dossier  || ''}}</span></td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.region?.slt_region || '' }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.departement?.slt_departement || '' }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.arrondissement?.slt_arrondissement || '' }}</td>
@@ -433,6 +433,7 @@ const getNicadBadgeClass = (terrain) => {
                                             </td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.slt_statut_nicad || '' }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.slt_motif_annulation_nicad || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.slt_signalement || '' }} {{ terrain.slt_designationSignalement || '' }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.references_cadastrales?.rd_immatriculation_terrain || '' }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.references_cadastrales?.slt_dependant_domaine || '' }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.references_cadastrales?.ussu_bornage || '' }}</td>
@@ -629,6 +630,9 @@ border-radius: 0.25rem;
 /* Badges */
 .bg-red-100 {
 background-color: #fee2e2 !important;
+}
+.bg-red-300 {
+background-color: #fca5a5 !important;
 }
 .text-red-800 {
 color: #991b1b !important;
