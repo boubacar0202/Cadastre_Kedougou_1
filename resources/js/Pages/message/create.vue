@@ -476,8 +476,7 @@ async function updateMessage() {
 
                                     <p class="whitespace-pre-wrap break-words text-sm leading-relaxed">{{ msg.content }}</p>
 
-                                    <div class="mt-1 flex items-center justify-end gap-2 text-[11px]"
-                                         class="text-primary-txt/70">
+                                    <div class="mt-1 flex items-center justify-end gap-2 text-[11px] text-primary-txt/70">
                                         <span>{{ msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '' }}</span>
                                         <span v-if="msg.sender_id === user.id">{{ msg.is_read ? '✓✓' : '✓' }}</span>
                                     </div>

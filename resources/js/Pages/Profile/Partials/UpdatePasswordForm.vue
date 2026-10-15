@@ -36,11 +36,11 @@ const updatePassword = () => {
 <template>
     <section>
         <header>
-            <h2 class="text-lg font-medium text-gray-900">
+            <h2 class="text-lg font-medium text-primary-txt">
                 Mettre à jour le mot de passe
             </h2>
 
-            <p class="mt-1 text-sm text-gray-600">
+            <p class="mt-1 text-sm text-primary-txt">
                 Assurez-vous d’utiliser un mot de passe long et aléatoire pour sécuriser votre compte.
             </p>
         </header>
@@ -110,7 +110,7 @@ const updatePassword = () => {
                 >
                     <p
                         v-if="form.recentlySuccessful"
-                        class="text-sm text-gray-600"
+                        class="text-sm text-primary-txt"
                     >
                         Enregistrer
                     </p>

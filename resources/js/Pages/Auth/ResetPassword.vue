@@ -79,8 +79,8 @@ const submit = () => {
                 <TextInput
                     id="email"
                     type="email"
-                    class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-gray-900
-                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400
+                    class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-primary-txt
+                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-primary-txt/50
                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
                     v-model="form.email"
                     required
@@ -101,8 +101,8 @@ const submit = () => {
                     <TextInput
                         id="password"
                         :type="showPassword ? 'text' : 'password'"
-                        class="block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-gray-900
-                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400
+                        class="block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-primary-txt
+                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-primary-txt/50
                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
                         v-model="form.password"
                         required
@@ -137,8 +137,8 @@ const submit = () => {
                     <TextInput
                         id="password_confirmation"
                         :type="showPasswordNew ? 'text' : 'password'"
-                        class="block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-gray-900
-                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400
+                        class="block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-primary-txt
+                            outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-primary-txt/50
                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
                         v-model="form.password_confirmation"
                         required

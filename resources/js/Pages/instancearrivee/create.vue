@@ -345,7 +345,7 @@ const formatDateDMY = (dateStr) => {
                                     </p>
  
                                     <form @submit.prevent class="flex flex-wrap items-center gap-2">
-                                        <div class="flex flex-wrap items-center gap-2">
+                                        <div class="flex flex-wrap items-center gap-1">
                                             <div>
                                                 <input 
                                                     v-model="mois"
@@ -494,9 +494,9 @@ const formatDateDMY = (dateStr) => {
                                                         v-if="arrivee.fichierPDF"
                                                         :href="`/storage/${arrivee.fichierPDF}`"
                                                         target="_blank"
-                                                        class="text-primary underline"
-                                                    >
-                                                        Voir PDF
+                                                        class="text-primary underline flex justify-center items-center"
+                                                    >                                                                    
+                                                        <img src="/iconePDF.png" alt="PDF" class="w-8 h-8 mx-auto">
                                                     </a>
                                                     <span v-else class="text-primary-txt/60 italic">Aucun PDF</span>
                                                 </td>

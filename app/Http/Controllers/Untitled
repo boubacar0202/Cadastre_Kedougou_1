@@ -1,0 +1,55 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\Parametre\UpdatePointDensifierRequest;
+use App\Models\Arrondissement;
+use App\Models\CodeAcces;
+use App\Models\Commune;
+use App\Models\Departement;
+use App\Models\Lotissement; 
+use App\Models\PointDensifier;
+use App\Models\Mutation;
+use Illuminate\Http\Request;
+use App\Models\Parametre; 
+use App\Models\Terrain;
+use App\Models\EvaluationTerrain;
+use App\Models\User;
+use App\Models\Message;
+use App\Models\Shapefile;
+use App\Models\Dossier;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage; 
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules;
+use Inertia\Inertia;
+
+class LotissementController extends Controller
+{
+    /**
+     * index
+     */
+    public function index()
+    {
+        //
+        $lotissements = Lotissement::with(['departement', 'arrondissement', 'commune'])->get();  
+        return Inertia::render('lotissement/index', [
+            'lotissements' => $lotissements, 
+        ]);
+    }
+
+    public function create()
+    {
+        return Inertia::render('lotissement/create');
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+    }
+}

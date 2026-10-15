@@ -33,7 +33,12 @@ const confirm = () => {
 }
 
 const close = () => {
-  router.visit(document.referrer || '/')
+  if (window.history.length > 1) {
+    window.history.back()
+    return
+  }
+
+  router.visit(route("dashboard"))
 }
 
 const togglePassword = () => {
@@ -73,7 +78,7 @@ const togglePassword = () => {
           <button
             type="button"
             @click="togglePassword"
-            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+            class="absolute inset-y-0 right-0 flex items-center pr-3 text-primary-txt/60 hover:text-primary"
           >
             <EyeIcon v-if="!showPassword" class="h-5 w-5" />
             <EyeSlashIcon v-else class="h-5 w-5" />

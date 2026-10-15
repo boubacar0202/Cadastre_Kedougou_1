@@ -10,11 +10,12 @@ import MazRadio from "maz-ui/components/MazRadio";
 import DefaultLayout from "@/Layouts/DefaultLayout.vue";
 import BaseInput from "@/Components/BaseInput.vue";
 import BaseSelect from "@/Components/BaseSelect.vue";
+import { baremeOptions, mapsFromBaremes } from "@/utils/baremes";
 
 defineOptions({ layout: DefaultLayout });
 
 // Props
-const { terrain, regions, departements, arrondissements, communes, titulaire, lotissements, references_usages, occupants, occupantsBP } =
+const { terrain, regions, departements, arrondissements, communes, titulaire, lotissements, references_usages, occupants, occupantsBP, baremes = [] } =
   defineProps({
     terrain: Object,
     regions: Array,
@@ -25,7 +26,10 @@ const { terrain, regions, departements, arrondissements, communes, titulaire, lo
     references_usages: Array,
     occupants: Array,
     occupantsBP: Array,
+    baremes: { type: Array, default: () => [] },
   });
+
+const { categories, prixParSecteur, coeffCAValues, coeffCLValues } = mapsFromBaremes(baremes);
 
 // États réactifs
 const formVisible = ref(false);
@@ -55,38 +59,6 @@ const showAnnulationNICAD = ref(false);
 // ✅ Fonction setActiveTab (définie avant toute utilisation)
 const setActiveTab = (tab) => {
   activeTab.value = tab;
-};
-
-// Catégories de bâtiment
-const categories = {
-  "Maison individuelle": {
-    "1": 205891,
-    "2": 190883,
-    "3": 180937,
-    "4": 158411,
-    "5": 119942,
-    "6": 88201,
-    "7": 58801,
-    "8": 40663,
-    "9": 11117,
-    "10": 10000,
-    "11": 8000,
-  },
-  "Immeuble collectif": {
-    A: 244257,
-    B: 226543,
-    C: 204069,
-    D: 177171,
-    E: 142293,
-    F: 123552,
-    G: 93878,
-    H: 61602,
-    I: 53793,
-    J: 25000,
-    K: 22000,
-    L: 20000,
-    M: 8000,
-  },
 };
 
 // ===== OPTIONS POUR BASESELECT =====
@@ -278,26 +250,11 @@ const natureMutationOptions = [
   { value: 'Partage-Heritage', label: 'Partage-Heritage' },
   { value: 'Autres', label: 'Autres' }
 ]
-const secteurOptions = [
-  { value: 1, label: '1' },
-  { value: 2, label: '2' },
-  { value: 3, label: '3' },
-]
-
-const categorieMaisonOptions = Array.from({ length: 11 }, (_, i) => ({
-  value: i + 1, label: String(i + 1),
-}))
-
-const categorieImmeubleOptions = ['A','B','C','D','E','F','G','H','I','J','K','L','M']
-  .map(v => ({ value: v, label: v }))
-
-const categorieCAOptions = Array.from({ length: 4 }, (_, i) => ({
-  value: i + 1, label: String(i + 1),
-}))
-
-const categorieCLOptions = Array.from({ length: 7 }, (_, i) => ({
-  value: i + 1, label: String(i + 1),
-}))
+const secteurOptions = baremeOptions(baremes, "secteur", "", { numeric: true })
+const categorieMaisonOptions = baremeOptions(baremes, "batiment", "Maison individuelle", { numeric: true })
+const categorieImmeubleOptions = baremeOptions(baremes, "batiment", "Immeuble collectif")
+const categorieCAOptions = baremeOptions(baremes, "cours_amenagee", "", { numeric: true })
+const categorieCLOptions = baremeOptions(baremes, "cloture", "", { numeric: true })
 
 const coefficientOptions = [
   { value: '0.10', label: '0.1' },
@@ -994,8 +951,6 @@ watchEffect(() => {
   }
 });
 
-// Prix secteur
-const prixParSecteur = { 1: 3000, 2: 2000, 3: 1000 };
 watchEffect(() => {
   const secteur = Number(form.slt_secteur);
   form.nbr_prix_metre_carre = prixParSecteur[secteur] || 0;
@@ -1077,8 +1032,6 @@ watchEffect(() => {
   form.txt_valeur_terrain_bati = txt_valeur_terrain_bati.value;
 });
 
-// Cours aménagées
-const coeffCAValues = { 1: 17500, 2: 13500, 3: 10500, 4: 5000 };
 watchEffect(() => {
   form.occupantsCA.forEach((occupant) => {
     const categorie = Number(occupant.slt_categorie_ca_total) || 0;
@@ -1096,8 +1049,6 @@ watchEffect(() => {
   form.nbr_valeur_total_ca = nbr_valeur_total_ca.value;
 });
 
-// Clôtures
-const coeffCLValues = { 1: 48269, 2: 35105, 3: 28084, 4: 25744, 5: 11848, 6: 4209, 7: 853 };
 watchEffect(() => {
   form.occupantsCL.forEach((occupant) => {
     const categorieCL = Number(occupant.slt_categorie_clo) || 0;
@@ -1146,9 +1097,10 @@ watchEffect(() => {
 const isPrincipalSelected = computed(() => form.txt_dependant_domainePR === "Principale");
 const tauxValeurLocative = computed(() => {
   if (!isPrincipalSelected.value) return 0;
-  const cat = Number(form.nbr_prix_metre_carrePR) || 0;
-  if ([244257, 205891].includes(cat)) return 0.1344;
-  if ([226543, 204069, 180937, 190883].includes(cat)) return 0.12;
+  const type = form.currentCat;
+  const code = String(form.slt_categoriePR || "");
+  if ((type === "Immeuble collectif" && code === "A") || (type === "Maison individuelle" && code === "1")) return 0.1344;
+  if ((type === "Immeuble collectif" && ["B", "C"].includes(code)) || (type === "Maison individuelle" && ["2", "3"].includes(code))) return 0.12;
   return 0.10;
 });
 const nbr_valeurLocative = computed(() => {
@@ -1302,7 +1254,7 @@ async function submit() {
                 <template v-if="terrain">
                   <div class="flex justify-center">
                     <h1 class="text-lg text-primary-txt font-bold">
-                      Modifier la parcelle de numéro dossier : {{ terrain.dossier.txt_num_dossier }}
+                      Modification de la parcelle de numéro dossier : {{ terrain.dossier.txt_num_dossier }}
                     </h1>
                   </div>
 

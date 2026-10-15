@@ -270,7 +270,7 @@ const submitForm = function () {
                                                     required
                                                     aria-label="Rechercher"
                                                     class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                         placeholder="Numéro Lot"
                                                     @keyup.enter="rechercherDossier" 
@@ -283,7 +283,7 @@ const submitForm = function () {
                                                     v-model="form.txt_lotissement" 
                                                     autocomplete="off" 
                                                     class="h-8 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                         placeholder="Entrer le numéro dossier conserné"
                                                 > 

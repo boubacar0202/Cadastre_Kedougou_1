@@ -200,25 +200,33 @@ const getCellClass = (terrain) => {
     const nicad = terrain?.txt_nicad;
     const signalement = String(terrain?.slt_signalement ?? '').trim().toLowerCase();
 
-    // NICAD explicitement absent
-    if (nicad === 'NON' || nicad === 'null' || String(nicad ?? '').toLowerCase() === 'non') {
-        return 'bg-blue-300 text-white font-bold rounded';
-    }
 
-    // NICAD vide
-    if (!nicad || String(nicad).trim() === '') {
-        return 'bg-blue-100 text-blue-800 font-bold rounded';
-    }
+
 
     // Litige ou Anomalie
     if (signalement === 'litige' || signalement === 'anomalie') {
         return 'bg-red-300 text-red-800 font-bold rounded';
+    }else {
+            
+        // NICAD vide
+        if (!nicad || String(nicad).trim() === '') {
+            return 'bg-blue-100 text-blue-800 font-bold rounded';
+        }
+
+        // Néant, vide ou null
+        if (!signalement || signalement === 'néant' || signalement === 'neant' || signalement === 'non' || signalement === 'null') {
+            return 'bg-green-100 text-green-800 font-bold rounded';
+        }
+ 
+        // NICAD explicitement absent
+        if (nicad === 'NON' || nicad === 'null' || String(nicad ?? '').toLowerCase() === 'non') {
+            return 'bg-blue-300 text-white font-bold rounded';
+        }
+ 
+        return 'text-primary-txt';
     }
 
-    // Néant, vide ou null
-    if (!signalement || signalement === 'néant' || signalement === 'neant' || signalement === 'non' || signalement === 'null') {
-        return 'bg-green-100 text-green-800 font-bold rounded';
-    }
+ 
 
     return 'text-primary-txt';
 };
@@ -282,7 +290,7 @@ const getNicadBadgeClass = (terrain) => {
                                     type="number"
                                     min="1"
                                     max="12"
-                                    class="h-8 w-20 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    class="h-8 w-20 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
                                     placeholder="Mois"
                                 />
                                 <input 
@@ -290,24 +298,24 @@ const getNicadBadgeClass = (terrain) => {
                                     type="number"
                                     min="2000"
                                     max="2100"
-                                    class="h-8 w-20 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    class="h-8 w-20 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
                                     placeholder="Année"
                                 />
                                 <input 
                                     v-model="filters.numero"
                                     type="text"
-                                    class="h-8 w-32 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    class="h-8 w-32 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
                                     placeholder="N° dossier"
                                 />
                                 <input 
                                     v-model="filters.prenomNom"
                                     type="text"
-                                    class="h-8 w-40 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    class="h-8 w-40 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
                                     placeholder="Prénom Nom"
                                 />
                                 <select
                                     v-model="filters.refServiceRendu"
-                                    class="h-8 w-44 rounded-xl bg-white text-gray-900 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    class="h-8 w-44 rounded-xl bg-white text-primary-txt px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
                                 >
                                     <option value="">Tous les services</option>
                                     <option 
@@ -339,9 +347,9 @@ const getNicadBadgeClass = (terrain) => {
                         <!-- Tableau -->
                         <div class="p-4">
                             <div class="max-h-[600px] overflow-x-auto shadow-md rounded-xl">
-                                <table class="table table-auto w-full text-base text-left text-gray-500">
+                                <table class="table table-auto w-full text-base text-left text-primary-txt">
                                     <thead 
-                                        class="sticky top-0 z-10 text-primary-txt text-font-bold text-center uppercase bg-primary-form bg-gray-50 dark:bg-gray-700 dark:text-gray-400 whitespace-nowrap bg-primary-only"
+                                        class="sticky top-0 z-10 text-primary-txt text-font-bold text-center uppercase bg-primary-form bg-gray-50 dark:bg-gray-700 dark:text-primary-txt whitespace-nowrap bg-primary-only"
                                     >
                                         <tr class="h-10">
                                             <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N°</th>
@@ -463,11 +471,11 @@ const getNicadBadgeClass = (terrain) => {
                                                     v-if="terrain.titulaire?.fichierPDF"
                                                     :href="`/storage/${terrain.titulaire.fichierPDF}?t=${Date.now()}`"
                                                     target="_blank"
-                                                    class="text-blue-600 underline"
-                                                >
-                                                    Voir PDF
+                                                    class="text-blue-500 underline flex justify-center items-center"
+                                                > 
+                                                    <img src="/iconePDF.png" alt="PDF" class="w-8 h-8 mx-auto">
                                                 </a>
-                                                <span v-else class="text-gray-400 italic">Aucun PDF</span>
+                                                <span v-else class="text-primary-txt/60 italic">Aucun PDF</span>
                                             </td>
                                             <td class="sticky right-0 z-8 px-2 py-1 border bg-white whitespace-nowrap">
                                                 <div class="flex justify-center gap-2">
@@ -505,7 +513,7 @@ const getNicadBadgeClass = (terrain) => {
 
                                         <!-- Message si aucun résultat -->
                                         <tr v-if="!terrains.data?.length">
-                                            <td colspan="49" class="text-center py-12 text-gray-500 text-base">
+                                            <td colspan="49" class="text-center py-12 text-primary-txt text-base">
                                                 Aucun terrain trouvé
                                             </td>
                                         </tr>
@@ -521,7 +529,7 @@ const getNicadBadgeClass = (terrain) => {
                                 <button 
                                     @click="prevPage"
                                     :disabled="!terrains.links?.prev"
-                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-200 hover:bg-gray-300 text-gray-700"
+                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-200 hover:bg-gray-300 text-primary-txt"
                                 >
                                     ← Précédent
                                 </button>
@@ -535,7 +543,7 @@ const getNicadBadgeClass = (terrain) => {
                                         'px-3.5 py-1.5 rounded-lg text-sm font-medium transition',
                                         link.active 
                                             ? 'bg-primary text-white shadow-md' 
-                                            : 'bg-gray-200 hover:bg-gray-300 text-gray-700',
+                                            : 'bg-gray-200 hover:bg-gray-300 text-primary-txt',
                                         !link.url ? 'opacity-40 cursor-not-allowed' : ''
                                     ]"
                                     v-html="link.label"
@@ -545,7 +553,7 @@ const getNicadBadgeClass = (terrain) => {
                                 <button 
                                     @click="nextPage"
                                     :disabled="!terrains.links?.next"
-                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-200 hover:bg-gray-300 text-gray-700"
+                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-200 hover:bg-gray-300 text-primary-txt"
                                 >
                                     Suivant →
                                 </button>

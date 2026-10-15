@@ -41,9 +41,14 @@ const props = defineProps({
             ]
         })
     },
-    gridData: {
-        type: Array,
-        default: () => []
+    evaluation: {
+        type: Object,
+        default: () => ({
+            annee: new Date().getFullYear(),
+            trimestre: Math.ceil((new Date().getMonth() + 1) / 3),
+            label: '',
+            lignes: []
+        })
     },
     stats: {
         type: Object,
@@ -85,12 +90,33 @@ const chartData = ref({
     }
 });
 
-// Données du grid
-const gridDataRef = ref(props.gridData || []);
+// Évaluation des utilisateurs
+const annee = ref(props.evaluation?.annee || new Date().getFullYear());
+const trimestre = ref(props.evaluation?.trimestre || Math.ceil((new Date().getMonth() + 1) / 3));
+const evaluationLignes = ref(props.evaluation?.lignes || []);
 const searchQuery = ref('');
-const sortColumn = ref('');
-const sortDirection = ref('asc');
+const sortColumn = ref('score');
+const sortDirection = ref('desc');
 const isRefreshing = ref(false);
+const isLoadingEvaluation = ref(false);
+
+const annees = [new Date().getFullYear(), new Date().getFullYear() - 1, new Date().getFullYear() - 2];
+const trimestresOptions = [
+    { value: 1, label: '1er trimestre' },
+    { value: 2, label: '2e trimestre' },
+    { value: 3, label: '3e trimestre' },
+    { value: 4, label: '4e trimestre' },
+];
+const colonnesEvaluation = [
+    { key: 'utilisateur', label: 'Utilisateur' },
+    { key: 'role', label: 'Rôle' },
+    { key: 'trimestre', label: 'Trimestre' },
+    { key: 'enregistrements', label: 'Enregistrements' },
+    { key: 'modifications', label: 'Modifications' },
+    { key: 'recherches', label: 'Recherches' },
+    { key: 'score', label: 'Score' },
+    { key: 'appreciation', label: 'Appréciation' },
+];
 
 // Statistiques
 const stats = ref(props.stats || {});
@@ -106,28 +132,14 @@ const cessionDataExtrait = ref({
     total: { nombre_unitaire: 0, montant_total: 0 }
 });
 
-// Computed pour les totaux du grid
-const gridTotals = computed(() => {
-    if (!gridDataRef.value.length) {
-        return { dossiers: 0, extraits_de_plan: 0, delimitation: 0, rejetes: 0 };
-    }
-    return {
-        dossiers: gridDataRef.value.reduce((sum, row) => sum + (row.dossiers || 0), 0),
-        extraits_de_plan: gridDataRef.value.reduce((sum, row) => sum + (row.extraits_de_plan || 0), 0),
-        delimitation: gridDataRef.value.reduce((sum, row) => sum + (row.delimitation || 0), 0),
-        rejetes: gridDataRef.value.reduce((sum, row) => sum + (row.rejetes || 0), 0)
-    };
-});
-
-// Computed pour les données filtrées du grid
-const filteredGridData = computed(() => {
-    let data = [...gridDataRef.value];
+const filteredEvaluation = computed(() => {
+    let data = [...evaluationLignes.value];
     if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase();
-        data = data.filter(item => 
-            Object.values(item).some(val => 
-                String(val).toLowerCase().includes(query)
-            )
+        data = data.filter(item =>
+            String(item.utilisateur || '').toLowerCase().includes(query)
+            || String(item.role || '').toLowerCase().includes(query)
+            || String(item.appreciation || '').toLowerCase().includes(query)
         );
     }
     if (sortColumn.value) {
@@ -137,13 +149,31 @@ const filteredGridData = computed(() => {
             if (typeof valA === 'number' && typeof valB === 'number') {
                 return sortDirection.value === 'asc' ? valA - valB : valB - valA;
             }
-            return sortDirection.value === 'asc' 
-                ? String(valA).localeCompare(String(valB))
-                : String(valB).localeCompare(String(valA));
+            return sortDirection.value === 'asc'
+                ? String(valA).localeCompare(String(valB), 'fr')
+                : String(valB).localeCompare(String(valA), 'fr');
         });
     }
     return data;
 });
+
+const evaluationTotals = computed(() => {
+    return filteredEvaluation.value.reduce((acc, row) => {
+        acc.enregistrements += row.enregistrements || 0;
+        acc.modifications += row.modifications || 0;
+        acc.recherches += row.recherches || 0;
+        acc.score += row.score || 0;
+        return acc;
+    }, { enregistrements: 0, modifications: 0, recherches: 0, score: 0 });
+});
+
+function appreciationClass(appreciation) {
+    if (appreciation === 'Excellente') return 'bg-green-100 text-green-800';
+    if (appreciation === 'Bonne') return 'bg-sky-100 text-sky-800';
+    if (appreciation === 'Moyenne') return 'bg-amber-100 text-amber-800';
+    if (appreciation === 'Faible') return 'bg-orange-100 text-orange-800';
+    return 'bg-gray-100 text-gray-600';
+}
 
 // Formatage des montants
 function formatCurrency(amount) {
@@ -292,11 +322,13 @@ function getTrimestreLabel(offset) {
 async function updateChartData() {
     isRefreshing.value = true;
     try {
-        const response = await axios.get('/api/chart-data');
+        const response = await axios.get('/api/chart-data', {
+            params: { annee: annee.value, trimestre: trimestre.value },
+        });
         const data = response.data;
         chartData.value.pie = data.pie || chartData.value.pie;
         chartData.value.bar = data.bar || chartData.value.bar;
-        gridDataRef.value = data.grid || [];
+        evaluationLignes.value = data.evaluation?.lignes || [];
         const statsResponse = await axios.get('/api/stats');
         stats.value = statsResponse.data;
         
@@ -314,22 +346,37 @@ async function updateChartData() {
     }
 }
 
-// Export CSV
-function exportGridData() {
-    if (filteredGridData.value.length === 0) {
-        toast.warning('Aucune donnée à exporter');
+async function loadEvaluation() {
+    isLoadingEvaluation.value = true;
+    try {
+        const { data } = await axios.get('/api/chart-data', {
+            params: { annee: annee.value, trimestre: trimestre.value },
+        });
+        evaluationLignes.value = data.evaluation?.lignes || [];
+    } catch (error) {
+        console.error('Erreur évaluation:', error);
+        toast.error("Impossible de charger l'évaluation du trimestre.");
+    } finally {
+        isLoadingEvaluation.value = false;
+    }
+}
+
+function exportEvaluation() {
+    if (filteredEvaluation.value.length === 0) {
+        toast.warning('Aucune évaluation à exporter');
         return;
     }
-    const headers = Object.keys(filteredGridData.value[0]);
+    const headers = colonnesEvaluation.map(col => col.label);
+    const keys = colonnesEvaluation.map(col => col.key);
     const csvContent = [
-        headers.join(','),
-        ...filteredGridData.value.map(row => headers.map(key => row[key] || '').join(','))
+        headers.join(';'),
+        ...filteredEvaluation.value.map(row => keys.map(key => row[key] ?? '').join(';'))
     ].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `statistiques_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `evaluation_utilisateurs_T${trimestre.value}_${annee.value}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
     toast.success('Exportation réussie !');
@@ -344,21 +391,9 @@ function sortBy(column) {
     }
 }
 
-function addGridRow() {
-    gridDataRef.value.push({
-        mois: `Nouveau ${gridDataRef.value.length + 1}`,
-        dossiers: Math.floor(Math.random() * 30) + 1,
-        extraits_de_plan: Math.floor(Math.random() * 15) + 1,
-        delimitation: Math.floor(Math.random() * 15) + 1,
-        rejetes: Math.floor(Math.random() * 5)
-    });
-    toast.success('Ligne ajoutée avec succès !');
-}
-
-function removeGridRow(index) {
-    gridDataRef.value.splice(index, 1);
-    toast.success('Ligne supprimée !');
-}
+watch([annee, trimestre], () => {
+    loadEvaluation();
+});
 
 watch(chartData, () => createCharts(), { deep: true });
 
@@ -383,7 +418,7 @@ watchEffect((onInvalidate) => {
         <div class="p-6">
             <!-- En-tête principal -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <h1 class="text-2xl font-bold text-primary-txt flex items-center gap-2">
                     <svg class="w-8 h-8 text-primary" viewBox="0 0 24 24" fill="none">
                         <path d="M4 20V4" stroke="#ff7a18" stroke-width="2"/>
                         <path d="M4 20h16" stroke="#ff7a18" stroke-width="2"/>
@@ -408,20 +443,20 @@ watchEffect((onInvalidate) => {
             <!-- Cartes statistiques -->
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white rounded-lg shadow-md p-4 border-l-4 border-orange-500">
-                    <p class="text-sm text-gray-500">Délimitation</p>
+                    <p class="text-sm text-primary-txt">Délimitation</p>
                     <p class="text-2xl font-bold text-orange-600">{{ stats.dossiers_delimitation || 0 }}</p>
                 </div>
                 <div class="bg-white rounded-lg shadow-md p-4 border-l-4 border-teal-500">
-                    <p class="text-sm text-gray-500">Extrait de plan</p>
+                    <p class="text-sm text-primary-txt">Extrait de plan</p>
                     <p class="text-2xl font-bold text-teal-600">{{ stats.dossiers_extrait_plan || 0 }}</p>
                 </div>
                 <div class="bg-white rounded-lg shadow-md p-4 border-l-4 border-indigo-500">
-                    <p class="text-sm text-gray-500">Implantation</p>
-                    <p class="text-2xl font-bold text-indigo-600">{{ stats.dossiers_implantation || 0 }}</p>
+                    <p class="text-sm text-primary-txt">Implantation</p>
+                    <p class="text-2xl font-bold text-primary">{{ stats.dossiers_implantation || 0 }}</p>
                 </div>
                 <div class="bg-white rounded-lg shadow-md p-4 border-l-4 border-pink-500">
                     <div class="flex justify-between items-center mb-1">
-                        <p class="text-sm text-gray-500">Terrains Enquêtés</p>
+                        <p class="text-sm text-primary-txt">Terrains Enquêtés</p>
                         <p class="text-xs font-bold text-red-500">Objectif : 1500</p> 
                     </div> 
                     <div class="flex justify-between items-center">
@@ -435,28 +470,28 @@ watchEffect((onInvalidate) => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="bg-white rounded-lg shadow-lg p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <h2 class="text-2xl font-bold text-primary-txt flex items-center gap-2">
                             <span class="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-blue-700 rounded-full"></span>
                             Répartition des Dossiers
                         </h2>
-                        <span class="text-sm text-gray-500">Pie Chart</span>
+                        <span class="text-sm text-primary-txt">Pie Chart</span>
                     </div>
                     <div class="h-80"><canvas ref="pieChartRef"></canvas></div>
                 </div>
                 <div class="bg-white rounded-lg shadow-lg p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <h2 class="text-2xl font-bold text-primary-txt flex items-center gap-2">
                             <span class="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-blue-700 rounded-full"></span>
                             Évolution Mensuelle
                         </h2>
-                        <span class="text-sm text-gray-500">Bar Chart</span>
+                        <span class="text-sm text-primary-txt">Bar Chart</span>
                     </div>
                     <div class="h-80"><canvas ref="barChartRef"></canvas></div>
                 </div>
             </div>
 
             <!-- Section États de Cession avec deux tableaux indépendants -->
-            <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2 mb-4">
+            <h2 class="text-2xl font-bold text-primary-txt flex items-center gap-2 mb-4">
                 <span class="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-blue-700 rounded-full"></span>
                 États de Cession
             </h2>
@@ -465,22 +500,22 @@ watchEffect((onInvalidate) => {
                 <!-- Tableau Délimitation -->
                 <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
-                        <h3 class="text-lg font-bold text-gray-700 flex items-center gap-2">
+                        <h3 class="text-lg font-bold text-primary-txt flex items-center gap-2">
                             <span class="w-1 h-6 bg-orange-500 rounded-full justify-start"></span>
                             Délimitation 
-                            <span class="text-xs text-gray-500">{{ getTrimestreLabel(offsetDelimitation) }}</span>
+                            <span class="text-xs text-primary-txt">{{ getTrimestreLabel(offsetDelimitation) }}</span>
                         </h3>
                         <div class="flex items-center gap-2">
                             <!-- Boutons de navigation Délimitation -->
                             <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                                 <button @click="changerTrimestreDelimitation(-1)" 
-                                    class="px-2 py-1 text-xs font-medium text-gray-700 hover:bg-white hover:shadow rounded transition-all flex items-center gap-1">
+                                    class="px-2 py-1 text-xs font-medium text-primary-txt hover:bg-white hover:shadow rounded transition-all flex items-center gap-1">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                                     Préc.
                                 </button>
-                                <span class="text-gray-400">|</span>
+                                <span class="text-primary-txt/60">|</span>
                                 <button @click="changerTrimestreDelimitation(1)" 
-                                    class="px-2 py-1 text-xs font-medium text-gray-700 hover:bg-white hover:shadow rounded transition-all flex items-center gap-1">
+                                    class="px-2 py-1 text-xs font-medium text-primary-txt hover:bg-white hover:shadow rounded transition-all flex items-center gap-1">
                                     Suiv.
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                 </button>
@@ -494,10 +529,10 @@ watchEffect((onInvalidate) => {
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead>
                                 <tr class="bg-gray-50">
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Mois</th>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Type</th>
-                                    <th class="px-4 py-2 text-center text-xs font-semibold text-gray-600">Nb</th>
-                                    <th class="px-4 py-2 text-right text-xs font-semibold text-gray-600">Montant</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-primary-txt">Mois</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-primary-txt">Type</th>
+                                    <th class="px-4 py-2 text-center text-xs font-semibold text-primary-txt">Nb</th>
+                                    <th class="px-4 py-2 text-right text-xs font-semibold text-primary-txt">Montant</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-100">
@@ -505,18 +540,18 @@ watchEffect((onInvalidate) => {
                                     <template v-if="month.details && Object.keys(month.details).length > 0">
                                         <tr v-for="(detail, type) in month.details" :key="type" v-if="type !== 'TOTAL'"
                                             class="hover:bg-orange-50">
-                                            <td class="px-4 py-2 text-sm text-center font-medium text-gray-800">{{ month.name }}</td>
+                                            <td class="px-4 py-2 text-sm text-center font-medium text-primary-txt">{{ month.name }}</td>
                                             <td class="px-4 py-2"><span class="px-2 py-0.5 bg-orange-100 text-orange-800 rounded-full text-xs">{{ type }}</span></td>
                                             <td class="px-4 py-2 text-center text-sm">{{ detail?.nombre ?? 0 }}</td>
                                             <td class="px-4 py-2 text-right text-sm">{{ formatCurrency(detail?.montant_total ?? 0) }}</td>
                                         </tr>
                                     </template>
                                     <tr v-else>
-                                        <td colspan="4" class="text-center text-gray-400 py-2 text-sm">Aucune donnée pour {{ month.name }}</td>
+                                        <td colspan="4" class="text-center text-primary-txt/60 py-2 text-sm">Aucune donnée pour {{ month.name }}</td>
                                     </tr>
                                     <tr class="bg-orange-50 font-bold border-t-2 border-orange-200">
-                                        <td class="px-4 py-2 text-sm text-gray-700 text-center">TOTAL</td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-500">—</td>
+                                        <td class="px-4 py-2 text-sm text-primary-txt text-center">TOTAL</td>
+                                        <td class="px-4 py-2 text-center text-sm text-primary-txt">—</td>
                                         <td class="px-4 py-2 text-center text-orange-600">{{ month.nombre_unitaire ?? 0 }}</td>
                                         <td class="px-4 py-2 text-right text-orange-600">{{ formatCurrency(month.montant_total ?? 0) }}</td>
                                     </tr>
@@ -534,22 +569,22 @@ watchEffect((onInvalidate) => {
                 <!-- Tableau Extrait de plan -->
                 <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
-                        <h3 class="text-lg font-bold text-gray-700 flex items-center gap-2 justify-start">
+                        <h3 class="text-lg font-bold text-primary-txt flex items-center gap-2 justify-start">
                             <span class="w-1 h-6 bg-teal-500 rounded-full"></span>
                             Extrait de plan 
-                            <span class="text-xs text-gray-500">{{ getTrimestreLabel(offsetExtrait) }}</span>
+                            <span class="text-xs text-primary-txt">{{ getTrimestreLabel(offsetExtrait) }}</span>
                         </h3>
                         <div class="flex items-center gap-2">
                             <!-- Boutons de navigation Extrait de plan -->
                             <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                                 <button @click="changerTrimestreExtrait(-1)" 
-                                    class="px-2 py-1 text-xs font-medium text-gray-700 hover:bg-white hover:shadow rounded transition-all flex items-center gap-1">
+                                    class="px-2 py-1 text-xs font-medium text-primary-txt hover:bg-white hover:shadow rounded transition-all flex items-center gap-1">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                                     Préc.
                                 </button>
-                                <span class="text-gray-400">|</span>
+                                <span class="text-primary-txt/60">|</span>
                                 <button @click="changerTrimestreExtrait(1)" 
-                                    class="px-2 py-1 text-xs font-medium text-gray-700 hover:bg-white hover:shadow rounded transition-all flex items-center gap-1">
+                                    class="px-2 py-1 text-xs font-medium text-primary-txt hover:bg-white hover:shadow rounded transition-all flex items-center gap-1">
                                     Suiv.
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                 </button>
@@ -563,10 +598,10 @@ watchEffect((onInvalidate) => {
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead>
                                 <tr class="bg-gray-50">
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Mois</th>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Type</th>
-                                    <th class="px-4 py-2 text-center text-xs font-semibold text-gray-600">Nb</th>
-                                    <th class="px-4 py-2 text-right text-xs font-semibold text-gray-600">Montant</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-primary-txt">Mois</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-primary-txt">Type</th>
+                                    <th class="px-4 py-2 text-center text-xs font-semibold text-primary-txt">Nb</th>
+                                    <th class="px-4 py-2 text-right text-xs font-semibold text-primary-txt">Montant</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-100">
@@ -574,18 +609,18 @@ watchEffect((onInvalidate) => {
                                     <template v-if="month.details && Object.keys(month.details).length > 0">
                                         <tr v-for="(detail, type) in month.details" :key="type" v-if="type !== 'TOTAL'"
                                             class="hover:bg-teal-50">
-                                            <td class="px-4 py-2 text-sm text-center font-medium text-gray-800">{{ month.name }}</td>
+                                            <td class="px-4 py-2 text-sm text-center font-medium text-primary-txt">{{ month.name }}</td>
                                             <td class="px-4 py-2"><span class="px-2 py-0.5 bg-teal-100 text-teal-800 rounded-full text-xs">{{ type }}</span></td>
                                             <td class="px-4 py-2 text-center text-sm">{{ detail?.nombre ?? 0 }}</td>
                                             <td class="px-4 py-2 text-right text-sm">{{ formatCurrency(detail?.montant_total ?? 0) }}</td>
                                         </tr>
                                     </template>
                                     <tr v-else>
-                                        <td colspan="4" class="text-center text-gray-400 py-2 text-sm">Aucune donnée pour {{ month.name }}</td>
+                                        <td colspan="4" class="text-center text-primary-txt/60 py-2 text-sm">Aucune donnée pour {{ month.name }}</td>
                                     </tr>
                                     <tr class="bg-teal-50 font-bold border-t-2 border-teal-200">
-                                        <td class="px-4 py-2 text-sm text-gray-700 text-center">TOTAL</td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-500">—</td>
+                                        <td class="px-4 py-2 text-sm text-primary-txt text-center">TOTAL</td>
+                                        <td class="px-4 py-2 text-center text-sm text-primary-txt">—</td>
                                         <td class="px-4 py-2 text-center text-teal-600">{{ month.nombre_unitaire ?? 0 }}</td>
                                         <td class="px-4 py-2 text-right text-teal-600">{{ formatCurrency(month.montant_total ?? 0) }}</td>
                                     </tr>
@@ -601,52 +636,79 @@ watchEffect((onInvalidate) => {
                 </div>
             </div>
 
-            <!-- Grid -->
+            <!-- Évaluation des utilisateurs -->
             <div class="bg-white rounded-lg shadow-lg p-6 mt-8">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
-                    <h2 class="text-lg font-semibold text-gray-700">Statistiques Détaillées</h2>
-                    <div class="flex flex-wrap gap-2 w-full md:w-auto">
-                        <BaseInput v-model="searchQuery" placeholder="Rechercher..." class="w-48" />
-                        <MazBtn @click="exportGridData" color="success" size="sm">Exporter CSV</MazBtn>
-                        <MazBtn @click="addGridRow" color="primary" size="sm">+ Ajouter</MazBtn>
+                    <div>
+                        <h2 class="text-lg font-semibold text-primary-txt">Évaluation des utilisateurs</h2>
+                        <p class="text-sm text-primary-txt/70 mt-1">
+                            Selon les traitements du trimestre  
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                        <select v-model.number="annee" class="h-10 rounded-xl border border-gray-300 bg-white px-3 text-sm text-primary-txt">
+                            <option v-for="year in annees" :key="year" :value="year">{{ year }}</option>
+                        </select>
+                        <select v-model.number="trimestre" class="h-10 rounded-xl border border-gray-300 bg-white px-3 text-sm text-primary-txt">
+                            <option v-for="item in trimestresOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
+                        </select>
+                        <BaseInput v-model="searchQuery" placeholder="Rechercher un utilisateur..." class="w-56" />
+                        <MazBtn @click="exportEvaluation" color="success" size="sm">Exporter CSV</MazBtn>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th v-for="(value, key) in (filteredGridData[0] || {})" :key="key"
-                                    @click="sortBy(key)"
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
+                                <th v-for="col in colonnesEvaluation" :key="col.key"
+                                    @click="sortBy(col.key)"
+                                    class="px-4 py-3 text-left text-xs font-medium text-primary-txt uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
                                     <div class="flex items-center gap-1">
-                                        {{ key.charAt(0).toUpperCase() + key.slice(1) }}
-                                        <span v-if="sortColumn === key" class="text-xs">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                                        {{ col.label }}
+                                        <span v-if="sortColumn === col.key" class="text-xs">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
                                     </div>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="(row, index) in filteredGridData" :key="index" class="hover:bg-gray-50 transition-colors">
-                                <td v-for="(value, key) in row" :key="key" class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ value }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <MazBtn @click="removeGridRow(index)" color="danger" size="xs">Supprimer</MazBtn>
+                            <tr v-if="isLoadingEvaluation">
+                                <td :colspan="colonnesEvaluation.length" class="px-6 py-4 text-center text-primary-txt">Chargement de l'évaluation...</td>
+                            </tr>
+                            <template v-else>
+                            <tr v-for="(row, index) in filteredEvaluation" :key="`${row.utilisateur}-${index}`" class="hover:bg-gray-50 transition-colors">
+                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary-txt">{{ row.utilisateur }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-primary-txt">{{ row.role }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-primary-txt">{{ row.trimestre }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-primary-txt">{{ row.enregistrements }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-primary-txt">{{ row.modifications }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-primary-txt">{{ row.recherches }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-semibold text-primary-txt">{{ row.score }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="appreciationClass(row.appreciation)">
+                                        {{ row.appreciation }}
+                                    </span>
                                 </td>
                             </tr>
-                            <tr v-if="filteredGridData.length === 0">
-                                <td colspan="100%" class="px-6 py-4 text-center text-gray-500">Aucune donnée disponible</td>
+                            </template>
+                            <tr v-if="!isLoadingEvaluation && filteredEvaluation.length === 0">
+                                <td :colspan="colonnesEvaluation.length" class="px-6 py-4 text-center text-primary-txt">Aucun utilisateur pour ce trimestre</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 text-sm text-gray-600">
-                    <span>{{ filteredGridData.length }} ligne(s) affichée(s)</span>
-                    <div class="flex flex-wrap gap-4">
-                        <span>Total dossiers : {{ gridTotals.dossiers }}</span>
-                        <span>Extrait de plan : {{ gridTotals.extraits_de_plan }}</span>
-                        <span>Délimitation : {{ gridTotals.delimitation }}</span>
-                        <span>Rejetés : {{ gridTotals.rejetes }}</span>
+                <div class="mt-4 flex flex-col gap-2 text-sm text-primary-txt">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                        <span>{{ filteredEvaluation.length }} utilisateur(s)</span>
+                        <div class="flex flex-wrap gap-4">
+                            <span>Enregistrements : {{ evaluationTotals.enregistrements }}</span>
+                            <span>Modifications : {{ evaluationTotals.modifications }}</span>
+                            <span>Recherches : {{ evaluationTotals.recherches }}</span>
+                            <span>Score cumulé : {{ evaluationTotals.score }}</span>
+                        </div>
                     </div>
+                    <p class="text-xs text-primary-txt/70">
+                        Appréciation : Aucune activité (0), Faible (1 à 9), Moyenne (10 à 24), Bonne (25 à 49), Excellente (50 et plus).
+                    </p>
                 </div>
             </div>
         </div>

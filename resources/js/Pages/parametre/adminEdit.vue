@@ -3,13 +3,12 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import DefaultLayout from "@/Layouts/DefaultLayout.vue";
 import { Head, useForm } from "@inertiajs/vue3";
 import MazBtn from "maz-ui/components/MazBtn";
-import { toast } from "@/Components/AppToast";  
+import { toast } from "@/Components/AppToast";
 import BaseInput from "@/Components/BaseInput.vue";
-import { Inertia } from "@inertiajs/inertia";
+import { ref } from "vue";
 
 defineOptions({ layout: DefaultLayout });
-  
-// Récupération de l'utilisateur envoyé par le controller
+
 const { user } = defineProps({
     user: {
         type: Object,
@@ -17,27 +16,30 @@ const { user } = defineProps({
     }
 });
 
-// Formulaire
+const showPassword = ref(false);
+const showPasswordConfirmation = ref(false);
+
 const form = useForm({
     name: user?.name || "",
     email: user?.email || "",
+    password: "",
+    password_confirmation: "",
 });
 
-// Soumission
 const submitForm = () => {
     form.put(route("parametre.updateUser", user.id), {
         preserveScroll: true,
-
-        onSuccess: () => {
-            toast.success(message);
-            Inertia.reload({ preserveState: false });
+        onSuccess: (page) => {
+            toast.success(page.props.flash?.success || "Utilisateur modifié avec succès.");
+            form.reset("password", "password_confirmation");
+            showPassword.value = false;
+            showPasswordConfirmation.value = false;
         },
         onError: () => {
             toast.error("Erreur lors de la modification.");
         },
     });
 };
- 
 </script>
 
 <template>
@@ -73,16 +75,65 @@ const submitForm = () => {
                                         name="name"
                                         required
                                         v-model="form.name"
+                                        :error="form.errors.name"
                                     />
 
                                     <BaseInput
                                         label="Adresse email"
                                         name="email"
+                                        type="email"
                                         required
                                         v-model="form.email"
+                                        :error="form.errors.email"
                                     />
 
+                                    <BaseInput
+                                        label="Nouveau mot de passe"
+                                        name="password"
+                                        :type="showPassword ? 'text' : 'password'"
+                                        autocomplete="new-password"
+                                        placeholder="Laisser vide pour conserver l'actuel"
+                                        v-model="form.password"
+                                        :error="form.errors.password"
+                                    >
+                                        <template #append>
+                                            <button
+                                                type="button"
+                                                @click="showPassword = !showPassword"
+                                                class="absolute right-3 top-1/2 -translate-y-1/2 text-primary-txt"
+                                            >
+                                                <span v-if="showPassword">👁️</span>
+                                                <span v-else>👁️‍🗨️</span>
+                                            </button>
+                                        </template>
+                                    </BaseInput>
+
+                                    <BaseInput
+                                        label="Confirmation du mot de passe"
+                                        name="password_confirmation"
+                                        :type="showPasswordConfirmation ? 'text' : 'password'"
+                                        autocomplete="new-password"
+                                        placeholder="Confirmer le nouveau mot de passe"
+                                        v-model="form.password_confirmation"
+                                        :error="form.errors.password_confirmation"
+                                    >
+                                        <template #append>
+                                            <button
+                                                type="button"
+                                                @click="showPasswordConfirmation = !showPasswordConfirmation"
+                                                class="absolute right-3 top-1/2 -translate-y-1/2 text-primary-txt"
+                                            >
+                                                <span v-if="showPasswordConfirmation">👁️</span>
+                                                <span v-else>👁️‍🗨️</span>
+                                            </button>
+                                        </template>
+                                    </BaseInput>
+
                                 </div>
+
+                                <p class="mt-3 text-xs text-primary-txt/70">
+                                    Le mot de passe n'est modifié que si un nouveau mot de passe est saisi.
+                                </p>
 
                                 <!-- Bouton -->
                                 <div class="flex justify-center mt-6">

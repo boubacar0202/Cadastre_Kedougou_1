@@ -334,7 +334,7 @@ async function submitForm() {
                                         <a
                                             :href="`/storage/${form.fichierPDFPoint}`"
                                             target="_blank"
-                                            class="text-blue-600 underline"
+                                            class="text-primary underline"
                                         >
                                             Voir le fichier
                                         </a>
@@ -361,16 +361,16 @@ async function submitForm() {
                     <!-- États alternatifs -->
                     <div v-else-if="!hasPoint" class="bg-white shadow-md rounded-lg p-6 text-center">
                         <span class="text-4xl block mb-4">🔍</span>
-                        <p class="text-gray-600 text-lg">Aucun point trouvé pour cette édition.</p>
-                        <p class="text-gray-400 text-sm mt-2">Vérifiez que l'ID est correct.</p>
+                        <p class="text-primary-txt text-lg">Aucun point trouvé pour cette édition.</p>
+                        <p class="text-primary-txt/60 text-sm mt-2">Vérifiez que l'ID est correct.</p>
                     </div>
                     <div v-else-if="hasPoint && !formVisible" class="bg-white shadow-md rounded-lg p-6 text-center">
                         <span class="text-4xl block mb-4">🔐</span>
-                        <p class="text-gray-600 text-lg">Veuillez valider le code d'accès.</p>
+                        <p class="text-primary-txt text-lg">Veuillez valider le code d'accès.</p>
                     </div>
                     <div v-else-if="isLoading" class="bg-white shadow-md rounded-lg p-6 text-center">
                         <span class="text-4xl block mb-4">⏳</span>
-                        <p class="text-gray-600">Vérification du code…</p>
+                        <p class="text-primary-txt">Vérification du code…</p>
                     </div>
                 </div>
             </div>

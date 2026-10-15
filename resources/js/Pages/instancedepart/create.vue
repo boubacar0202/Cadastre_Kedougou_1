@@ -323,9 +323,9 @@ function supprimerCourrierDepart(depart) {
                                                         v-if="depart.fichierPDFcd"
                                                         :href="`/storage/${depart.fichierPDFcd}`"
                                                         target="_blank"
-                                                        class="text-primary underline"
+                                                        class="text-primary underline flex justify-center items-center"
                                                     >
-                                                        Voir PDF
+                                                        <img src="/iconePDF.png" alt="PDF" class="w-8 h-8 mx-auto">
                                                     </a>
                                                     <span v-else class="text-primary-txt/60 italic">Aucun PDF</span>
                                                 </td>

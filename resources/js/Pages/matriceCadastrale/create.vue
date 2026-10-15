@@ -32,34 +32,25 @@ const selectedTerrain = ref(null);
 const loadingDelete = ref(false);
 const deleteCode = ref('');
 
-// 🔥 Vérifier si c'est une collection (Array) ou une pagination (Object)
-const isCollection = computed(() => {
-    return Array.isArray(props.terrains);
-});
+const hasNicad = (terrain) => String(terrain?.txt_nicad ?? "").trim() !== "";
 
-// 🔥 Obtenir les données
+// 🔥 Vérifier si c'est une collection (Array) ou une pagination (Object)
+const isCollection = computed(() => Array.isArray(props.terrains));
+
+// 🔥 Obtenir les données, sans les lignes dont le NICAD est vide
 const displayData = computed(() => {
-    if (isCollection.value) {
-        return props.terrains || [];
-    }
-    return props.terrains?.data || [];
+    const rows = isCollection.value
+        ? (props.terrains || [])
+        : (props.terrains?.data || []);
+
+    return rows.filter(hasNicad);
 });
 
 // 🔥 Total des enregistrements
-const totalEnregistrement = computed(() => {
-    if (isCollection.value) {
-        return props.terrains?.length || 0;
-    }
-    return props.terrains?.meta?.total || 0;
-});
+const totalEnregistrement = computed(() => displayData.value.length);
 
 // 🔥 Vérifier si des données existent
-const hasData = computed(() => {
-    if (isCollection.value) {
-        return props.terrains && props.terrains.length > 0;
-    }
-    return props.terrains?.data && props.terrains.data.length > 0;
-});
+const hasData = computed(() => displayData.value.length > 0);
 
 // 🔥 Vérifier si la pagination est disponible
 const hasPagination = computed(() => {
@@ -286,37 +277,37 @@ const exportToExcel = () => {
                                 <input 
                                     v-model="filters.numero"
                                     type="text"
-                                    class="h-8 w-32 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    class="h-8 w-32 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
                                     placeholder="N° dossier"
                                 />
                                 <input 
                                     v-model="filters.nicad"
                                     type="text"
-                                    class="h-8 w-32 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    class="h-8 w-32 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
                                     placeholder="NICAD"
                                 />
                                 <input 
                                     v-model="filters.titulaire"
                                     type="text"
-                                    class="h-8 w-40 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    class="h-8 w-40 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
                                     placeholder="Titulaire"
                                 />
                                 <input 
                                     v-model="filters.commune"
                                     type="text"
-                                    class="h-8 w-32 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
+                                    class="h-8 w-32 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
                                     placeholder="Commune"
                                 />
                                 <button 
                                     @click="resetFilters"
-                                    class="h-8 px-4 bg-white/20 text-white rounded-xl text-sm hover:bg-white/30 transition font-medium"
+                                    class="h-8 px-4 bg-white/20 text-white rounded-xl text-sm hover:bg-white/50 transition font-medium"
                                 >
                                     ✕ Réinitialiser
                                 </button>
                                 <button 
                                     @click="exportToExcel"
                                     :disabled="!hasData"
-                                    class="h-8 px-4 bg-green-600 text-white rounded-xl text-sm hover:bg-green-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                    class="h-8 px-4 bg-green-600 text-white rounded-xl text-sm hover:bg-green-300 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                                     title="Exporter en Excel"
                                 >
                                     📥 Exporter Excel
@@ -336,7 +327,7 @@ const exportToExcel = () => {
                         <!-- Tableau -->
                         <div class="p-4">
                             <div class="max-h-[600px] overflow-x-auto shadow-md rounded-xl">
-                                <table class="table table-auto w-full text-xs text-left text-gray-500">
+                                <table class="table table-auto w-full text-xs text-left text-primary-txt">
                                     <thead class="sticky top-0 z-10 bg-primary text-white whitespace-nowrap">
                                         <tr>
                                             <th class="px-2 py-2 text-center border-r border-white/20 font-semibold">N°</th>
@@ -412,7 +403,7 @@ const exportToExcel = () => {
                                         </tr>
 
                                         <tr v-if="!hasData">
-                                            <td colspan="20" class="text-center py-12 text-gray-500 text-base">
+                                            <td colspan="20" class="text-center py-12 text-primary-txt text-base">
                                                 Aucun terrain trouvé
                                             </td>
                                         </tr>
@@ -423,14 +414,14 @@ const exportToExcel = () => {
 
                         <!-- Pagination - Masquée si c'est une collection -->
                         <div v-if="!isCollection && hasPagination" class="p-4 border-t flex flex-wrap justify-between items-center gap-4 bg-gray-50 rounded-b-xl">
-                            <div class="text-sm text-gray-700 font-medium">
+                            <div class="text-sm text-primary-txt font-medium">
                                 <template v-if="hasData">
-                                    Affichage de <span class="font-bold text-gray-900">{{ props.terrains?.meta?.from ?? 0 }}</span> 
-                                    à <span class="font-bold text-gray-900">{{ props.terrains?.meta?.to ?? 0 }}</span> 
-                                    sur <span class="font-bold text-gray-900">{{ props.terrains?.meta?.total ?? 0 }}</span> enregistrements
+                                    Affichage de <span class="font-bold text-primary-txt">{{ props.terrains?.meta?.from ?? 0 }}</span> 
+                                    à <span class="font-bold text-primary-txt">{{ props.terrains?.meta?.to ?? 0 }}</span> 
+                                    sur <span class="font-bold text-primary-txt">{{ props.terrains?.meta?.total ?? 0 }}</span> enregistrements
                                 </template>
                                 <template v-else>
-                                    <span class="text-gray-500">Aucun enregistrement trouvé</span>
+                                    <span class="text-primary-txt">Aucun enregistrement trouvé</span>
                                 </template>
                             </div>
                             
@@ -438,7 +429,7 @@ const exportToExcel = () => {
                                 <button 
                                     @click="prevPage"
                                     :disabled="!props.terrains?.links?.prev"
-                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-200 hover:bg-gray-300 text-gray-700"
+                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-200 hover:bg-gray-300 text-primary-txt"
                                 >
                                     ← Précédent
                                 </button>
@@ -452,7 +443,7 @@ const exportToExcel = () => {
                                         'px-3.5 py-1.5 rounded-lg text-sm font-medium transition',
                                         link.active 
                                             ? 'bg-primary text-white shadow-md' 
-                                            : 'bg-gray-200 hover:bg-gray-300 text-gray-700',
+                                            : 'bg-gray-200 hover:bg-gray-300 text-primary-txt',
                                         !link.url ? 'opacity-40 cursor-not-allowed' : ''
                                     ]"
                                     v-html="link.label"
@@ -462,7 +453,7 @@ const exportToExcel = () => {
                                 <button 
                                     @click="nextPage"
                                     :disabled="!props.terrains?.links?.next"
-                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-200 hover:bg-gray-300 text-gray-700"
+                                    class="px-3 py-1.5 rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed bg-gray-200 hover:bg-gray-300 text-primary-txt"
                                 >
                                     Suivant →
                                 </button>

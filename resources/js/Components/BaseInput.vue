@@ -10,8 +10,9 @@
     type: { type: String, default: "text" },
     required: Boolean,
     placeholder: String,
-    max: String,
-    min: String,
+    max: [String, Number],
+    min: [String, Number],
+    step: [String, Number],
     maxlength: [String, Number],
     minlength: [String, Number],
     autocomplete: { type: String, default: "null" },
@@ -22,9 +23,15 @@
     fontSize: { type: String, default: "0.875rem" },
   })
 
-  const emit = defineEmits(["update:modelValue", "input", "change"])
+  const emit = defineEmits(["update:modelValue", "input", "change", "blur"])
 
   const inputId = computed(() => props.id || props.name || undefined)
+
+  function onInput(event) {
+    if (props.type === "file") return
+    emit("update:modelValue", event.target.value)
+    emit("input", event)
+  }
 
   const inputInlineStyle = computed(() => ({
     fontSize: props.fontSize,
@@ -55,6 +62,7 @@
         :required="required"
         :max="max"
         :min="min"
+        :step="step"
         :maxlength="maxlength"
         :minlength="minlength"
         :autocomplete="autocomplete ?? 'on'"
@@ -77,8 +85,9 @@
         ]"
         :style="inputInlineStyle"
         :value="type !== 'file' ? modelValue : null"
-        @input="type !== 'file' ? $emit('update:modelValue', $event.target.value) : null"
-        @change="type === 'file' ? $emit('change', $event) : null"
+        @input="onInput"
+        @change="type === 'file' ? emit('change', $event) : null"
+        @blur="emit('blur', $event)"
       />
       <slot name="append" />
     </div>

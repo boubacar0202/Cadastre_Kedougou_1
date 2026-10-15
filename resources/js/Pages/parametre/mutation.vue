@@ -174,7 +174,7 @@ const confirmerSuppression = async ({ deleteCode, adminCode } = {}) => {
 
             <div class="p-6">
               <div class="max-h-[600px] overflow-x-auto shadow-md sm:rounded-xl mt-4">
-                <table class="table-auto w-full text-sm text-left text-gray-500">
+                <table class="table-auto w-full text-sm text-left text-primary-txt">
                   <thead
                     class="sticky top-0 z-10 text-primary-txt text-center bg-primary-form bg-gray-50 dark:bg-gray-700"
                   >
@@ -266,7 +266,7 @@ const confirmerSuppression = async ({ deleteCode, adminCode } = {}) => {
                           v-if="mutation.fichier_pdf"
                           :href="mutation.fichier_pdf"
                           target="_blank"
-                          class="text-blue-600 hover:underline"
+                          class="text-primary hover:underline"
                         >
                           Voir PDF
                         </a>
@@ -298,7 +298,7 @@ const confirmerSuppression = async ({ deleteCode, adminCode } = {}) => {
 
                     <!-- Message si vide -->
                     <tr v-if="mutations.length === 0">
-                      <td colspan="9" class="px-6 py-4 text-center text-gray-400 italic">
+                      <td colspan="9" class="px-6 py-4 text-center text-primary-txt/60 italic">
                         Aucune mutation trouvée.
                       </td>
                     </tr>

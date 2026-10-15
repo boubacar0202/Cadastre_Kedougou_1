@@ -30,7 +30,9 @@ return new class extends Migration {
             $table->string('txt_nicad')->nullable()->unique();
             $table->string('slt_statut_nicad')->nullable();
             $table->string('slt_motif_annulation_nicad')->nullable();
-
+            $table->string('slt_signalement')->nullable();
+            $table->string('slt_statutSignalement')->nullable();
+            $table->string('slt_designationSignalement')->nullable();
             // ============ Clés étrangères ============
             $table->foreignId('slt_region')->constrained('regions')->onDelete('cascade');
             $table->foreignId('slt_departement')->constrained('departements')->onDelete('cascade');

@@ -173,6 +173,7 @@ onUnmounted(() => {
 watch(isMenuOpen, (newValue) => {
     localStorage.setItem('menuOpen', newValue.toString())
 })
+
 </script>
 
 <template>
@@ -180,32 +181,33 @@ watch(isMenuOpen, (newValue) => {
         <meta name="csrf-token" content="{{ csrf_token() }}">
     </Head>
 
-    <div class="flex min-h-screen bg-primary-layout">
+    <div class="flex min-h-screen w-full bg-primary-layout">
         <!-- Sidebar -->
-        <nav class="w-64 h-screen bg-white border-r border-primary-only fixed flex flex-col p-4 overflow-y-auto">
+        <nav class="app-sidebar fixed inset-y-0 left-0 z-40 flex h-screen w-64 flex-col overflow-y-auto border-r border-primary-only/70 bg-white/95 p-4 shadow-sm">
             <!-- Logo -->
             <div class="flex items-center justify-center mb-6">
                 <Link :href="route('dashboard')">
-                    <img src="/logo.jpg" alt="Logo" class="h-100 w-auto">
+                    <img src="/logo.jpg" alt="Logo" class="h-20 w-auto rounded-xl object-contain">
                 </Link>
             </div>
 
             <!-- Navigation Links -->
             <div class="flex flex-col space-y-1">
-                <!-- Bouton d'ouverture/fermeture -->
-                <button 
-                    @click="toggleMenu"
-                    class="p-2 text-white rounded-xl shadow-md mb-5
-                        bg-gradient-to-r from-primary to-primary/80
-                        hover:to-primary hover:shadow-lg hover:-translate-y-0.5
-                        hover:from-primary hover:to-primary-dark
-                        hover:bg-gradient-to-r
-                        hover:shadow-lg hover:scale-[1.02]
-                        transition-all duration-300 ease-in-out
-                        flex items-center gap-2 text-lg justify-center"
-                >
-                    ☰ Menu
-                </button>
+                <!-- Bouton d'ouverture/fermeture --> 
+                    <button 
+                        @click="toggleMenu"
+                        class="p-2 text-white rounded-xl shadow-md mb-5
+                            bg-gradient-to-r from-primary to-primary/80
+                            hover:to-primary hover:shadow-lg hover:-translate-y-0.5
+                            hover:from-primary hover:to-primary-dark
+                            hover:bg-gradient-to-r
+                            hover:shadow-lg hover:scale-[1.02]
+                            transition-all duration-300 ease-in-out
+                            flex items-center gap-2 text-lg justify-center
+                            overflow-x-hidden "
+                    >
+                        ☰ Menu
+                    </button> 
                 
                 <transition name="slide">
                     <div v-if="isMenuOpen || !isDesktop" class="flex flex-col space-y-1">
@@ -231,6 +233,28 @@ watch(isMenuOpen, (newValue) => {
                                 </svg>
                                 Enregistrer Dossier
                             </NavLink>
+ 
+                            <NavLink :href="route('arrivee.create')" :active="route().current('arrivee.create') || route().current('arrivee.edit')"
+                                class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
+                                hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
+                                rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('arrivee.create') || route().current('arrivee.edit')}">
+                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                    <path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z" fill="#ff7a18"/>
+                                    <path d="M22 6l-10 7L2 6" stroke="white" stroke-width="1.6"/>
+                                </svg>
+                                Enregistrement Arrivées
+                            </NavLink>
+  
+                            <NavLink :href="route('depart.create')" :active="route().current('depart.create') || route().current('depart.edit')"
+                                class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
+                                hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
+                                rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('depart.create') || route().current('depart.edit')}">
+                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                    <path d="M4 4h16a2 2 0 012 2v9l-5 5H4a2 2 0 01-2-2V6a2 2 0 012-2z" fill="#ff7a18"/>
+                                    <path d="M17 15v5l5-5h-5z" fill="#613104"/>
+                                </svg>
+                                Enregistrement Départs
+                            </NavLink> 
                             
                             <NavLink :href="route('geometre.create')" :active="route().current('geometre.create')" 
                                 class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
@@ -255,6 +279,76 @@ watch(isMenuOpen, (newValue) => {
                                 </svg>
                                 Matrice Cadastrale
                             </NavLink>
+                         
+                            <NavLink :href="route('mutation.create')" :active="route().current('mutation.create')" 
+                                class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
+                                hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2 
+                                rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('mutation.create')}">
+                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                    <path d="M7 7h11l-3-3m3 3l-3 3" stroke="#ff512f" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M17 17H6l3 3m-3-3l3-3" stroke="#dd2476" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                                Mutations
+                            </NavLink>
+ 
+                            <NavLink 
+                                    :href="route('lotissement.index')" :active="(route().current() || '') === 'lotissement.index'"
+                                    class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
+                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
+                                >
+                                <svg class="w-6 h-4 mr-4" viewBox="0 0 24 24" fill="none">
+                                    <rect x="4" y="5" width="16" height="3" fill="#6a11cb"/>
+                                    <rect x="4" y="10.5" width="16" height="3" fill="#ff7a18"/>
+                                    <rect x="4" y="16" width="16" height="3" fill="#ff7a18"/>
+                                </svg>
+                                Liste lotissements
+                            </NavLink>
+ 
+                            <NavLink 
+                                    :href="route('mutation.index')" :active="route().current('mutation.index')"
+                                    class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
+                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
+                                >    
+                                <svg class="w-6 h-4 mr-4" viewBox="0 0 24 24" fill="none">
+                                    <path d="M4 4h10v16H4z" fill="#ff7a18"/>
+                                    <path d="M14 7h6v13h-6z" fill="#00c6ff"/>
+                                    <path d="M7 8h4M7 12h4M7 16h4" stroke="white" stroke-width="1.5"/>
+                                </svg>
+                                Registre Mutations
+                            </NavLink>
+                             
+                            <NavLink :href="route('instance.create')" :active="route().current('instance.create')"
+                                class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
+                                hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
+                                rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('instance.create')}">
+                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                    <rect x="3" y="4" width="18" height="16" rx="2" fill="#ff7a18"/>
+                                    <path d="M7 9h10M7 13h10M7 17h6" stroke="white" stroke-width="1.6"/>
+                                </svg>
+                                Courriers Instances
+                            </NavLink>
+
+                            <NavLink :href="route('instancearrivee.create')" :active="route().current('instancearrivee.create')"
+                                class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
+                                hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
+                                rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('instancearrivee.create')}">
+                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                    <path d="M4 6h16v12H4z" fill="#ff7a18"/>
+                                    <path d="M4 6l8 6 8-6" stroke="white" stroke-width="1.6"/>
+                                </svg>
+                                Base Courriers Arrivées
+                            </NavLink>
+
+                            <NavLink :href="route('instancedepart.create')" :active="route().current('instancedepart.create')"
+                                class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
+                                hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
+                                rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('instancedepart.create')}">
+                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                    <path d="M4 6h16v12H4z" fill="#ff7a18"/>
+                                    <path d="M12 16V8m0 8l-3-3m3 3l3-3" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                                </svg>
+                                Base Courriers Départs
+                            </NavLink>
                             
                             <NavLink :href="route('donnee.create')" :active="route().current('donnee.create')" 
                                 class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
@@ -266,34 +360,6 @@ watch(isMenuOpen, (newValue) => {
                                     <path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" fill="#ff7a18"/>
                                 </svg>
                                 Base de Données
-                            </NavLink>
-                            
-                            <NavLink :href="route('mutation.create')" :active="route().current('mutation.create')" 
-                                class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
-                                hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2 
-                                rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('mutation.create')}">
-                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
-                                    <path d="M7 7h11l-3-3m3 3l-3 3" stroke="#ff512f" stroke-width="2" stroke-linecap="round"/>
-                                    <path d="M17 17H6l3 3m-3-3l3-3" stroke="#dd2476" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                                Mutations
-                            </NavLink>
-                            
-                            <!-- 🔔 Discussion avec compteur de messages non lus -->
-                            <NavLink :href="route('message.create')" :active="route().current('message.create')" 
-                                class="relative hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
-                                hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2 
-                                rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('message.create')}">
-                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
-                                    <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8z" fill="#ff7a18"/>
-                                    <circle cx="17" cy="12" r="2" fill="white"/>
-                                </svg>
-                                Discussion
-                                <!-- 🔔 Badge avec le nombre total de messages non lus -->
-                                <span v-if="unreadTotal > 0"
-                                    class="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold bg-red-500 text-white rounded-full shadow-lg animate-pulse">
-                                    {{ unreadTotal }}
-                                </span>
                             </NavLink>
                             
                             <NavLink :href="route('plan.create')" :active="route().current('plan.create')" 
@@ -357,6 +423,18 @@ watch(isMenuOpen, (newValue) => {
                                     Administrateur
                                 </NavLink>
 
+                                <NavLink
+                                    :href="route('parametre.user')" :active="route().current('parametre.user')"
+                                    class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
+                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center justify-between"
+                                >
+                                    <svg class="w-6 h-4 mr-4" viewBox="0 0 24 24" fill="none">
+                                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" fill="#ff7a18"/>
+                                        <path d="M4 20a8 8 0 0 1 16 0" fill="#ff7a18"/>
+                                    </svg>
+                                    Utilisateurs
+                                </NavLink>
+
                                 <NavLink :href="route('parametre.lotissement.create')" :active="route().current('parametre.lotissement.create')"
                                     class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
                                     rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
@@ -382,46 +460,7 @@ watch(isMenuOpen, (newValue) => {
                                     </svg>
                                     Ajouter/Lotissements
                                 </NavLink>
-                                 
-                                <NavLink 
-                                    :href="route('parametre.lotissement.index')" :active="(route().current() || '') === 'parametre.lotissement.index'"
-                                    class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
-                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
-                                >
-                                    <svg class="w-6 h-4 mr-4" viewBox="0 0 24 24" fill="none">
-                                        <rect x="4" y="5" width="16" height="3" fill="#6a11cb"/>
-                                        <rect x="4" y="10.5" width="16" height="3" fill="#ff7a18"/>
-                                        <rect x="4" y="16" width="16" height="3" fill="#ff7a18"/>
-                                    </svg>
-                                    Liste lotissements
-                                </NavLink>
-                                
-                                <NavLink 
-                                    :href="route('parametre.mutation')" :active="route().current('parametre.mutation')"
-                                    class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
-                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
-                                >    
-                                    <svg class="w-6 h-4 mr-4" viewBox="0 0 24 24" fill="none">
-                                        <path d="M4 4h10v16H4z" fill="#ff7a18"/>
-                                        <path d="M14 7h6v13h-6z" fill="#00c6ff"/>
-                                        <path d="M7 8h4M7 12h4M7 16h4" stroke="white" stroke-width="1.5"/>
-                                    </svg>
-                                    Registre Mutations
-                                </NavLink>
-
-                                <NavLink 
-                                    :href="route('parametre.chart')" :active="route().current('parametre.chart')"
-                                    class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
-                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
-                                >
-                                    <svg class="w-6 h-4 mr-4" viewBox="0 0 24 24" fill="none">
-                                        <path d="M4 20V4" stroke="#ff7a18" stroke-width="2"/>
-                                        <path d="M4 20h16" stroke="#ff7a18" stroke-width="2"/>
-                                        <path d="M7 15l3-4 3 2 4-6" stroke="#00c6ff" stroke-width="2" fill="none"/>
-                                    </svg>
-                                    Evalutation
-                                </NavLink>
-                                
+ 
                                 <NavLink :href="route('parametre.pointDensifier.createPoint')" :active="route().current('parametre.pointDensifier.createPoint')"
                                     class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
                                     rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
@@ -449,26 +488,80 @@ watch(isMenuOpen, (newValue) => {
                                     </svg>
                                     Ajouter/Points
                                 </NavLink>
+ 
+                                <NavLink :href="route('parametre.service.create')"
+                                    :active="route().current('parametre.service.create') || route().current('parametre.service.edit')"
+                                    class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
+                                    hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
+                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
+                                    :class="{'border-primary-menu': route().current('parametre.service.create') || route().current('parametre.service.edit')}">
+                                    <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                        <path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="#ff7a18"/>
+                                        <path d="M14 3v5h5M8 13h8M8 17h6" stroke="white" stroke-width="1.4"/>
+                                    </svg>
+                                    Recueil de texte
+                                </NavLink>
+
+                                <NavLink :href="route('parametre.trimestre.create')"
+                                    :active="route().current('parametre.trimestre.create')"
+                                    class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
+                                    hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
+                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
+                                    :class="{'border-primary-menu': route().current('parametre.trimestre.create')}">
+                                    <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                        <rect x="3" y="5" width="18" height="16" rx="2" fill="#ff7a18"/>
+                                        <path d="M3 10h18M8 3v4M16 3v4" stroke="white" stroke-width="1.6"/>
+                                    </svg>
+                                    Trimestres
+                                </NavLink>
+
+                                <NavLink :href="route('parametre.bareme.index')"
+                                    :active="route().current('parametre.bareme.index')"
+                                    class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
+                                    hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
+                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
+                                    :class="{'border-primary-menu': route().current('parametre.bareme.index')}">
+                                    <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                        <rect x="3" y="4" width="18" height="16" rx="2" fill="#ff7a18"/>
+                                        <path d="M7 9h10M7 13h10M7 17h6" stroke="white" stroke-width="1.6"/>
+                                    </svg>
+                                    Barèmes
+                                </NavLink> 
+
+
+                                <NavLink 
+                                    :href="route('parametre.chart')" :active="route().current('parametre.chart')"
+                                    class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
+                                    rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
+                                >
+                                    <svg class="w-6 h-4 mr-4" viewBox="0 0 24 24" fill="none">
+                                        <path d="M4 20V4" stroke="#ff7a18" stroke-width="2"/>
+                                        <path d="M4 20h16" stroke="#ff7a18" stroke-width="2"/>
+                                        <path d="M7 15l3-4 3 2 4-6" stroke="#00c6ff" stroke-width="2" fill="none"/>
+                                    </svg>
+                                    Evalutation
+                                </NavLink> 
+
                             </div>
                         </div>
                     </div>
                 </transition>
             </div>
 
-            <footer class="bg-white border-t border-primary-only text-center text-sm text-primary-txt mt-auto py-4">
-                <b>CENTRE DES SERVICES FISCAUX</b> CADASTRE KÉDOUGOU
+            <footer class="bg-primary-form/60 border-t border-primary-only/80 text-center text-xs tracking-wide text-primary-txt mt-auto py-4 rounded-xl">
+                <b>CENTRE DES SERVICES FISCAUX</b><br>CADASTRE KÉDOUGOU
             </footer>
         </nav>
 
         <!-- Page Content -->
-        <div class="flex-1 md:ml-64 overflow-x-auto">
-            <header class="bg-white shadow flex justify-between items-center p-4 relative">
-                <div>
+        <div class="flex min-h-screen w-full flex-col md:pl-64">
+            <header class="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b border-primary-only/50 bg-white/90 p-4 shadow-sm backdrop-blur-md">
+                <div class="min-w-0 flex-1">
                     <slot name="header" />
                 </div>
 
                 <!-- User Dropdown -->
-                <div class="relative">
+                <div class="relative shrink-0">
                     <button 
                         @click="showingNavigationDropdown = !showingNavigationDropdown"
                         class="flex items-center gap-3 px-4 py-2 bg-primary text-white rounded-xl shadow hover:bg-primary-dark transition"
@@ -502,8 +595,8 @@ watch(isMenuOpen, (newValue) => {
                             class="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50"
                         >
                             <div class="px-4 py-3 bg-gray-50 border-b">
-                                <p class="text-sm text-gray-500">Connecté en tant que</p>
-                                <p class="font-semibold text-gray-800 truncate">{{ user?.name }}</p>
+                                <p class="text-sm text-primary-txt">Connecté en tant que</p>
+                                <p class="font-semibold text-primary-txt truncate">{{ user?.name }}</p>
                             </div>
 
                             <div class="py-2">
@@ -525,9 +618,27 @@ watch(isMenuOpen, (newValue) => {
                 </div>
             </header>
 
-            <main class="p-6 overflow-x-auto">
+            <main class="w-full flex-1 bg-primary-layout p-4 md:p-6">
                 <slot />
             </main>
+        </div>
+
+        <div v-if="!route().current('message.create')" class="fixed bottom-6 right-6 z-[2000]">
+            <Link
+                :href="route('message.create')"
+                class="relative inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/70"
+                aria-label="Discussion"
+            >
+                <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none">
+                    <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8z" fill="currentColor"/>
+                </svg>
+                <span
+                    v-if="unreadTotal > 0"
+                    class="absolute -top-1 -right-1 inline-flex min-w-[20px] h-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white shadow-lg"
+                >
+                    {{ unreadTotal }}
+                </span>
+            </Link>
         </div>
     </div>
 </template>

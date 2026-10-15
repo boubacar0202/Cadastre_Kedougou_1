@@ -1,13 +1,16 @@
 <script setup>
-import { ref, watch } from "vue"; 
+import { computed, ref, watch } from "vue"; 
 import MazBtn from "maz-ui/components/MazBtn";
-import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'; // Ou vos propres icônes
+import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     show: { type: Boolean, required: true },
+    itemName: { type: String, default: "" },
     mutation: { type: Object, default: null },
     loading: { type: Boolean, default: false }
 });
+
+const displayName = computed(() => props.itemName || props.mutation?.txt_numeroMutation || "");
 
 const emit = defineEmits(["update:show", "confirm"]);
 
@@ -68,16 +71,16 @@ const toggleDeletePassword = () => {
 </script>
 
 <template>
-    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[2000]">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-lg p-6">
             <h2 class="text-xl font-bold text-red-600 text-center mb-4">
                 Confirmer la suppression
             </h2>
 
-            <p class="text-center text-gray-700 mb-4">
+            <p class="text-center text-primary-txt mb-4">
                 Voulez-vous vraiment supprimer :
                 <br>
-                <span class="font-semibold text-primary">{{ mutation?.txt_numeroMutation }}</span>
+                <span class="font-semibold text-primary">{{ displayName }}</span>
             </p>
 
             <!-- Code administrateur avec toggle -->
@@ -89,13 +92,13 @@ const toggleDeletePassword = () => {
                     v-model="adminCode" 
                     placeholder="Code administrateur"
                     class="h-10 block w-full rounded-xl bg-white px-3 py-1.5 text-base text-primary-txt 
-                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6 pr-12"
                 />
                 <button 
                     type="button"
                     @click="toggleAdminPassword"
-                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-primary-txt/60 hover:text-primary"
                 >
                     <EyeIcon v-if="!showAdminPassword" class="h-5 w-5" />
                     <EyeSlashIcon v-else class="h-5 w-5" />
@@ -111,13 +114,13 @@ const toggleDeletePassword = () => {
                     v-model="deleteCode" 
                     placeholder="Entrez votre code de suppression"
                     class="h-10 block w-full rounded-xl bg-white px-3 py-1.5 text-base text-primary-txt 
-                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6 pr-12"
                 />
                 <button 
                     type="button"
                     @click="toggleDeletePassword"
-                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-primary-txt/60 hover:text-primary"
                 >
                     <EyeIcon v-if="!showDeletePassword" class="h-5 w-5"/>
                     <EyeSlashIcon v-else class="h-5 w-5" />

@@ -47,8 +47,8 @@ const submit = () => {
                     id="email"
                     type="email"
                     placeholder="votre@email.com"
-                    class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-gray-900
-                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400
+                    class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-primary-txt
+                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-primary-txt/50
                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
                     v-model="form.email"
                     required

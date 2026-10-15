@@ -57,7 +57,7 @@ const submit = () => {
                                 id="email"
                                 type="email"
                                 class="mt-1 block w-full h-12 text-lg px-3 py-2 rounded-xl bg-white text-base text-primary-txt 
-                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
                                 v-model="form.email"
                                 required
@@ -76,7 +76,7 @@ const submit = () => {
                                     id="password"
                                     :type="showPassword ? 'text' : 'password'"
                                     class="mt-1 block w-full h-12 text-lg px-3 py-2 rounded-xl bg-white text-base text-primary-txt 
-                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                         focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
                                     v-model="form.password"
                                     required

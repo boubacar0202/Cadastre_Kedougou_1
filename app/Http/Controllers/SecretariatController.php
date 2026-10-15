@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
  
+use App\Models\BaremeEvaluation;
 use App\Models\Region;
 use App\Models\Departement;
 use App\Models\Arrondissement;
@@ -77,10 +78,11 @@ class SecretariatController extends Controller
             'departements' => Departement::select('id', 'slt_departement')->get(),
             'arrondissements' => Arrondissement::select('id', 'slt_arrondissement')->get(),
             'communes' => Commune::select('id', 'slt_commune', 'txt_codeCommune')->get(), 
-            'lotissements' => Lotissement::select('id', 'txt_denomination')->get(),        ]);
+            'lotissements' => Lotissement::select('id', 'txt_denomination')->get(),
+            'baremes' => BaremeEvaluation::pourCalcul(),
+        ]);
     }
-  
-
+   
     public function verifyDossier(Request $request)
     {
         $request->validate([
@@ -307,6 +309,8 @@ class SecretariatController extends Controller
             'txt_nicad' => 'nullable|string',
             'slt_statut_nicad' => 'nullable|string',
             'slt_motif_annulation_nicad' => 'nullable|string',
+            'slt_signalement' => 'nullable|string',
+            'slt_designationSignalement' => 'nullable|string',
 
             'slt_region' => 'required|exists:regions,id',
             'slt_departement' => 'required|exists:departements,id',
@@ -457,7 +461,8 @@ class SecretariatController extends Controller
                 'txt_nicad' => $validated['txt_nicad'] ?? null,
                 'slt_statut_nicad' => $validated['slt_statut_nicad'] ?? null,
                 'slt_motif_annulation_nicad' => $validated['slt_motif_annulation_nicad'] ?? null,
-
+                'slt_signalement' => $validated['slt_signalement'] ?? null,
+                'slt_designationSignalement' => $validated['slt_designationSignalement'] ?? null,
                 'slt_region' => $validated['slt_region'],
                 'slt_departement' => $validated['slt_departement'],
                 'slt_arrondissement' => $validated['slt_arrondissement'],
@@ -475,7 +480,6 @@ class SecretariatController extends Controller
             ]);
         });
     }
-
 
     // update Upload PDF
     public function uploadPDF(Request $request, Terrain $terrain)
@@ -495,8 +499,7 @@ class SecretariatController extends Controller
 
         return response()->json(['success' => true, 'path' => $path]);
     }
- 
-    
+  
     // Mise à jour d'un terrain
     public function update(Request $request, $id)
     {
@@ -578,6 +581,8 @@ class SecretariatController extends Controller
             'dt_date_deliberation',
             'slt_statut_nicad',
             'slt_motif_annulation_nicad',
+            'slt_signalement',
+            'slt_designationSignalement',
         ]));
 
         // ✅ Mise à jour de la relation Dossier
@@ -757,7 +762,7 @@ class SecretariatController extends Controller
                 'txt_fonctionResponsablePA_MT'=> $request->input('txt_fonctionResponsablePA'),
                 'txt_telephonePA_MT'          => $request->input('txt_telephonePA'),
                 'txt_emailPA_MT'              => $request->input('txt_emailPA'),
-                'txt_ministèreTutelePA_MT'    => $request->input('txt_ministèreTutelePA'),
+                'txt_ministereTutelePA_MT'    => $request->input('txt_ministereTutelePA'),
 
                 // Acquéreur (suffixe Mutation)
                 'slt_titulaireMutation'       => $request->input('slt_titulaireMutation'),
@@ -797,7 +802,7 @@ class SecretariatController extends Controller
                 'txt_fonctionResponsablePA_Mutation' => $request->input('txt_fonctionResponsablePA_Mutation'),
                 'txt_telephonePA_Mutation'    => $request->input('txt_telephonePA_Mutation'),
                 'txt_emailPA_Mutation'        => $request->input('txt_emailPA_Mutation'),
-                'txt_ministèreTutelePA_Mutation' => $request->input('txt_ministèreTutelePA_Mutation'),
+                'txt_ministereTutelePA_Mutation' => $request->input('txt_ministereTutelePA_Mutation'),
             ];
 
             // Gestion PDF mutation

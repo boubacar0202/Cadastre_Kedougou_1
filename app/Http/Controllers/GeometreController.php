@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BaremeEvaluation;
 use App\Models\Dossier;
 use App\Models\EvaluationAmenagement;
 use App\Models\EvaluationBati;
@@ -40,6 +41,7 @@ class GeometreController extends Controller
             'txt_num_dossier' => $dossier->txt_num_dossier,
             'txt_nicad' => $terrain?->txt_nicad,
             'nbr_surface' => $terrain?->nbr_surface,
+            'baremes' => BaremeEvaluation::pourCalcul(),
         ]);
     }
  

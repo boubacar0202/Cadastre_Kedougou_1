@@ -204,6 +204,7 @@ const submitForm = () => {
     form.slt_commune = slt_commune.value || "";
 
     form.post(route('parametre.pointDensifier.storePoint'), {
+        forceFormData: true,
         onSuccess: () => {
             toast.success("✅ Point enregistré avec succès");
             Inertia.visit(route("parametre.pointDensifier.createPoint"), { replace: true });
@@ -402,7 +403,7 @@ onMounted(() => {
                                 <div class="flex justify-between items-center">
                                     <h1 class="text-1xl text-primary-txt font-semibold">
                                         Nombre d'enregistrements
-                                        <span v-if="totalPoint > 0" class="text-gray-600">
+                                        <span v-if="totalPoint > 0" class="text-primary-txt">
                                             ({{ totalPoint }})
                                         </span>
                                         <span v-else class="text-red-600">
@@ -415,8 +416,8 @@ onMounted(() => {
                                                 v-model="refTitre"
                                                 type="search"
                                                 aria-label="Rechercher"
-                                                class="h-9 block w-64 rounded-xl bg-white px-3 py-1.5 text-base text-gray-900
-                                                    border border-primary-menu placeholder:text-gray-400
+                                                class="h-9 block w-64 rounded-xl bg-white px-3 py-1.5 text-base text-primary-txt
+                                                    border border-primary-menu placeholder:text-primary-txt/50
                                                     focus:outline focus:outline-2 focus:outline-primary sm:text-sm/6"
                                                 placeholder="Rechercher Description"
                                             />
@@ -424,8 +425,8 @@ onMounted(() => {
                                         <div>
                                             <select
                                                 v-model="refPoint"
-                                                class="h-8 block w-30 rounded-xl bg-white px-3 py-1.5 text-base text-gray-900
-                                                    border border-primary-menu placeholder:text-gray-400
+                                                class="h-8 block w-30 rounded-xl bg-white px-3 py-1.5 text-base text-primary-txt
+                                                    border border-primary-menu placeholder:text-primary-txt/50
                                                     focus:outline focus:outline-2 focus:outline-primary sm:text-sm/6"
                                             >
                                                 <option value="">Tous</option>
@@ -443,7 +444,7 @@ onMounted(() => {
                             </div>
 
                             <div class="max-h-[700px] overflow-y-auto shadow-md sm:rounded-xl mt-2">
-                                <table class="table table-auto w-full text-sm text-left rtl:text-right text-gray-500">
+                                <table class="table table-auto w-full text-sm text-left rtl:text-right text-primary-txt">
                                     <thead class="sticky top-0 z-10 text-xs text-primary-txt font_bold uppercase text-center
                                             bg-primary-footer bg-gray-50 whitespace-nowrap">
                                         <tr class="h-10">
@@ -476,10 +477,10 @@ onMounted(() => {
                                             <td class="px-2 py-1 border border-primary-only">{{ point.txt_hauteurPoint || '-' }}</td>
                                             <td class="px-2 py-1 border border-primary-only">
                                                 <a v-if="point.fichierPDF" :href="`/storage/${point.fichierPDF}`" target="_blank"
-                                                    class="text-blue-600 font-bold underline">
+                                                    class="text-primary font-bold underline">
                                                     Voir PDF
                                                 </a>
-                                                <span v-else class="text-gray-400 italic">Aucun</span>
+                                                <span v-else class="text-primary-txt/60 italic">Aucun</span>
                                             </td> 
                                             <td class="px-2 py-1 border border-primary-only whitespace-nowrap">
                                                 <Link :href="`/parametre/pointDensifier/edit/${point.id}`">

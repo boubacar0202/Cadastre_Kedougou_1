@@ -6,18 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('mutations', function (Blueprint $table) {
             $table->id();
 
+            // ============ Identification ============
             $table->string('txt_numeroMutation');
+            $table->string('txt_num_dossier')->nullable();          // 🆕
             $table->string('txt_num_lotissementMutation');
             $table->string('txt_lotissementMutation');
-            // information titulaire
+
+            // ============ Titulaire ============
             $table->string('slt_titulaireMT');
             $table->string('txt_nationaliteMT')->nullable();
             $table->string('slt_civiliteMT')->nullable();
@@ -29,27 +29,30 @@ return new class extends Migration
             $table->date('dt_date_naissanceMT')->nullable();
             $table->string('txt_lieu_naissanceMT')->nullable();
             $table->string('txt_adresseMT')->nullable();
-            $table->string('tel_telephoneMT')->nullable(); 
-            $table->string('txt_representantMT')->nullable()->nullable();
-            $table->string('tel_telRepresentantMT')->nullable()->nullable();
-                // Personne physique
+            $table->string('tel_telephoneMT')->nullable();
+            $table->string('txt_representantMT')->nullable();
+            $table->string('tel_telRepresentantMT')->nullable();
+
+            // Personne morale (titulaire)  ✅ 1 seul "s"
             $table->string('slt_categoriePM_MT')->nullable();
-            $table->string('txt_formJuridiquePM_MT')->nullable(); 
-            $table->string('txt_denominationPM_MT')->nullable(); 
-            $table->string('txt_nineaPM_MT')->nullable(); 
-            $table->string('txt_perssonneRepresentantPM_MT')->nullable(); 
-            $table->string('txt_fonctionPM_MT')->nullable(); 
-            $table->string('txt_telephonePM_MT')->nullable(); 
-            $table->string('txt_emailPM_MT')->nullable(); 
-            $table->string('txt_adressePM_MT')->nullable(); 
-                // Personne morale
+            $table->string('txt_formJuridiquePM_MT')->nullable();
+            $table->string('txt_denominationPM_MT')->nullable();
+            $table->string('txt_nineaPM_MT')->nullable();
+            $table->string('txt_personneRepresentantPM_MT')->nullable();  // 🔧 FIX
+            $table->string('txt_fonctionPM_MT')->nullable();
+            $table->string('txt_telephonePM_MT')->nullable();
+            $table->string('txt_emailPM_MT')->nullable();
+            $table->string('txt_adressePM_MT')->nullable();
+
+            // État (titulaire) — sans accent
             $table->string('slt_etablissementPA_MT')->nullable();
             $table->string('txt_personneResponsablePA_MT')->nullable();
             $table->string('txt_fonctionResponsablePA_MT')->nullable();
             $table->string('txt_telephonePA_MT')->nullable();
             $table->string('txt_emailPA_MT')->nullable();
-            $table->string('txt_ministèreTutelePA_MT')->nullable();
-            // information ecquereur 
+            $table->string('txt_ministereTutelePA_MT')->nullable();
+
+            // ============ Acquéreur ============
             $table->string('slt_titulaireMutation');
             $table->string('txt_prenomMutation')->nullable();
             $table->string('txt_nomMutation')->nullable();
@@ -61,49 +64,69 @@ return new class extends Migration
             $table->date('dt_date_naissanceMutation')->nullable();
             $table->string('txt_lieu_naissanceMutation')->nullable();
             $table->string('txt_adresseMutation')->nullable();
-            $table->string('tel_telephoneMutation')->nullable();   
-            $table->string('txt_representantMutation')->nullable(); 
-            $table->string('tel_telRepresentantMutation')->nullable();    
+            $table->string('tel_telephoneMutation')->nullable();
+            $table->string('txt_representantMutation')->nullable();
+            $table->string('tel_telRepresentantMutation')->nullable();
+
+            // Acte de mutation
             $table->string('txt_typeActeMutation');
             $table->string('txt_nomNotaireMutation')->nullable();
             $table->date('dt_dateMutation');
             $table->string('txt_natureMutation')->nullable();
+            $table->string('txt_jugementMutation')->nullable();   // 🆕
             $table->string('txt_observationMutation')->nullable();
-                // Personne physique
+
+            // Personne morale (acquéreur) ✅ 1 seul "s"
             $table->string('slt_categoriePM_Mutation')->nullable();
             $table->string('txt_formJuridiquePM_Mutation')->nullable();
             $table->string('txt_denominationPM_Mutation')->nullable();
             $table->string('txt_nineaPM_Mutation')->nullable();
-            $table->string('txt_perssonneRepresentantPM_Mutation')->nullable();
+            $table->string('txt_personneRepresentantPM_Mutation')->nullable();  // 🔧 FIX
             $table->string('txt_fonctionPM_Mutation')->nullable();
             $table->string('txt_telephonePM_Mutation')->nullable();
             $table->string('txt_emailPM_Mutation')->nullable();
             $table->string('txt_adressePM_Mutation')->nullable();
-                // Personne morale
+
+            // État (acquéreur) — sans accent
             $table->string('slt_etablissementPA_Mutation')->nullable();
             $table->string('txt_personneResponsablePA_Mutation')->nullable();
             $table->string('txt_fonctionResponsablePA_Mutation')->nullable();
             $table->string('txt_telephonePA_Mutation')->nullable();
             $table->string('txt_emailPA_Mutation')->nullable();
-            $table->string('txt_ministèreTutelePA_Mutation')->nullable();
-             
-            // $table->string('fichierPDFMutation')->nullable();
+            $table->string('txt_ministereTutelePA_Mutation')->nullable();
 
-            // 🔑 Clés étrangères (colonnes)
-            $table->foreignId('terrain_id')->constrained('terrains')->onDelete('cascade');
-            $table->foreignId('dossier_id')->constrained('dossiers')->onDelete('cascade');
+            // Fichier PDF (chemin de stockage)
+            $table->string('fichierPDFMutation')->nullable();
+
+            // ============ Clés étrangères ============
+            // 🔧 RESTRICT au lieu de CASCADE pour éviter la suppression en cascade
+            $table->foreignId('terrain_id')
+                  ->nullable()
+                  ->constrained('terrains')
+                  ->onDelete('restrict')
+                  ->onUpdate('cascade');
+
+            $table->foreignId('dossier_id')
+                  ->nullable()
+                  ->constrained('dossiers')
+                  ->onDelete('restrict')
+                  ->onUpdate('cascade');
+
             $table->string('txt_nicadMutation')->nullable();
-            $table->foreign('txt_nicadMutation')->references('txt_nicad')->on('terrains')->onDelete('cascade');
-                
+
             $table->timestamps();
+
+            // 🔍 Index pour les recherches fréquentes
+            $table->index('txt_num_lotissementMutation');
+            $table->index('txt_lotissementMutation');
+            $table->index('txt_nicadMutation');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('mutations');
+        Schema::enableForeignKeyConstraints();
     }
 };

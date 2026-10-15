@@ -254,7 +254,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                 id="txt_numdossier"
                                                 required
                                                 class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                     focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                     placeholder="Entrer le numéro dossier"
                                                 
@@ -297,7 +297,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     id="Titulaire"
                                                     required
                                                     class="h- block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                    
                                                 >
@@ -338,7 +338,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     id="Nationalite"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
@@ -355,7 +355,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     v-model="form.slt_civilite" 
                                                     id="Civilite"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 >
                                                     <option selected disabled>
@@ -384,7 +384,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     id="Prenom"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
@@ -403,7 +403,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     id="nom"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
@@ -420,7 +420,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     v-model="form.slt_piece" 
                                                     id="selectePiece"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 >
                                                     <option selected disabled>
@@ -449,7 +449,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     id="numPiece"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
@@ -471,7 +471,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     id="dateDelivrance"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
@@ -493,7 +493,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     id="dateNaissance"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
@@ -514,7 +514,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     id="lieuNaissance"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
@@ -533,7 +533,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     id="adresse"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
@@ -552,7 +552,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     id="telephone"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
@@ -571,7 +571,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     id="Email"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
@@ -592,7 +592,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     id="txt_representant"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
@@ -613,7 +613,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                     id="tel_telRepresentant"
                                                     autocomplete="address-level2"
                                                     class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-gray-400 
+                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
                                                             focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                                                 />
                                             </div>
@@ -643,7 +643,7 @@ const submitForm = function () {  // Ajoutez `async` ici
                                                 autocomplete="off"  
                                                 class="h-7 block w-full rounded-md bg-white 
                                                     px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
-                                                    outline-primary-only placeholder:text-gray-400 focus:outline focus:outline-2 
+                                                    outline-primary-only placeholder:text-primary-txt/50 focus:outline focus:outline-2 
                                                     focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
                                             </div> 
                                         </div>

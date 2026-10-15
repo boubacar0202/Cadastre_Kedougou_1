@@ -131,8 +131,8 @@ const confirmerSuppression = async (code) => {
                       type="search" 
                       id="default-search"
                       aria-label="Rechercher"
-                      class="h-9 block w-26 rounded-xl bg-white px-3 py-1.5 text-base text-gray-900 
-                          border border-primary-menu  placeholder:text-gray-400 
+                      class="h-9 block w-26 rounded-xl bg-white px-3 py-1.5 text-base text-primary-txt 
+                          border border-primary-menu  placeholder:text-primary-txt/50 
                           focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
                       placeholder="Lotissement"
                   /> 
@@ -153,9 +153,9 @@ const confirmerSuppression = async (code) => {
               <div class="max-h-[600px] overflow-x-auto shadow-md rounded-xl mt-2">
                 <div class="container">
                   <div class="card-body">
-                    <table class="table table-auto w-full text-base text-left text-gray-500">
+                    <table class="table table-auto w-full text-base text-left text-primary-txt">
                       <thead
-                        class="sticky top-0 z-10 text-primary-txt text-center uppercase bg-primary-form bg-gray-50 dark:bg-gray-700 dark:text-gray-400 whitespace-nowrap"
+                        class="sticky top-0 z-10 text-primary-txt text-center uppercase bg-primary-form bg-gray-50 dark:bg-gray-700 dark:text-primary-txt whitespace-nowrap"
                       >
                         <tr class="h-10">
                           <th class="px-4 py-1 text-xs text-white text-center border bg-primary font-semibold">N°</th>
@@ -185,11 +185,11 @@ const confirmerSuppression = async (code) => {
                           <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ lot.txt_nombreParcelle || '-' }}</td> 
                           <td class="px-2 py-1 text-xs border">
                             <div v-if="lot.txt_documentsAfferants">
-                              <a :href="`/storage/${lot.txt_documentsAfferants}?t=${Date.now()}`" target="_blank" class="text-blue-600 underline">
+                              <a :href="`/storage/${lot.txt_documentsAfferants}?t=${Date.now()}`" target="_blank" class="text-primary underline">
                                 Voir PDF
                               </a>
                             </div>
-                            <div v-else class="text-gray-400 italic">Aucun PDF</div>
+                            <div v-else class="text-primary-txt/60 italic">Aucun PDF</div>
                           </td>
 
                           <!-- Actions -->
@@ -223,7 +223,7 @@ const confirmerSuppression = async (code) => {
 
                         <!-- si aucun lot -->
                         <tr v-if="!lotissements || lotissements.length === 0">
-                          <td class="px-6 py-4 text-center text-gray-400 italic" colspan="9">Aucun lotissement trouvé.</td>
+                          <td class="px-6 py-4 text-center text-primary-txt/60 italic" colspan="9">Aucun lotissement trouvé.</td>
                         </tr>
                       </tbody>
                     </table>

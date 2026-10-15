@@ -14,14 +14,17 @@ export default {
 
      theme: {
         extend: {
+            fontFamily: {
+                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+            },
             colors: {
-                "primary": '#613104', // Définir primary comme  #5f2e01
+                "primary": '#613104', // Définir primary comme #643407
                 "primary-dark": "#A35200", //   #A35200
-                "primary-txt": "#66380a",   // #592D00
+                "primary-txt": "#643407",   //rgb(114, 58, 1)
                 "primary-only": "#E6C5A2", // #E6C5A2
                 "primary-menu": "#C7812E", //  #C7812E
                 "primary-form": "#ffe5c5", //  #ffe5c5
-                "primary-layout": "#faefe6ff", //  #006afd            },
+                "primary-layout": "#faefe6ff", //#3a2a00            },
             // Ajoute la personnalisation de la scrollbar
             scrollbar: ['rounded'],
         },

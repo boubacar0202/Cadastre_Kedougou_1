@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Parametre\UpdatePointDensifierRequest;
+use App\Models\ActiviteUtilisateur;
 use App\Models\Arrondissement;
 use App\Models\CodeAcces;
 use App\Models\Commune;
@@ -12,15 +13,19 @@ use App\Models\PointDensifier;
 use App\Models\Mutation;
 use Illuminate\Http\Request;
 use App\Models\Parametre; 
-use App\Models\Terrain;
 use App\Models\EvaluationTerrain;
 use App\Models\User;
+use App\Models\Message;
+use App\Models\Shapefile;
 use App\Models\Dossier;
+use Illuminate\Database\QueryException;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage; 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 
 class ParametreController extends Controller
@@ -75,16 +80,18 @@ class ParametreController extends Controller
      */
     public function admin()
     { 
-        //
-        $user = User::all();  
-        return Inertia::render("parametre/admin", [ 
-            'users' => $user,
+        $users = User::where('role', 'admin')->where('is_validated', true)->orderBy('name')->get();
+        $pendingUsers = User::where('is_validated', false)->latest()->get();
+
+        return Inertia::render("parametre/admin", [
+            'users' => $users,
+            'pendingUsers' => $pendingUsers,
         ]); 
     }
 
     /**
      * Mutation
-     */ 
+     */
     public function mutation()
     {
         $mutation = Mutation::all();  
@@ -177,10 +184,9 @@ class ParametreController extends Controller
      */
     public function user()
     {
-        $terrains = Terrain::with(['region', 'departement', 'arrondissement', 'commune', 'dossier'])->get(); 
-        return Inertia::render("parametre/user",
-        [
-            "terrains" => $terrains
+        $users = User::where('role', 'user')->where('is_validated', true)->orderBy('name')->get();
+        return Inertia::render("parametre/user", [
+            'users' => $users,
         ]);
     }
   
@@ -344,18 +350,105 @@ class ParametreController extends Controller
     {
         $user = User::findOrFail($id);
 
-        // Validation
-        $validateData = $request->validate([
-            'name'  => 'required|string|max:255',
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $id,
+            'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
+        ], [
+            'name.required' => 'Le nom complet est obligatoire.',
+            'email.required' => "L'adresse email est obligatoire.",
+            'email.email' => "L'adresse email n'est pas valide.",
+            'email.unique' => 'Cette adresse email est déjà utilisée.',
+            'password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
+            'password.min' => 'Le mot de passe doit contenir au moins :min caractères.',
         ]);
 
-        // Mise à jour
-        $user->update($validateData);
+        $data = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ];
+
+        if (! empty($validated['password'])) {
+            $data['password'] = $validated['password'];
+        }
+
+        $user->update($data);
+
+        return redirect()
+            ->route($user->role === 'user' ? 'parametre.user' : 'parametre.admin')
+            ->with('success', 'Utilisateur ' . $user->name . ' modifié avec succès');
+    }
+
+    public function storeUser(Request $request)
+    {
+        $authUser = $request->user();
+
+        if (! $authUser || $authUser->role !== 'admin') {
+            return back()->with('error', 'Seuls les administrateurs peuvent créer un compte.');
+        }
+
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email'))),
+        ]);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'role' => 'required|string|in:admin,user',
+        ], [
+            'name.required' => 'Le nom complet est obligatoire.',
+            'email.required' => "L'adresse email est obligatoire.",
+            'email.email' => "L'adresse email n'est pas valide.",
+            'email.unique' => 'Cette adresse email est déjà utilisée.',
+            'password.required' => 'Le mot de passe est obligatoire.',
+            'password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
+            'password.min' => 'Le mot de passe doit contenir au moins :min caractères.',
+            'role.required' => 'Le rôle est obligatoire.',
+            'role.in' => 'Le rôle choisi est invalide.',
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => $validated['password'],
+            'role' => $validated['role'],
+            'is_validated' => true,
+        ]);
+
+        $liste = $user->role === 'user' ? 'Utilisateurs' : 'administrateurs';
 
         return redirect()
             ->route('parametre.admin')
-            ->with('success', 'Utilisateur ' . $user->name . ' modifié avec succès');
+            ->with('success', 'Le compte de ' . $user->name . ' a été créé. Il figure dans la liste des ' . $liste . '.');
+    }
+
+    public function validateUser(Request $request, $id)
+    {
+        $authUser = $request->user();
+
+        if (! $authUser || $authUser->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Seuls les administrateurs peuvent valider un compte.',
+            ], 403);
+        }
+
+        $user = User::findOrFail($id);
+
+        if ($user->is_validated) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ce compte est déjà validé.',
+            ], 422);
+        }
+
+        $user->update(['is_validated' => true]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Le compte de ' . $user->name . ' a été validé. Il peut maintenant se connecter.',
+        ]);
     } 
 
     // Suppression un utilisateur
@@ -377,23 +470,34 @@ class ParametreController extends Controller
             ], 403);
         }
 
-        // Récupérer l'utilisateur  
-        $user = User::findOrFail($id);
+        $authUser = $request->user();
 
-        // Interdire la suppression si est l'email
-        if ($user->email === 'mbengueboubacar095@gmail.com' || $user->email === 'fayesaliou196@gmail.com' ) {
+        if (!$authUser || $authUser->role !== 'admin') {
             return response()->json([
                 'success' => false,
-                'message' => "Impossible : {$user->name} est un administrateur principal."
+                'message' => 'Impossible : seuls les administrateurs peuvent supprimer un utilisateur.'
             ], 403);
         }
 
-        // Supprimer l'utilisateur
-        $user->delete();
+        // Récupérer l'utilisateur  
+        $user = User::findOrFail($id);
+        try {
+            $user->delete();
+        } catch (QueryException $e) {
+            Log::error('Suppression utilisateur impossible', [
+                'id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => "Impossible de supprimer {$user->name} : des données y sont encore liées.",
+            ], 409);
+        }
 
         return response()->json([
             'success' => true,
-            'message' => "{$user->name}; supprimé avec succès."
+            'message' => "{$user->name} supprimé avec succès."
         ]);
     }
 
@@ -408,8 +512,8 @@ class ParametreController extends Controller
         // Données pour le Bar Chart - Évolution mensuelle
         $barData = $this->getBarChartData();
         
-        // Données pour le Grid - Statistiques détaillées
-        $gridData = $this->getGridData();
+        // Évaluation des utilisateurs pour le trimestre en cours
+        $evaluation = $this->getEvaluationUtilisateurs();
 
         // Données supplémentaires pour le dashboard
         $stats = $this->getStats();
@@ -417,7 +521,7 @@ class ParametreController extends Controller
         return Inertia::render("parametre/chart", [ 
             'pieData' => $pieData,
             'barData' => $barData,
-            'gridData' => $gridData,
+            'evaluation' => $evaluation,
             'stats' => $stats
         ]); 
     }
@@ -430,7 +534,10 @@ class ParametreController extends Controller
         return response()->json([
             'pie' => $this->getPieChartData(),
             'bar' => $this->getBarChartData(),
-            'grid' => $this->getGridData()
+            'evaluation' => $this->getEvaluationUtilisateurs(
+                $request->integer('annee') ?: null,
+                $request->integer('trimestre') ?: null,
+            ),
         ]);
     }
 
@@ -1084,7 +1191,6 @@ class ParametreController extends Controller
     // store
     public function storePoint(Request $request)
     {  
-        // 🔥 Validation (inchangée)
         $validated = $request->validate([
             'txt_nomPoint' => 'required|string|max:255',
             'txt_dateCreationPoint' => 'required|date',
@@ -1096,7 +1202,7 @@ class ParametreController extends Controller
             'txt_estPoint' => 'required|string|max:255',
             'txt_nordPoint' => 'required|string|max:255',
             'txt_hauteurPoint' => 'required|string|max:255',
-            'fichierPDFPoint' => 'nullable|string|max:255',
+            'fichierPDFPoint' => 'nullable|file|mimes:pdf|max:102400',
         ],[
             'txt_nomPoint.required' => 'Le nom du point est requis.',
             'txt_dateCreationPoint.required' => 'La date de création est requise.',
@@ -1107,7 +1213,9 @@ class ParametreController extends Controller
             'txt_situationPoint.required' => 'La situation est requise.',
             'txt_estPoint.required' => 'La coordonnée Est est requise.',
             'txt_nordPoint.required' => 'La coordonnée Nord est requise.',
-            'txt_hauteurPoint.required' => 'La hauteur est requise.'
+            'txt_hauteurPoint.required' => 'La hauteur est requise.',
+            'fichierPDFPoint.mimes' => 'Le document doit être un fichier PDF.',
+            'fichierPDFPoint.max' => 'Le fichier PDF ne doit pas dépasser 100 Mo.',
         ] );
 
         // 📁 fichier PDF
@@ -1130,8 +1238,7 @@ class ParametreController extends Controller
                 'txt_estPoint' => $validated['txt_estPoint'],
                 'txt_nordPoint' => $validated['txt_nordPoint'],
                 'txt_hauteurPoint' => $validated['txt_hauteurPoint'],
-                'fichierPDFPoint' => $validated['txt_documentsAfferants'] ?? null
-             
+                'fichierPDFPoint' => $validated['fichierPDFPoint'] ?? null,
             ]); 
  
 
@@ -1142,7 +1249,9 @@ class ParametreController extends Controller
     }
 
     
-
+    /**
+     * Mettre à jour un point densifié
+     */
     public function updatePoint(Request $request, string $id)
     { 
         $point_densifier = PointDensifier::findOrFail($id); 
@@ -1206,7 +1315,80 @@ class ParametreController extends Controller
             ->with('success', 'Point densifié mis à jour avec succès.');
     }
 
+    /**
+     * Évaluation des utilisateurs pour un trimestre.
+     * Score = enregistrements × 3 + modifications × 2 + recherches × 1.
+     */
+    private function getEvaluationUtilisateurs(?int $annee = null, ?int $trimestre = null): array
+    {
+        $annee = $annee && $annee > 2000 ? $annee : (int) now()->year;
+        $trimestre = $trimestre && $trimestre >= 1 && $trimestre <= 4
+            ? $trimestre
+            : (int) ceil(now()->month / 3);
 
-    
- 
+        $debut = Carbon::create($annee, (($trimestre - 1) * 3) + 1, 1)->startOfDay();
+        $fin = $debut->copy()->addMonths(3)->subSecond();
+        $label = ['1er', '2e', '3e', '4e'][$trimestre - 1].' trimestre '.$annee;
+
+        $roleColumn = null;
+        if (Schema::hasColumn('users', 'txt_roleUser')) {
+            $roleColumn = 'txt_roleUser';
+        } elseif (Schema::hasColumn('users', 'role')) {
+            $roleColumn = 'role';
+        }
+
+        $columns = ['id', 'name'];
+        if ($roleColumn) {
+            $columns[] = $roleColumn;
+        }
+
+        $users = User::query()->orderBy('name')->get($columns);
+
+        $counts = collect();
+        if (Schema::hasTable('activites_utilisateurs')) {
+            $counts = ActiviteUtilisateur::query()
+                ->select('user_id', 'action', DB::raw('COUNT(*) as total'))
+                ->whereBetween('created_at', [$debut, $fin])
+                ->groupBy('user_id', 'action')
+                ->get()
+                ->groupBy('user_id');
+        }
+
+        $lignes = $users->map(function ($user) use ($counts, $label, $roleColumn) {
+            $byAction = collect($counts->get($user->id, []))->keyBy('action');
+            $enregistrements = (int) ($byAction->get('enregistrement')->total ?? 0);
+            $modifications = (int) ($byAction->get('modification')->total ?? 0);
+            $recherches = (int) ($byAction->get('recherche')->total ?? 0);
+            $score = ($enregistrements * 3) + ($modifications * 2); //+ $recherches;
+
+            return [
+                'utilisateur' => $user->name,
+                'role' => $roleColumn ? ($user->{$roleColumn} ?: '—') : '—',
+                'trimestre' => $label,
+                'enregistrements' => $enregistrements,
+                'modifications' => $modifications,
+                'recherches' => $recherches,
+                'score' => $score,
+                'appreciation' => $this->appreciationUtilisateur($score),
+            ];
+        })->sortByDesc('score')->values()->all();
+
+        return [
+            'annee' => $annee,
+            'trimestre' => $trimestre,
+            'label' => $label,
+            'lignes' => $lignes,
+        ];
+    }
+
+    private function appreciationUtilisateur(int $score): string
+    {
+        return match (true) {
+            $score >= 50 => 'Excellente',
+            $score >= 25 => 'Bonne',
+            $score >= 10 => 'Moyenne',
+            $score >= 1 => 'Faible',
+            default => 'Aucune activité',
+        };
+    }
 }

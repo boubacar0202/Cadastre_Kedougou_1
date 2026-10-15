@@ -93,6 +93,8 @@ const form = useForm({
     slt_motif_annulation_nicad: "",
     txt_num_titre: "",
     slt_statut_nicad: "",
+    slt_signalement: "",
+    slt_designationSignalement: "",
     nbr_surface: "",
     slt_document_admin: "",
     txt_num_deliberation: "",
@@ -166,8 +168,6 @@ watch(activeTab, (newVal, oldVal) => {
     // Si on change de tab, on met à jour rd_immatriculation_terrain
     form.rd_immatriculation_terrain = newVal || '';
     
-    console.log(`🔄 Changement de tab : ${oldVal} → ${newVal}`);
-    console.log('✅ Champs réinitialisés');
 });
 
 // Vérification de l'existence du dossier
@@ -225,15 +225,40 @@ const showAnnulationNICAD = ref(false);
 
 // Méthode
 const handleSelectChangeAnnulationNICAD = () => {
-    showAnnulationNICAD.value = form.slt_statut_nicad === 'Annulé';
+    showAnnulationNICAD.value = (form.slt_statut_nicad === 'Annulé') || (form.slt_statut_nicad === 'Supprimé') || (form.slt_statut_nicad === 'Désactivé');
     if (!showAnnulationNICAD.value) {
         form.slt_motif_annulation_nicad = '';
     }
-};
+}; 
+watch(() => form.slt_statut_nicad, handleSelectChangeAnnulationNICAD);
 
-// Watch
-watch(() => form.slt_statut_nicad, handleSelectChangeAnnulationNICAD, { immediate: true });
+// Statut Signalement 
+const showStatutSignalement = ref(false); 
 
+// Méthode
+const handleSelectChangeStatutSignalement = () => {
+    showStatutSignalement.value = (form.slt_signalement === 'Litige') || (form.slt_signalement === 'Anomalie');
+    if(!showStatutSignalement.value) {
+        form.slt_designationSignalement = '';
+    }
+}  
+watch(() => form.slt_signalement, handleSelectChangeStatutSignalement);
+
+const designationSignalement = { 
+    'Litige': [ 'Pluralité de titres', 'Cession multiple', 'Instance judiciaire','Contestation de propriété','Contestation de limites',
+            'Contentieux entre ayants droit','Revendication de propriété','Succession litigieuse','Autre litige'
+    ], 
+    'Anomalie': ['Absence de document justificatif','Dossier incomplet','Document irrégulier',
+            'Document non conforme','Empiètement','Limites incertaines','Limites non matérialisées','Superficie à vérifier',
+            'Géométrie à corriger','Données cadastrales incohérentes','Situation foncière à régulariser','Autre anomalie'
+    ]
+};  
+const designationsSignalement = ref([]);
+watch(() => form.slt_signalement, (newCategorie) => {
+    designationsSignalement.value = designationSignalement[newCategorie] || [];
+    form.slt_designationSignalement = '';
+});
+  
 // Préremplire les champs N° dossier et N° d'ordre
 const fetchNextDossier = async () => {
     try {
@@ -244,9 +269,9 @@ const fetchNextDossier = async () => {
         console.error("Erreur lors de la récupération du numéro de dossier :", error);
     }
 };
-
 onMounted(fetchNextDossier);
 
+// Départements
 const fetchDepartements = async () => {
     if (!slt_region.value) {
         departements.value = [];
@@ -262,6 +287,7 @@ const fetchDepartements = async () => {
     }
 };
 
+// Arrondissements
 const fetchArrondissements = async () => {
     if (!slt_departement.value) {
         arrondissements.value = [];
@@ -277,6 +303,7 @@ const fetchArrondissements = async () => {
     }
 };
 
+// Communes
 const fetchCommunes = async () => {
     if (!slt_arrondissement.value) {
         communes.value = [];
@@ -292,6 +319,7 @@ const fetchCommunes = async () => {
     }
 };
 
+// Lotissements
 const fetchlotissements = async () => {
     if (!slt_commune.value) {
         lotissements.value = [];
@@ -436,7 +464,7 @@ const submitForm = function () {
     // 5. Formulaire Laravel
     form.post(route('secretariat.store'), {
         onSuccess: (page) => { 
-            toast.success(page.props.flash?.success || "✅ Dossier enregistré !");
+            toast.success(page.props.flash?.success || "✅ Dossier enregistré sous le numéro : " + form.txt_num_dossier + " !");
             Inertia.visit(route("secretariat.create"), { replace: true });
         },
         onError: (errors) => {
@@ -463,30 +491,33 @@ const submitForm = function () {
 
         <div class="py-12">
             <div class="flex justify-center">
-                <div class="w-full max-w-8xl">
+                <div class="w-full max-w-8xl px-2 py-2">
                     <div class="bg-white shadow-md rounded-xl"> 
-                        <div class="p-4 border-b bg-primary rounded-t-xl">
-                            <h1 class="text-lg text-white font-semibold">Formulaire</h1>
+                        <div class="p-4 border-b bg-primary flex items-center justify-between rounded-t-xl gap-2">
+                            <h2 class="text-2xl leading-tight text-white font-bold">Formulaire</h2>
+
+                            <div class="flex justify-end p-2"> 
+                                <MazBtn 
+                                    type="button" 
+                                    no-shadow 
+                                    no-hover-effect
+                                    class="inline-flex items-center justify-center gap-2 w-36 h-9 px-4 rounded-lg shadow-md text-primary-txt font-bold 
+                                        leading-tight bg-gradient-to-r from-primary-only via-primary-only to-primary-dark transition duration-200 hover:brightness-110 
+                                        hover:-translate-y-0.5 hover:shadow-lg hover:cursor-pointer hover:font-bold hover:text-primary-only focus:outline-none 
+                                        focus:ring-2 focus:ring-white/70 active:translate-y-0 rounded-xl"
+                                    size="medium"
+                                    @click="verifierDossier"
+                                >
+                                    <i class="fas fa-check">Vérifier</i>
+                                </MazBtn>
+                            </div> 
                         </div> 
                         <form class="space-y-4" autocomplete="on" @submit.prevent="submitForm">
                             <div class="p-6"> 
-                                <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center justify-between mb-2">
                                     <h5 class="text-lg text-primary-txt font-bold">
                                         Réferences Dossiers
                                     </h5> 
-                                    <MazBtn 
-                                        type="button" 
-                                        no-shadow 
-                                        no-hover-effect
-                                        class="w-36 h-8 text-white bg-gradient-to-r from-primary via-primary-dark to-primary
-                                            hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
-                                            dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg
-                                            dark:shadow-blue-800/80 font-medium rounded-lg text-xs px-3 py-1 text-center"
-                                        size="medium"
-                                        @click="verifierDossier"
-                                    >
-                                        Vérifier
-                                    </MazBtn>
                                 </div>
                                 <div class="mb-6">
                                     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -544,13 +575,14 @@ const submitForm = function () {
                                             required="on"
                                             v-model="form.dt_date_creation"
                                         />
-                                    </div> 
-
-                                    <!-- Parcelle -->
-                                    <h5 class="text-lg text-primary-txt font-bold mt-4">
+                                    </div>  
+                                </div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <h5 class="text-lg text-primary-txt font-bold mt-2">
                                         Réferences Parcellelaires
-                                    </h5>
-                                    <br />
+                                    </h5> 
+                                </div>
+                                <div class="mb-6">
                                     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
                                         <BaseSelect
                                             label="Région"
@@ -679,8 +711,7 @@ const submitForm = function () {
                                             :error="errorMessageNumParcelle" 
                                         />  
 
-                                        <BaseInput
-                                            class="sm:col-span-2"
+                                        <BaseInput 
                                             label="NICAD"
                                             name="txt_nicad"   
                                             :modelValue="txt_nicad"
@@ -701,7 +732,7 @@ const submitForm = function () {
                                             @change="handleSelectChangeAnnulationNICAD"                                        
                                         /> 
 
-                                        <BaseSelect
+                                        <BaseSelect 
                                             v-if="showAnnulationNICAD"
                                             label="Motif d'Annulation NICAD"
                                             name="slt_motif_annulation_nicad"   
@@ -709,20 +740,43 @@ const submitForm = function () {
                                             :options="[
                                                 {value:'Fusion', label:'Fusion'},
                                                 {value:'Division/Morcellement', label:'Division/Morcellement'},
-                                                {value:'Affecter par un Projet', label:'Affecter par un Projet'},
+                                                {value:'Affectée par un Projet', label:'Affectée par un Projet'},
                                                 {value:'Règlement Judiciaire', label:'Règlement Judiciaire'},
                                             ]" 
                                         />
+
+                                        <BaseSelect 
+                                            label="Signalement"
+                                            name="slt_signalement"   
+                                            v-model="form.slt_signalement"
+                                            :options="[
+                                                {value:'Néant', label:'Néant'},
+                                                {value:'Litige', label:'Litige'},
+                                                {value:'Anomalie', label:'Anomalie'}, 
+                                            ]" 
+                                            @change="handleSelectChangeStatutSignalement;"
+                                        />
+ 
+                                        <BaseSelect
+                                            v-if="showStatutSignalement"
+                                            label="Designation Signalement"
+                                            name="slt_designationSignalement"   
+                                            v-model="form.slt_designationSignalement"
+                                            :options="designationsSignalement.map(designation => ({
+                                                value: designation,
+                                                label: designation
+                                            }))" 
+                                        /> 
                                     </div>
                                 </div>
 
                                 <!-- ✅ CORRIGÉ : Réferences Cadastrales -->
-                                <h5 class="text-lg text-primary-txt font-bold mt-4">
-                                    Réferences Cadastrales
-                                </h5>
-                                <br />
-
-                                <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <h5 class="text-lg text-primary-txt font-bold mt-4">
+                                        Réferences Cadastrales
+                                    </h5> 
+                                </div>
+                                <div class="mb-6">
                                     <!-- Nature Juridique -->
                                     <div class="sm:col-span-2">
                                         <label for="slt_dependant_domaine" class="block font-medium text-primary-txt">
@@ -851,10 +905,11 @@ const submitForm = function () {
                                 </div> 
 
                                 <!-- Section Titulaire -->
-                                <h5 class="text-lg text-primary-txt font-bold mt-4">
-                                    Identité Titulaire de droit
-                                </h5>
-                                <br />
+                                <div class="flex items-center justify-between mb-2">
+                                    <h5 class="text-lg text-primary-txt font-bold mt-4">
+                                        Identité Titulaire de droit
+                                    </h5> 
+                                </div>
                                 <div class="mb-6">
                                     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
                                         <BaseSelect

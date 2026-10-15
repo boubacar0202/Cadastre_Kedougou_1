@@ -4,6 +4,14 @@ use App\Models\Dossier;
 use App\Models\Terrain;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\ArriveeController;
+use App\Http\Controllers\DepartController;
+use App\Http\Controllers\InstanceController;
+use App\Http\Controllers\InstanceArriveeController;
+use App\Http\Controllers\InstanceDepartController;
+use App\Http\Controllers\BaremeEvaluationController;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\TrimestreController;
 use App\Http\Controllers\CodeAccesController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DonneeController;
@@ -77,8 +85,29 @@ Route::middleware('auth')->group(function () {
     Route::resource('/message', MessageController::class);
     Route::resource('mutation', MutationController::class); 
     Route::resource('lotissement', ParametreController::class); 
-    Route::resource('plan', PlanController::class); 
-     
+    Route::resource('plan', PlanController::class);
+
+    // ✅ Arrivee
+    Route::get('/arrivee/next/{annee}', [ArriveeController::class, 'getNextOrdre'])->name('arrivee.next');
+    Route::delete('/arrivee/{id}/pdf', [ArriveeController::class, 'deletePdf'])->name('arrivee.pdf.destroy');
+    Route::get('/arrivee/editarrivee/{id}', [ArriveeController::class, 'edit'])->name('arrivee.edit');
+    Route::resource('arrivee', ArriveeController::class)->only(['create', 'store', 'update']); 
+
+    // ✅ Depart
+    Route::post('/fetch-references-arrivee', [DepartController::class, 'fetchReferencesArrivee'])->name('depart.references');
+    Route::get('/depart/next/{annee}', [DepartController::class, 'getNextOrdre'])->name('depart.next');
+    Route::delete('/depart/{id}/pdf', [DepartController::class, 'deletePdf'])->name('depart.pdf.destroy');
+    Route::get('/depart/editdepart/{id}', [DepartController::class, 'edit'])->name('depart.edit');
+    Route::resource('depart', DepartController::class)->only(['create', 'store', 'update']); 
+    Route::delete('/instancearrivee/arrivee/{id}', [InstancearriveeController::class, 'destroy'])->name('instancearrivee.destroyArrivee');
+    Route::get('/instancearrivee/arrivee/{txt_numdordre}', [InstancearriveeController::class, 'show'])->name('instancearrivee.show');
+    Route::delete('/instancedepart/depart/{id}', [InstancedepartController::class, 'destroyDepart'])->name('instancedepart.destroyDepart'); 
+
+    // ✅ Instance
+    Route::resource('instance', InstanceController::class);
+    Route::resource('instancearrivee', InstanceArriveeController::class);
+    Route::resource('instancedepart', InstanceDepartController::class);
+
     // ✅ Données
     Route::get('/donnees', [DonneeController::class, 'create'])->name('donnees.create');  
     Route::delete('/terrains/{id}', [TerrainController::class, 'destroyTerrain'])->name('terrain.destroy');
@@ -145,7 +174,10 @@ Route::middleware('auth')->group(function () {
     // ✅ Paramétrages
     Route::prefix('parametre')->group(function () {
         // 👤 Admin - Gestion des utilisateurs
-        Route::get('/admin', [ParametreController::class, 'admin'])->name('parametre.admin'); 
+        Route::get('/admin', [ParametreController::class, 'admin'])->name('parametre.admin');
+        Route::get('/user', [ParametreController::class, 'user'])->name('parametre.user');
+        Route::post('/admin/store', [ParametreController::class, 'storeUser'])->name('parametre.admin.store');
+        Route::post('/admin/{id}/validate', [ParametreController::class, 'validateUser'])->name('parametre.admin.validate');
         Route::delete('/admin/{id}', [ParametreController::class, 'destroyUser'])->name('parametre.admin.destroy'); 
         Route::get('/adminEdit/{id}', [ParametreController::class, 'editUser'])->name('parametre.admin.edit');  
         Route::put('/admin/update/{id}', [ParametreController::class, 'updateUser'])->name('parametre.updateUser');
@@ -183,7 +215,23 @@ Route::middleware('auth')->group(function () {
         Route::post('/code/verifyPoint', [CodeAccesController::class, 'verifyPoint'])->name('code.verifyPoint'); 
         
         // 📊 Chart / Évaluation - Page des graphiques
-        Route::get('/chart', [ParametreController::class, 'chart'])->name('parametre.chart'); 
+        Route::get('/chart', [ParametreController::class, 'chart'])->name('parametre.chart');
+
+        // Recueil de textes
+        Route::get('/service/create', [ServiceController::class, 'create'])->name('parametre.service.create');
+        Route::post('/service', [ServiceController::class, 'store'])->name('parametre.service.store');
+        Route::get('/service/edit/{service}', [ServiceController::class, 'edit'])->name('parametre.service.edit');
+        Route::put('/service/{service}', [ServiceController::class, 'update'])->name('parametre.service.update');
+        Route::delete('/service/{service}', [ServiceController::class, 'destroy'])->name('parametre.service.destroy');
+
+        // Trimestres
+        Route::get('/trimestre/create', [TrimestreController::class, 'create'])->name('parametre.trimestre.create');
+
+        // Barèmes d'évaluation
+        Route::get('/bareme', [BaremeEvaluationController::class, 'index'])->name('parametre.bareme.index');
+        Route::post('/bareme', [BaremeEvaluationController::class, 'store'])->name('parametre.bareme.store');
+        Route::put('/bareme/{bareme}', [BaremeEvaluationController::class, 'update'])->name('parametre.bareme.update');
+        Route::delete('/bareme/{bareme}', [BaremeEvaluationController::class, 'destroy'])->name('parametre.bareme.destroy');
     });
 
     // ✅ Routes API pour les graphiques (en dehors du préfixe 'parametre') 
@@ -198,15 +246,23 @@ Route::middleware('auth')->group(function () {
     Route::post('/terrain/search', [TerrainController::class, 'searchTerrain']); 
     Route::get('/parcelles/{numero}', [TerrainController::class, 'show']);
 
-    // ✅ Shapefiles
+    // ✅ Shapefiles  
+
+    // Page du plan
     Route::get('/plan/create', [ShapefileController::class, 'index'])->name('plan.create');
+
+    // Liste + CRUD Shapefiles
     Route::get('/shapefiles', [ShapefileController::class, 'list'])->name('shapefiles.list');
     Route::post('/shapefiles', [ShapefileController::class, 'store'])->name('shapefiles.store');
     Route::patch('/shapefiles/{shapefile}', [ShapefileController::class, 'update'])->name('shapefiles.update');
     Route::delete('/shapefiles/{shapefile}', [ShapefileController::class, 'destroy'])->name('shapefiles.destroy');
-    Route::get('/api/shapefiles/{shapefile}/geojson', [ShapefileController::class, 'geojson'])->name('shapefiles.geojson');
-    Route::post('/generer-angles', [App\Http\Controllers\ShapefileController::class, 'genererAngles'])->name('generer.angles');
 
+    // API GeoJSON d'un shapefile
+    Route::get('/api/shapefiles/{shapefile}/geojson', [ShapefileController::class, 'geojson'])->name('shapefiles.geojson');
+
+    // Génération de polygones à partir d'un centroïde
+    Route::post('/api/generer-polygone', [ShapefileController::class, 'genererPolygone'])->name('api.generer.polygone');
+    Route::post('/generer-angles', [ShapefileController::class, 'genererAngles'])->name('generer.angles'); 
 
 });
 
