@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3'; 
 import NavLink from '@/Components/NavLink.vue';
 import { toast } from "@/Components/AppToast"; 
@@ -11,7 +11,8 @@ const page = usePage();
 const user = computed(() => page.props.auth?.user);
 const isAdmin = computed(() => user.value?.role === 'admin');
 const isMenuOpen = ref(false);
-const isDesktop = ref(false);
+const isDesktop = ref(typeof window !== 'undefined' && window.innerWidth >= 768);
+const isSmallScreen = computed(() => !isDesktop.value);
 const showingNavigationDropdown = ref(false);
 const unreadTotal = ref(0);
 const previousUnreadTotal = ref(0);
@@ -138,12 +139,15 @@ onUnmounted(() => {
 
 // Surveille la largeur d'écran
 function checkScreenSize() {
-    isDesktop.value = window.innerWidth >= 768
-    if (isDesktop.value) {
-        const savedMenuState = localStorage.getItem('menuOpen');
-        if (savedMenuState === 'true') {
-            isMenuOpen.value = true;
-        }
+    const desktop = window.innerWidth >= 768
+    const wasDesktop = isDesktop.value
+    isDesktop.value = desktop
+
+    if (desktop && !wasDesktop) {
+        const savedMenuState = localStorage.getItem('menuOpen')
+        isMenuOpen.value = savedMenuState === null ? true : savedMenuState === 'true'
+    } else if (!desktop && wasDesktop) {
+        isMenuOpen.value = false
     }
 }
 
@@ -153,26 +157,27 @@ function toggleMenu() {
     localStorage.setItem('menuOpen', isMenuOpen.value.toString());
 }
 
+function onNavClick(event) {
+    if (!isSmallScreen.value) return
+    if (event.target.closest('a')) {
+        isMenuOpen.value = false
+    }
+}
+
 // Garde l’état du menu après rafraîchissement
 onMounted(() => {
-    checkScreenSize()
-    window.addEventListener('resize', checkScreenSize)
-    
-    const savedMenuState = localStorage.getItem('menuOpen');
-    if (savedMenuState !== null) {
-        isMenuOpen.value = savedMenuState === 'true';
+    isDesktop.value = window.innerWidth >= 768
+    if (isDesktop.value) {
+        const savedMenuState = localStorage.getItem('menuOpen');
+        isMenuOpen.value = savedMenuState === null ? true : savedMenuState === 'true';
     } else {
-        isMenuOpen.value = window.innerWidth >= 768;
+        isMenuOpen.value = false
     }
+    window.addEventListener('resize', checkScreenSize)
 })
 
 onUnmounted(() => {
     window.removeEventListener('resize', checkScreenSize)
-})
-
-// Mémoriser l'état dans localStorage pour persistance
-watch(isMenuOpen, (newValue) => {
-    localStorage.setItem('menuOpen', newValue.toString())
 })
 
 </script>
@@ -182,9 +187,10 @@ watch(isMenuOpen, (newValue) => {
         <meta name="csrf-token" content="{{ csrf_token() }}">
     </Head>
 
-    <div class="flex min-h-screen w-full bg-primary-layout">
-        <!-- Sidebar -->
-        <nav class="app-sidebar fixed inset-y-0 left-0 z-40 flex h-screen w-64 flex-col overflow-y-auto p-4">
+ 
+    <div class="app-shell flex min-h-screen w-full bg-primary-layout" :class="{ 'is-menu-open': isMenuOpen }">
+        <div v-if="isMenuOpen && isSmallScreen" class="app-overlay" @click="isMenuOpen = false"></div>
+        <nav class="app-sidebar" :class="{ 'is-open': isMenuOpen }" @click="onNavClick">
             <!-- Logo -->
             <div class="flex items-center justify-center mb-6">
                 <Link :href="route('dashboard')">
@@ -548,6 +554,15 @@ watch(isMenuOpen, (newValue) => {
         <!-- Page Content -->
         <div class="flex min-h-screen w-full flex-col md:pl-64">
             <header class="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b border-primary-only/50 bg-white/90 p-4 shadow-sm backdrop-blur-md">
+                <button
+                    v-if="isSmallScreen"
+                    type="button"
+                    class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-lg text-white shadow"
+                    aria-label="Ouvrir le menu"
+                    @click="toggleMenu"
+                >
+                    ☰
+                </button>
                 <div class="min-w-0 flex-1">
                     <slot name="header" />
                 </div>
@@ -646,6 +661,38 @@ watch(isMenuOpen, (newValue) => {
 </template>
 
 <style scoped>
+.app-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(97, 49, 4, 0.45);
+}
+
+.app-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    display: flex;
+    width: 16rem;
+    height: 100vh;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 1rem;
+    transition: transform 0.28s ease;
+}
+
+@media (max-width: 767px) {
+    .app-sidebar {
+        transform: translateX(-110%);
+    }
+
+    .app-sidebar.is-open {
+        transform: translateX(0);
+    }
+}
+
 .slide-enter-active,
 .slide-leave-active {
     transition: max-height 1s ease-in-out, opacity 1s ease-in-out;
