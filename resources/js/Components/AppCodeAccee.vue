@@ -3,6 +3,7 @@ import { ref, watch } from "vue"
 import MazBtn from "maz-ui/components/MazBtn"
 import { router } from '@inertiajs/vue3';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline';
+import BaseInput from "@/Components/BaseInput.vue";
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -62,28 +63,26 @@ const togglePassword = () => {
 
       <!-- Body -->
       <div class="p-6">
-        <!-- Input avec toggle à l'intérieur -->
-        <div class="relative mb-6">
-          <input
-            v-model="code"
-            :type="showPassword ? 'text' : 'password'"
-            autocomplete="off"
-            placeholder="Entrez votre code d'accès"
-            class="h-10 w-full rounded-lg px-3 text-primary-txt
-                   outline outline-1 outline-primary-only
-                   focus:outline-2 focus:outline-primary-only
-                   pr-12"
-            @keyup.enter="confirm"
-          />
-          <button
-            type="button"
-            @click="togglePassword"
-            class="absolute inset-y-0 right-0 flex items-center pr-3 text-primary-txt/60 hover:text-primary"
-          >
-            <EyeIcon v-if="!showPassword" class="h-5 w-5" />
-            <EyeSlashIcon v-else class="h-5 w-5" />
-          </button>
-        </div>
+        <BaseInput
+          v-model="code"
+          label="Code d'accès"
+          :type="showPassword ? 'text' : 'password'"
+          autocomplete="off"
+          placeholder="Entrez votre code d'accès"
+          wrapper-class="mb-6 w-full"
+          @keyup.enter="confirm"
+        >
+          <template #append>
+            <button
+              type="button"
+              @click="togglePassword"
+              class="absolute inset-y-0 right-0 flex items-center pr-3 text-primary-txt/60 hover:text-primary"
+            >
+              <EyeIcon v-if="!showPassword" class="h-5 w-5" />
+              <EyeSlashIcon v-else class="h-5 w-5" />
+            </button>
+          </template>
+        </BaseInput>
 
         <div class="flex justify-center gap-4">
           <MazBtn

@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('mutations', function (Blueprint $table) {
-            $table->string('txt_nicadMutation')->nullable();
-        });
+        if (!Schema::hasColumn('mutations', 'txt_nicadMutation')) {
+            Schema::table('mutations', function (Blueprint $table) {
+                $table->string('txt_nicadMutation')->nullable();
+            });
+        }
     }
 
     public function down(): void

@@ -2,10 +2,8 @@
  
 import Checkbox from '@/Components/Checkbox.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
+import BaseInput from '@/Components/BaseInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Inertia } from '@inertiajs/inertia'; 
 import { ref } from 'vue'
@@ -50,52 +48,41 @@ const submit = () => {
                 <div class="justify-right"> 
                     <form @submit.prevent="submit"
                         class="w-full max-w-md">
-                        <div>
-                            <InputLabel for="email" value="Adresse Email" class="text-primary-txt font-bold" />
+                        <BaseInput
+                            id="email"
+                            name="email"
+                            label="Adresse Email"
+                            type="email"
+                            v-model="form.email"
+                            required
+                            autofocus
+                            autocomplete="username"
+                            wrapper-class="w-full"
+                            :error="form.errors.email"
+                        />
 
-                            <TextInput
-                                id="email"
-                                type="email"
-                                class="mt-1 block w-full h-12 text-lg px-3 py-2 rounded-xl bg-white text-base text-primary-txt 
-                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
-                                v-model="form.email"
-                                required
-                                autofocus
-                                autocomplete="username"
-                            />
-
-                            <InputError class="mt-2" :message="form.errors.email" />
-                        </div>
-
-                        <div class="mt-4">
-                            <InputLabel for="password" value="Mot de Passe" class="text-primary-txt font-bold" />
-
-                            <div class="flex items-center mt-1 relative">
-                                <TextInput
-                                    id="password"
-                                    :type="showPassword ? 'text' : 'password'"
-                                    class="mt-1 block w-full h-12 text-lg px-3 py-2 rounded-xl bg-white text-base text-primary-txt 
-                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
-                                    v-model="form.password"
-                                    required
-                                    autocomplete="current-password"
-                                    
-                                />
-
+                        <BaseInput
+                            id="password"
+                            name="password"
+                            label="Mot de Passe"
+                            :type="showPassword ? 'text' : 'password'"
+                            v-model="form.password"
+                            required
+                            autocomplete="current-password"
+                            wrapper-class="mt-4 w-full"
+                            :error="form.errors.password"
+                        >
+                            <template #append>
                                 <button
                                     type="button"
                                     @click="togglePassword"
-                                    class="absolute right-3 text-primary-txt"
-                                    >
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-primary-txt"
+                                >
                                     <span v-if="showPassword">👁️</span>
                                     <span v-else>👁️‍🗨️</span>
-                                </button> 
-                            </div>
-
-                                <InputError class="mt-2" :message="form.errors.password" />
-                        </div>
+                                </button>
+                            </template>
+                        </BaseInput>
 
                         <div class="mt-6 block">
                             <label class="flex items-center">
@@ -129,5 +116,3 @@ const submit = () => {
  
     </GuestLayout>
 </template>
-
- 

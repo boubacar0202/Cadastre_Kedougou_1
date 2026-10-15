@@ -261,38 +261,23 @@ const submitForm = function () {
                                     <div
                                         class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full max-w-xl "
                                     > 
-                                        <div class="flex relative sm:col-span-4">
-                                            <div class="sm:col-span-1 mr-2"> 
-                                                <input
-                                                    type="text"
-                                                    name="txt_num_lotissement"
-                                                    v-model="form.txt_num_lotissement" 
-                                                    required
-                                                    aria-label="Rechercher"
-                                                    class="h-8 block w-28 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                        placeholder="Numéro Lot"
-                                                    @keyup.enter="rechercherDossier" 
-                                                > 
-                                            </div>
-                                            <div class="sm:col-span-1 mr-2"> 
-                                                <select
-                                                    type="text"
-                                                    name="txt_lotissement"
-                                                    v-model="form.txt_lotissement" 
-                                                    autocomplete="off" 
-                                                    class="h-8 block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                        outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                        placeholder="Entrer le numéro dossier conserné"
-                                                > 
-                                                    <option value="">Choisir le lotissement</option>
-                                                    <option v-for="(ref, index) in referencesLot" :key="index" :value="ref">
-                                                        {{ ref }}
-                                                    </option> 
-                                                </select>
-                                            </div>
+                                        <div class="flex flex-wrap items-center gap-2 sm:col-span-4">
+                                            <BaseInput
+                                                type="text"
+                                                name="txt_num_lotissement"
+                                                v-model="form.txt_num_lotissement"
+                                                required
+                                                placeholder="Numéro Lot"
+                                                wrapper-class="w-32"
+                                                @keyup.enter="rechercherDossier"
+                                            />
+                                            <BaseSelect
+                                                name="txt_lotissement"
+                                                v-model="form.txt_lotissement"
+                                                :options="referencesLot"
+                                                placeholder="Choisir le lotissement"
+                                                wrapper-class="w-64"
+                                            />
                                         </div>  
                                         <MazBtn  
                                             type="button"

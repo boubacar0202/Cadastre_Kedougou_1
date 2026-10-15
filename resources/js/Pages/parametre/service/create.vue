@@ -308,32 +308,19 @@ const confirmerSuppression = async ({ adminCode } = {}) => {
                                     </h1>
 
                                     <div class="flex flex-wrap items-center gap-2">
-                                        <div>
-                                            <input
-                                                v-model="refTitre"
-                                                type="search"
-                                                id="default-search"
-                                                aria-label="Rechercher par titre"
-                                                class="h-10 block w-64 rounded-xl bg-white px-3 text-sm text-primary-txt border border-primary-only placeholder:text-primary-txt/50 focus:outline-none focus:ring-2 focus:ring-primary-menu/40 focus:border-primary-menu"
-                                                placeholder="Rechercher Titre"
-                                            />
-                                        </div>
-                                        <div>
-                                            <select
-                                                v-model="refService"
-                                                aria-label="Filtrer par type"
-                                                class="h-10 block w-44 rounded-xl bg-white px-3 text-sm text-primary-txt border border-primary-only focus:outline-none focus:ring-2 focus:ring-primary-menu/40 focus:border-primary-menu"
-                                            >
-                                                <option value="">Tous</option>
-                                                <option
-                                                    v-for="service in uniqueServices"
-                                                    :key="service"
-                                                    :value="service"
-                                                >
-                                                    {{ service }}
-                                                </option>
-                                            </select>
-                                        </div>
+                                        <BaseInput
+                                            v-model="refTitre"
+                                            type="search"
+                                            id="default-search"
+                                            placeholder="Rechercher Titre"
+                                            wrapper-class="w-64"
+                                        />
+                                        <BaseSelect
+                                            v-model="refService"
+                                            :options="uniqueServices"
+                                            placeholder="Tous"
+                                            wrapper-class="w-44"
+                                        />
                                     </div>
                                 </div>
                             </div>

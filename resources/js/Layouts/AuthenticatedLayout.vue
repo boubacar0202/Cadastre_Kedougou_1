@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3'; 
 import NavLink from '@/Components/NavLink.vue';
 import { toast } from "@/Components/AppToast"; 
@@ -8,7 +8,8 @@ import { route } from 'ziggy-js'
 
 // Récupérer l'utilisateur depuis les props Inertia
 const page = usePage();
-const user = page.props.auth?.user;
+const user = computed(() => page.props.auth?.user);
+const isAdmin = computed(() => user.value?.role === 'admin');
 const isMenuOpen = ref(false);
 const isDesktop = ref(false);
 const showingNavigationDropdown = ref(false);
@@ -108,7 +109,7 @@ const fetchUnreadTotal = async () => {
 };
 
 // Ouvrir automatiquement si on est dans parametre.*
-if (route().current('parametre.*')) {
+if (isAdmin.value && route().current('parametre.*')) {
     isSettingsOpen.value = true;
 }
 
@@ -183,7 +184,7 @@ watch(isMenuOpen, (newValue) => {
 
     <div class="flex min-h-screen w-full bg-primary-layout">
         <!-- Sidebar -->
-        <nav class="app-sidebar fixed inset-y-0 left-0 z-40 flex h-screen w-64 flex-col overflow-y-auto border-r border-primary-only/70 bg-white/95 p-4 shadow-sm">
+        <nav class="app-sidebar fixed inset-y-0 left-0 z-40 flex h-screen w-64 flex-col overflow-y-auto p-4">
             <!-- Logo -->
             <div class="flex items-center justify-center mb-6">
                 <Link :href="route('dashboard')">
@@ -217,7 +218,7 @@ watch(isMenuOpen, (newValue) => {
                                 class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
                                 hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2 
                                 rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('dashboard')}">
-                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5z" fill="#ff7a18"/>
                                 </svg>
                                 Accueil
@@ -227,7 +228,7 @@ watch(isMenuOpen, (newValue) => {
                                 class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
                                 hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2 
                                 rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('secretariat.create')}">
-                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                     <path d="M4 6h7l2 2h7v10a2 2 0 0 1-2 2H4V6z" fill="#ff7a18"/>
                                     <path d="M12 11v6m-3-3h6" stroke="white" stroke-width="2"/>
                                 </svg>
@@ -238,7 +239,7 @@ watch(isMenuOpen, (newValue) => {
                                 class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
                                 hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
                                 rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('arrivee.create') || route().current('arrivee.edit')}">
-                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                     <path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z" fill="#ff7a18"/>
                                     <path d="M22 6l-10 7L2 6" stroke="white" stroke-width="1.6"/>
                                 </svg>
@@ -249,9 +250,10 @@ watch(isMenuOpen, (newValue) => {
                                 class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
                                 hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
                                 rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('depart.create') || route().current('depart.edit')}">
-                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                     <path d="M4 4h16a2 2 0 012 2v9l-5 5H4a2 2 0 01-2-2V6a2 2 0 012-2z" fill="#ff7a18"/>
                                     <path d="M17 15v5l5-5h-5z" fill="#613104"/>
+                                    <path d="M7 12h7m0 0-2.2-2.2M14 12l-2.2 2.2" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
                                 Enregistrement Départs
                             </NavLink> 
@@ -260,7 +262,7 @@ watch(isMenuOpen, (newValue) => {
                                 class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
                                 hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2 
                                 rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('geometre.create')}">
-                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                     <path d="M12 21s7-4.5 7-11a7 7 0 10-14 0c0 6.5 7 11 7 11z" fill="#ff7a18"/>
                                     <circle cx="12" cy="10" r="2" fill="white"/>
                                 </svg>
@@ -271,7 +273,7 @@ watch(isMenuOpen, (newValue) => {
                                 class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
                                 hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2 
                                 rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('matriceCadastrale.create')}">
-                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                     <rect x="3" y="4" width="7" height="7" fill="#6a11cb"/>
                                     <rect x="14" y="4" width="7" height="7" fill="#ff7a18"/>
                                     <rect x="3" y="13" width="7" height="7" fill="#ff7a18"/>
@@ -284,19 +286,19 @@ watch(isMenuOpen, (newValue) => {
                                 class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
                                 hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2 
                                 rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('mutation.create')}">
-                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                     <path d="M7 7h11l-3-3m3 3l-3 3" stroke="#ff512f" stroke-width="2" stroke-linecap="round"/>
                                     <path d="M17 17H6l3 3m-3-3l3-3" stroke="#dd2476" stroke-width="2" stroke-linecap="round"/>
                                 </svg>
                                 Mutations
                             </NavLink>
  
-                            <NavLink 
+                            <NavLink v-if="isAdmin"
                                     :href="route('lotissement.index')" :active="(route().current() || '') === 'lotissement.index'"
                                     class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
                                     rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
                                 >
-                                <svg class="w-6 h-4 mr-4" viewBox="0 0 24 24" fill="none">
+                                <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                     <rect x="4" y="5" width="16" height="3" fill="#6a11cb"/>
                                     <rect x="4" y="10.5" width="16" height="3" fill="#ff7a18"/>
                                     <rect x="4" y="16" width="16" height="3" fill="#ff7a18"/>
@@ -309,7 +311,7 @@ watch(isMenuOpen, (newValue) => {
                                     class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
                                     rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
                                 >    
-                                <svg class="w-6 h-4 mr-4" viewBox="0 0 24 24" fill="none">
+                                <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                     <path d="M4 4h10v16H4z" fill="#ff7a18"/>
                                     <path d="M14 7h6v13h-6z" fill="#00c6ff"/>
                                     <path d="M7 8h4M7 12h4M7 16h4" stroke="white" stroke-width="1.5"/>
@@ -321,7 +323,7 @@ watch(isMenuOpen, (newValue) => {
                                 class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
                                 hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
                                 rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('instance.create')}">
-                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                     <rect x="3" y="4" width="18" height="16" rx="2" fill="#ff7a18"/>
                                     <path d="M7 9h10M7 13h10M7 17h6" stroke="white" stroke-width="1.6"/>
                                 </svg>
@@ -332,7 +334,7 @@ watch(isMenuOpen, (newValue) => {
                                 class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
                                 hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
                                 rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('instancearrivee.create')}">
-                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                     <path d="M4 6h16v12H4z" fill="#ff7a18"/>
                                     <path d="M4 6l8 6 8-6" stroke="white" stroke-width="1.6"/>
                                 </svg>
@@ -343,9 +345,9 @@ watch(isMenuOpen, (newValue) => {
                                 class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
                                 hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
                                 rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('instancedepart.create')}">
-                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                     <path d="M4 6h16v12H4z" fill="#ff7a18"/>
-                                    <path d="M12 16V8m0 8l-3-3m3 3l3-3" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                                    <path d="M12 16V8M9 11l3-3 3 3" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
                                 Base Courriers Départs
                             </NavLink>
@@ -354,7 +356,7 @@ watch(isMenuOpen, (newValue) => {
                                 class="hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
                                 hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2 
                                 rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('donnee.create')}">
-                                <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                     <ellipse cx="12" cy="5" rx="8" ry="3" fill="#ff7a18"/>
                                     <path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5" fill="#4facfe"/>
                                     <path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" fill="#ff7a18"/>
@@ -366,7 +368,7 @@ watch(isMenuOpen, (newValue) => {
                                 class="relative hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
                                 hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2 
                                 rounded-xl text-lg text-primary-txt border-l-8 border flex items-center" :class="{'border-primary-menu': route().current('plan.create')}">
-                                <svg class="w-6 h-6 mr-4 globe" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <svg class="w-6 h-6 mr-4 shrink-0 globe" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <defs>
                                         <linearGradient id="earth" x1="0" y1="0" x2="1" y2="1">
                                             <stop offset="0%" stop-color="#ff7a18"/>
@@ -383,7 +385,8 @@ watch(isMenuOpen, (newValue) => {
                                 Plan
                             </NavLink>
                             
-                            <!-- Paramètres -->
+                            <!-- Paramètres : visible uniquement pour les administrateurs -->
+                            <template v-if="isAdmin">
                             <div
                                 class="relative h-10 hover:bg-primary-dark hover:from-primary hover:to-primary-dark hover:bg-gradient-to-r
                                 hover:shadow-lg hover:scale-[1.02] hover:text-white hover:font-bold hover:text-1xl 
@@ -395,17 +398,15 @@ watch(isMenuOpen, (newValue) => {
                                     :active="route().current().startsWith('parametre.')"
                                     class="hover:text-white text-md text-primary-txt h-10"
                                 >
-                                    <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
-                                        <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" fill="#ff7a18"/>
-                                        <path d="M19.4 15a7.8 7.8 0 0 0 .1-1l2-1.5-2-3.5-2.3.6a7.5 7.5 0 0 0-1.7-1L15 6h-6l-.5 2.6a7.5 7.5 0 0 0-1.7 1L4.5 9l-2 3.5 2 1.5a7.8 7.8 0 0 0 .1 1L2.6 17l2 3.5 2.3-.6c.5.4 1.1.7 1.7 1L9 23h6l.5-2.6c.6-.3 1.2-.6 1.7-1l2.3.6 2-3.5-2.1-2z" fill="#ff7a18" opacity="0.9"/>
+                                    <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
+                                        <path d="M19.4 15a7.8 7.8 0 0 0 .1-1l2-1.5-2-3.5-2.3.6a7.5 7.5 0 0 0-1.7-1L15 6h-6l-.5 2.6a7.5 7.5 0 0 0-1.7 1L4.5 9l-2 3.5 2 1.5a7.8 7.8 0 0 0 .1 1L2.6 17l2 3.5 2.3-.6c.5.4 1.1.7 1.7 1L9 23h6l.5-2.6c.6-.3 1.2-.6 1.7-1l2.3.6 2-3.5-2.1-2z" fill="#ff7a18"/>
+                                        <circle cx="12" cy="12" r="3.2" fill="white"/>
                                     </svg>
                                     Paramètres
                                 </NavLink>
-                                <button @click.stop="isSettingsOpen = !isSettingsOpen">
-                                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                        viewBox="0 0 24 24" stroke="#5f2e01">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 5l7 7-7 7" />
+                                <button @click.stop="isSettingsOpen = !isSettingsOpen" aria-label="Ouvrir les paramètres">
+                                    <svg class="w-6 h-6 transition-transform duration-200" :class="{ 'rotate-90': isSettingsOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#5f2e01">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                     </svg>
                                 </button>
                             </div>
@@ -416,9 +417,11 @@ watch(isMenuOpen, (newValue) => {
                                     class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
                                     rounded-xl text-lg text-primary-txt border-l-8 border flex items-center justify-between"
                                 >
-                                    <svg class="w-6 h-4 mr-4" viewBox="0 0 24 24" fill="none">
+                                    <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                         <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" fill="#ff7a18"/>
                                         <path d="M4 20a8 8 0 0 1 16 0" fill="#ff7a18"/>
+                                        <path d="M16.8 13.2 19.4 14.1v2.1c0 1.4-1 2.4-2.6 3-1.6-.6-2.6-1.6-2.6-3v-2.1l2.6-.9z" fill="#613104"/>
+                                        <path d="M15.9 16.1 16.8 17 18.4 15.4" stroke="white" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                     Administrateur
                                 </NavLink>
@@ -428,9 +431,11 @@ watch(isMenuOpen, (newValue) => {
                                     class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
                                     rounded-xl text-lg text-primary-txt border-l-8 border flex items-center justify-between"
                                 >
-                                    <svg class="w-6 h-4 mr-4" viewBox="0 0 24 24" fill="none">
-                                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" fill="#ff7a18"/>
-                                        <path d="M4 20a8 8 0 0 1 16 0" fill="#ff7a18"/>
+                                    <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
+                                        <circle cx="16.2" cy="9" r="2.5" fill="#613104"/>
+                                        <path d="M12.4 19.6c.2-2.4 1.5-4 3.8-4s3.6 1.6 3.8 4z" fill="#613104"/>
+                                        <circle cx="9" cy="8.4" r="3.1" fill="#ff7a18"/>
+                                        <path d="M3.4 20c.3-3.2 2.5-5.4 5.6-5.4s5.3 2.2 5.6 5.4z" fill="#ff7a18"/>
                                     </svg>
                                     Utilisateurs
                                 </NavLink>
@@ -439,24 +444,15 @@ watch(isMenuOpen, (newValue) => {
                                     class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
                                     rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
                                 >
-                                    <svg class="w-6 h-4 mr-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <!-- Terrain principal (lotissement) -->
-                                        <rect x="2" y="3" width="18" height="16" rx="2" fill="#ff7a18" />
-                                        
-                                        <!-- Ligne séparatrice horizontale (parcelles) -->
-                                        <line x1="2" y1="10.5" x2="20" y2="10.5" stroke="white" stroke-width="1.5" />
-                                        
-                                        <!-- Ligne séparatrice verticale (parcelles) -->
-                                        <line x1="11" y1="3" x2="11" y2="19" stroke="white" stroke-width="1.5" />
-                                        
-                                        <!-- Petites maisons sur les parcelles (optionnel) -->
-                                        <path d="M5 8 L5 6 L7 6 L7 8" stroke="white" stroke-width="1.2" fill="none" />
-                                        <path d="M14 8 L14 6 L16 6 L16 8" stroke="white" stroke-width="1.2" fill="none" />
-                                        
-                                        <!-- Symbole + (ajouter) en bas à droite -->
-                                        <circle cx="21" cy="20" r="4.5" fill="#ff7a18" stroke="white" stroke-width="1.5" />
-                                        <line x1="18.5" y1="20" x2="23.5" y2="20" stroke="white" stroke-width="2" />
-                                        <line x1="21" y1="17.5" x2="21" y2="22.5" stroke="white" stroke-width="2" />
+                                    <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="2" y="2.5" width="15" height="13.5" rx="2" fill="#ff7a18" />
+                                        <line x1="2" y1="9.2" x2="17" y2="9.2" stroke="white" stroke-width="1.4" />
+                                        <line x1="9.5" y1="2.5" x2="9.5" y2="16" stroke="white" stroke-width="1.4" />
+                                        <path d="M5 6.6V5.2h1.5v1.4" stroke="white" stroke-width="1.1" fill="none" />
+                                        <path d="M12.2 6.6V5.2h1.5v1.4" stroke="white" stroke-width="1.1" fill="none" />
+                                        <circle cx="18.6" cy="18.6" r="3.6" fill="#ff7a18" stroke="white" stroke-width="1.3" />
+                                        <line x1="16.8" y1="18.6" x2="20.4" y2="18.6" stroke="white" stroke-width="1.6" />
+                                        <line x1="18.6" y1="16.8" x2="18.6" y2="20.4" stroke="white" stroke-width="1.6" />
                                     </svg>
                                     Ajouter/Lotissements
                                 </NavLink>
@@ -465,26 +461,18 @@ watch(isMenuOpen, (newValue) => {
                                     class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
                                     rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
                                 >
-                                    <svg class="w-6 h-4 mr-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <!-- Épingle / Marqueur principal -->
-                                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 6 12 7 13.25C13 21 19 14.25 19 9c0-3.87-3.13-7-7-7z" 
-                                            fill="#ff7a18" />
-                                        <circle cx="12" cy="9" r="3" fill="white" />
-                                        
-                                        <!-- Points secondaires (densification) -->
-                                        <circle cx="4" cy="16" r="2.5" fill="#ff7a18" opacity="0.7" />
-                                        <circle cx="4" cy="16" r="1.2" fill="white" />
-                                        
-                                        <circle cx="20" cy="16" r="2.5" fill="#ff7a18" opacity="0.7" />
-                                        <circle cx="20" cy="16" r="1.2" fill="white" />
-                                        
-                                        <circle cx="7" cy="20" r="2" fill="#ff7a18" opacity="0.6" />
-                                        <circle cx="17" cy="20" r="2" fill="#ff7a18" opacity="0.6" />
-                                        
-                                        <!-- Symbole + (ajouter) en bas à droite -->
-                                        <circle cx="22" cy="22" r="3.5" fill="#ff7a18" stroke="white" stroke-width="1.5" />
-                                        <line x1="19.5" y1="22" x2="24.5" y2="22" stroke="white" stroke-width="2" />
-                                        <line x1="22" y1="19.5" x2="22" y2="24.5" stroke="white" stroke-width="2" />
+                                    <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M10.5 2.2C7.9 2.2 5.8 4.3 5.8 6.9c0 3.6 3.8 8.2 4.7 9.1.9-.9 4.7-5.5 4.7-9.1 0-2.6-2.1-4.7-4.7-4.7z" fill="#ff7a18" />
+                                        <circle cx="10.5" cy="6.9" r="1.8" fill="white" />
+                                        <circle cx="4.2" cy="14.2" r="1.6" fill="#ff7a18" opacity="0.7" />
+                                        <circle cx="4.2" cy="14.2" r="0.7" fill="white" />
+                                        <circle cx="15.4" cy="13.6" r="1.6" fill="#ff7a18" opacity="0.7" />
+                                        <circle cx="15.4" cy="13.6" r="0.7" fill="white" />
+                                        <circle cx="6.6" cy="17.6" r="1.3" fill="#ff7a18" opacity="0.6" />
+                                        <circle cx="12.6" cy="17.8" r="1.3" fill="#ff7a18" opacity="0.6" />
+                                        <circle cx="18.7" cy="18.7" r="3.5" fill="#ff7a18" stroke="white" stroke-width="1.3" />
+                                        <line x1="16.9" y1="18.7" x2="20.5" y2="18.7" stroke="white" stroke-width="1.5" />
+                                        <line x1="18.7" y1="16.9" x2="18.7" y2="20.5" stroke="white" stroke-width="1.5" />
                                     </svg>
                                     Ajouter/Points
                                 </NavLink>
@@ -495,7 +483,7 @@ watch(isMenuOpen, (newValue) => {
                                     hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
                                     rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
                                     :class="{'border-primary-menu': route().current('parametre.service.create') || route().current('parametre.service.edit')}">
-                                    <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                    <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                         <path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="#ff7a18"/>
                                         <path d="M14 3v5h5M8 13h8M8 17h6" stroke="white" stroke-width="1.4"/>
                                     </svg>
@@ -508,7 +496,7 @@ watch(isMenuOpen, (newValue) => {
                                     hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
                                     rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
                                     :class="{'border-primary-menu': route().current('parametre.trimestre.create')}">
-                                    <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
+                                    <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                         <rect x="3" y="5" width="18" height="16" rx="2" fill="#ff7a18"/>
                                         <path d="M3 10h18M8 3v4M16 3v4" stroke="white" stroke-width="1.6"/>
                                     </svg>
@@ -521,9 +509,12 @@ watch(isMenuOpen, (newValue) => {
                                     hover:shadow-lg hover:scale-[1.02] hover:text-white hover:text-1xl hover:font-bold p-2
                                     rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
                                     :class="{'border-primary-menu': route().current('parametre.bareme.index')}">
-                                    <svg class="w-6 h-6 mr-4" viewBox="0 0 24 24" fill="none">
-                                        <rect x="3" y="4" width="18" height="16" rx="2" fill="#ff7a18"/>
-                                        <path d="M7 9h10M7 13h10M7 17h6" stroke="white" stroke-width="1.6"/>
+                                    <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
+                                        <path d="M12 4v14" stroke="#ff7a18" stroke-width="2" stroke-linecap="round"/>
+                                        <path d="M8 20h8" stroke="#ff7a18" stroke-width="2" stroke-linecap="round"/>
+                                        <path d="M4.5 8h15" stroke="#ff7a18" stroke-width="2" stroke-linecap="round"/>
+                                        <path d="M4.5 8 2 14h5L4.5 8z" fill="#ff7a18"/>
+                                        <path d="M19.5 8 17 14h5l-2.5-6z" fill="#ff7a18"/>
                                     </svg>
                                     Barèmes
                                 </NavLink> 
@@ -534,7 +525,7 @@ watch(isMenuOpen, (newValue) => {
                                     class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
                                     rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"
                                 >
-                                    <svg class="w-6 h-4 mr-4" viewBox="0 0 24 24" fill="none">
+                                    <svg class="w-6 h-6 mr-4 shrink-0" viewBox="0 0 24 24" fill="none">
                                         <path d="M4 20V4" stroke="#ff7a18" stroke-width="2"/>
                                         <path d="M4 20h16" stroke="#ff7a18" stroke-width="2"/>
                                         <path d="M7 15l3-4 3 2 4-6" stroke="#00c6ff" stroke-width="2" fill="none"/>
@@ -543,6 +534,7 @@ watch(isMenuOpen, (newValue) => {
                                 </NavLink> 
 
                             </div>
+                            </template>
                         </div>
                     </div>
                 </transition>
@@ -570,12 +562,12 @@ watch(isMenuOpen, (newValue) => {
                             {{ user?.name?.charAt(0).toUpperCase() }}
                         </div>
                         <span class="font-medium">{{ user?.name }}</span>
-                        <svg 
+                        <svg
                             class="w-4 h-4 transition-transform duration-300"
                             :class="{ 'rotate-180': showingNavigationDropdown }"
-                            xmlns="http://www.w3.org/2000/svg" 
-                            fill="none" 
-                            viewBox="0 0 24 24" 
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
                             stroke="currentColor"
                         >
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -590,7 +582,7 @@ watch(isMenuOpen, (newValue) => {
                         leave-from-class="opacity-100 scale-100 translate-y-0"
                         leave-to-class="opacity-0 scale-95 translate-y-1"
                     >
-                        <div 
+                        <div
                             v-if="showingNavigationDropdown"
                             class="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50"
                         >
@@ -600,9 +592,19 @@ watch(isMenuOpen, (newValue) => {
                             </div>
 
                             <div class="py-2">
-                                <Link 
-                                    :href="route('logout')" 
-                                    method="post" 
+                                <Link
+                                    :href="route('profile.edit')"
+                                    class="flex items-center gap-2 w-full px-4 py-2 text-sm text-primary-txt hover:bg-primary-form transition"
+                                >
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <circle cx="12" cy="8" r="3.2" stroke-width="1.8"/>
+                                        <path d="M5 19.5c.8-3.2 3.2-5 7-5s6.2 1.8 7 5" stroke-width="1.8" stroke-linecap="round"/>
+                                    </svg>
+                                    Profil
+                                </Link>
+                                <Link
+                                    :href="route('logout')"
+                                    method="post"
                                     as="button"
                                     class="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
                                 >

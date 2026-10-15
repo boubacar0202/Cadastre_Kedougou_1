@@ -48,4 +48,18 @@ class User extends Authenticatable
             'is_validated' => 'boolean',
         ];
     }
+
+    /**
+     * Ramène un libellé saisi (admin, Administrateur, utilisateur…) à la valeur stockée.
+     */
+    public static function normalizeRole(mixed $role): string
+    {
+        $value = strtolower(trim((string) $role));
+
+        return match ($value) {
+            'admin', 'administrateur' => 'admin',
+            'user', 'utilisateur' => 'user',
+            default => $value,
+        };
+    }
 }

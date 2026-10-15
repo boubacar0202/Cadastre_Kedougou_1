@@ -130,38 +130,38 @@ onMounted(() => {
                 class="min-h-screen bg-cover bg-center bg-no-repeat"
                 style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/9/93/Map_of_the_departments_of_the_K%C3%A9dougou_region_of_Senegal.png');"
             >
-                <div class="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center gap-8 px-4 py-8 italic">
+                <div class="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center gap-8 px-4 py-8">
                     <div class="flex flex-wrap items-center justify-center gap-8">
                         <div class="flex h-52 w-52 flex-col items-center justify-center rounded-full border-8 border-primary-only bg-white/80 text-center shadow-lg">
                             <span class="text-7xl font-bold text-primary-txt">{{ displayCount }}</span>
-                            <h1 class="px-6 text-sm font-bold italic text-primary-txt">DOSSIERS</h1>
+                            <h1 class="px-6 text-sm font-semibold text-primary-txt">DOSSIERS</h1>
                         </div>
                         <div class="flex h-52 w-52 flex-col items-center justify-center rounded-full border-8 border-primary-only bg-white/80 text-center shadow-lg">
                             <span class="text-7xl font-bold text-primary-txt">{{ displayCountDelim }}</span>
-                            <h1 class="px-6 text-sm font-bold italic text-primary-txt">DELIMITATIONS</h1>
+                            <h1 class="px-6 text-sm font-semibold text-primary-txt">DELIMITATIONS</h1>
                         </div>
                         <div class="flex h-52 w-52 flex-col items-center justify-center rounded-full border-8 border-primary-only bg-white/80 text-center shadow-lg">
                             <span class="text-7xl font-bold text-primary-txt">{{ displayCountNicad }}</span>
-                            <h1 class="px-6 text-sm font-bold italic text-primary-txt">ONT DES NICAD</h1>
+                            <h1 class="px-6 text-sm font-semibold text-primary-txt">ONT DES NICAD</h1>
                         </div>
                         <div class="flex h-52 w-52 flex-col items-center justify-center rounded-full border-8 border-primary-only bg-white/80 text-center shadow-lg">
                             <span class="text-7xl font-bold text-primary-txt">{{ displayCountSansNicad }}</span>
-                            <h1 class="px-6 text-sm font-bold italic text-primary-txt">SANS NICAD</h1>
+                            <h1 class="px-6 text-sm font-semibold text-primary-txt">SANS NICAD</h1>
                         </div>
                     </div>
 
                     <div class="flex flex-wrap items-center justify-center gap-8">
                         <div class="flex h-52 w-52 flex-col items-center justify-center rounded-full border-8 border-primary-only bg-white/80 text-center shadow-lg">
                             <span class="text-7xl font-bold text-primary-txt">{{ displayCountArrivee }}</span>
-                            <h1 class="px-6 text-sm font-bold italic text-primary-txt">COURRIERS ARRIVÉES</h1>
+                            <h1 class="px-6 text-sm font-semibold text-primary-txt">COURRIERS ARRIVÉES</h1>
                         </div>
                         <div class="flex h-52 w-52 flex-col items-center justify-center rounded-full border-8 border-primary-only bg-white/80 text-center shadow-lg">
                             <span class="text-7xl font-bold text-primary-txt">{{ displayCountDepart }}</span>
-                            <h1 class="px-6 text-sm font-bold italic text-primary-txt">COURRIERS DÉPARTS</h1>
+                            <h1 class="px-6 text-sm font-semibold text-primary-txt">COURRIERS DÉPARTS</h1>
                         </div>
                         <div class="flex h-52 w-52 flex-col items-center justify-center rounded-full border-8 border-primary-only bg-white/80 text-center shadow-lg">
                             <span class="text-7xl font-bold text-primary-txt">{{ displayCountInstance }}</span>
-                            <h1 class="px-6 text-sm font-bold italic text-primary-txt">COURRIERS INSTANCES</h1>
+                            <h1 class="px-6 text-sm font-semibold text-primary-txt">COURRIERS INSTANCES</h1>
                         </div>
                     </div>
                 </div> 

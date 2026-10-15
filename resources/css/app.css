@@ -6,6 +6,13 @@
     --maz-color-primary: #FE5835 !important;
     --maz-color-primary-dark: #e04c2f !important;
     --maz-color-primary-light: #ff7553 !important;
+    --sb-size: 8px;
+    --sb-track: #faefe6;
+    --sb-thumb: #c7812e;
+    --sb-thumb-hover: #613104;
+    --side-bg: #fff9f4;
+    --side-border: #e6c5a2;
+    --side-radius: 1.5rem;
 }
 
 .maz-input {
@@ -21,29 +28,9 @@ input[type="checkbox"]:checked {
     accent-color: #FE5835; /* Remplace par ta couleur primaire */
 }
 
-/* Personnalisation de la barre de défilement dans un select */
 select {
-    overflow-y: auto; /* Active le défilement vertical */
-    scrollbar-width: thin; /* Pour les navigateurs Firefox */
-  }
-  
-  /* Personnalisation pour les navigateurs basés sur WebKit */
-  select::-webkit-scrollbar {
-    width: 8px; /* Largeur de la barre de défilement */
-  }
-  
-  select::-webkit-scrollbar-track {
-    background: #f1f1f1; /* Couleur de fond de la piste */
-  }
-  
-  select::-webkit-scrollbar-thumb {
-    background: #6d3500; /* Couleur primaire de ton thème */
-    border-radius: 10px;
-  }
-  
-  select::-webkit-scrollbar-thumb:hover {
-    background: #bd7b00; /* Couleur sur hover */
-  }
+    overflow-y: auto;
+}
 
 @layer base {
     html {
@@ -52,7 +39,10 @@ select {
 
     body {
         font-family: Figtree, ui-sans-serif, system-ui, sans-serif;
-        color: #66380a;
+        font-size: 0.875rem;
+        font-weight: 500;
+        line-height: 1.5;
+        color: #643407;
         background-color: #faefe6;
         text-rendering: optimizeLegibility;
     }
@@ -60,7 +50,8 @@ select {
     input,
     select,
     textarea,
-    button {
+    button,
+    option {
         font-family: inherit;
         color: inherit;
     }
@@ -106,29 +97,155 @@ main table tbody tr:hover td {
 
 header h1,
 header h2 {
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    font-style: normal !important;
+    line-height: 1.25 !important;
     letter-spacing: -0.02em;
     color: #613104;
 }
 
+header p {
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-style: normal;
+    color: #643407;
+}
+
+label {
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    font-style: normal !important;
+    letter-spacing: 0 !important;
+    color: #643407;
+}
+
+input,
+select,
+textarea,
+option {
+    font-family: Figtree, ui-sans-serif, system-ui, sans-serif !important;
+    font-size: 0.875rem !important;
+}
+
+main .bg-primary h1,
+main .bg-primary h2,
+main .bg-primary h3 {
+    font-size: 1.125rem !important;
+    font-weight: 600 !important;
+    font-style: normal !important;
+    line-height: 1.35 !important;
+    letter-spacing: 0 !important;
+    color: #fff !important;
+}
+
+main .bg-primary-form h1,
+main .bg-primary-form h2,
+main .bg-primary-form h3,
+main .bg-white h1,
+main .bg-white h2,
+main .bg-white h3 {
+    font-size: 1.125rem !important;
+    font-weight: 600 !important;
+    font-style: normal !important;
+    line-height: 1.35 !important;
+    letter-spacing: 0 !important;
+}
+
+main table th,
+main table td {
+    font-family: Figtree, ui-sans-serif, system-ui, sans-serif !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    font-style: normal !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+}
+
+main table thead th {
+    font-weight: 600 !important;
+}
+
+.font-mono {
+    font-family: Figtree, ui-sans-serif, system-ui, sans-serif !important;
+}
+
+.leaflet-container,
+.leaflet-popup-content,
+.maz-input,
+.maz-input input {
+    font-family: Figtree, ui-sans-serif, system-ui, sans-serif !important;
+}
+
+nav.app-sidebar a,
+nav.app-sidebar a:hover,
+nav.app-sidebar button {
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    font-style: normal !important;
+    letter-spacing: 0 !important;
+    line-height: 1.35 !important;
+}
+
+nav.app-sidebar {
+    background: linear-gradient(180deg, var(--side-bg) 0%, #faefe6 100%);
+    border-right: 1px solid var(--side-border);
+    border-radius: 0 var(--side-radius) var(--side-radius) 0;
+    box-shadow: 10px 0 28px rgba(97, 49, 4, 0.1);
+}
+
 nav.app-sidebar a {
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    border-radius: 0.9rem;
 }
 
 nav.app-sidebar a:hover {
     transform: none;
 }
 
-::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+aside.app-sidepanel {
+    background: linear-gradient(180deg, var(--side-bg) 0%, #faefe6 100%);
+    border: 0;
+    border-right: 1px solid var(--side-border);
+    border-radius: 0;
+    box-shadow: none;
 }
 
-::-webkit-scrollbar-thumb {
-    background: #e6c5a2;
+.app-sidepanel:not(aside) {
+    background: rgba(255, 249, 244, 0.96);
+    border: 1px solid var(--side-border);
+    border-radius: var(--side-radius);
+    box-shadow: 0 16px 40px rgba(97, 49, 4, 0.12);
+}
+
+html,
+body,
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--sb-thumb) var(--sb-track);
+}
+
+*::-webkit-scrollbar {
+    width: var(--sb-size);
+    height: var(--sb-size);
+}
+
+*::-webkit-scrollbar-track {
+    background: var(--sb-track);
     border-radius: 999px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: #c7812e;
+*::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #d4923f, var(--sb-thumb));
+    border: 2px solid var(--sb-track);
+    border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--sb-thumb-hover);
+}
+
+*::-webkit-scrollbar-corner {
+    background: transparent;
 }
 

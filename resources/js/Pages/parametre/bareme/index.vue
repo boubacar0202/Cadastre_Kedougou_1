@@ -188,15 +188,12 @@ const confirmerSuppression = async ({ adminCode } = {}) => {
                             <h1 class="text-lg text-white font-semibold">
                                 Barèmes ({{ lignesFiltrees.length }})
                             </h1>
-                            <select
+                            <BaseSelect
                                 v-model="filtreGroupe"
-                                class="h-10 rounded-xl bg-white px-3 text-sm text-primary-txt border border-primary-only"
-                            >
-                                <option value="">Tous les groupes</option>
-                                <option v-for="groupe in groupes" :key="groupe.value" :value="groupe.value">
-                                    {{ groupe.label }}
-                                </option>
-                            </select>
+                                :options="groupes"
+                                placeholder="Tous les groupes"
+                                wrapper-class="w-56"
+                            />
                         </div>
 
                         <DeleteModal
@@ -224,28 +221,25 @@ const confirmerSuppression = async ({ adminCode } = {}) => {
                                     <tr v-for="ligne in lignesFiltrees" :key="ligne.id" class="bg-white text-center">
                                         <td class="px-2 py-2 border border-primary-only">{{ libelleGroupe(ligne.groupe) }}</td>
                                         <td class="px-2 py-2 border border-primary-only">
-                                            <select
+                                            <BaseSelect
                                                 v-if="ligne.groupe === 'batiment'"
                                                 v-model="ligne.type"
-                                                class="h-10 w-full rounded-xl bg-white px-2 text-sm border border-primary-only"
-                                            >
-                                                <option v-for="type in typesBatiment" :key="type.value" :value="type.value">
-                                                    {{ type.label }}
-                                                </option>
-                                            </select>
+                                                :options="typesBatiment"
+                                                wrapper-class="w-full"
+                                            />
                                             <span v-else>—</span>
                                         </td>
                                         <td class="px-2 py-1 border border-primary-only">
-                                            <input v-model="ligne.code" type="text" class="h-8 w-20 rounded-xl border border-primary-only px-2 text-center" />
+                                            <BaseInput v-model="ligne.code" type="text" input-class="text-center" wrapper-class="w-full" />
                                         </td>
                                         <td class="px-2 py-1 border border-primary-only">
-                                            <input v-model.number="ligne.prix" type="number" min="0" class="h-8 w-32 rounded-xl border border-primary-only px-2 text-right" />
+                                            <BaseInput v-model.number="ligne.prix" type="number" min="0" input-class="text-right" wrapper-class="w-full" />
                                         </td>
                                         <td class="px-2 py-1 border border-primary-only">
-                                            <input v-model.number="ligne.ordre" type="number" min="0" class="h-8 w-16 rounded-xl border border-primary-only px-2 text-center" />
+                                            <BaseInput v-model.number="ligne.ordre" type="number" min="0" input-class="text-center" wrapper-class="w-full" />
                                         </td>
                                         <td class="px-2 py-1 border border-primary-only">
-                                            <input v-model="ligne.actif" type="checkbox" class="h-4 w-4" />
+                                            <input v-model="ligne.actif" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary" />
                                         </td>
                                         <td class="px-2 py-1 border border-primary-only whitespace-nowrap">
                                             <button

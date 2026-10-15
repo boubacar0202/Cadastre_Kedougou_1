@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BaseInput from '@/Components/BaseInput.vue';
+import BaseSelect from '@/Components/BaseSelect.vue';
 import { ref, computed, watch, nextTick } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import { defineProps, onMounted } from 'vue';
@@ -345,80 +347,17 @@ const formatDateDMY = (dateStr) => {
                                     </p>
  
                                     <form @submit.prevent class="flex flex-wrap items-center gap-2">
-                                        <div class="flex flex-wrap items-center gap-1">
-                                            <div>
-                                                <input 
-                                                    v-model="mois"
-                                                    type="search"
-                                                    maxlength="4"
-                                                    id="default-search"
-                                                    aria-label="Rechercher"
-                                                    class="h-10 block w-20 rounded-xl bg-white px-3 text-sm text-primary-txt border border-primary-only placeholder:text-primary-txt/50 focus:outline-none focus:ring-2 focus:ring-primary-menu/40 focus:border-primary-menu"
-                                                    placeholder="Mois"
-                                                /> 
-                                            </div>
-
-                                            <div>
-                                                <input 
-                                                    v-model="annee"
-                                                    type="search"
-                                                    maxlength="4"
-                                                    id="default-search"
-                                                    aria-label="Rechercher"
-                                                    class="h-10 block w-20 rounded-xl bg-white px-3 text-sm text-primary-txt border border-primary-only placeholder:text-primary-txt/50 focus:outline-none focus:ring-2 focus:ring-primary-menu/40 focus:border-primary-menu"
-                                                    placeholder="Années"
-                                                /> 
-                                            </div>
-                                        
-                                            <div>
-                                                <input 
-                                                    v-model="numeroCA"
-                                                    type="search"
-                                                    id="default-search"
-                                                    aria-label="Rechercher"
-                                                    class="h-10 block w-28 rounded-xl bg-white px-3 text-sm text-primary-txt border border-primary-only placeholder:text-primary-txt/50 focus:outline-none focus:ring-2 focus:ring-primary-menu/40 focus:border-primary-menu"
-                                                    placeholder="N° Ordre"
-                                                />
-                                            </div> 
- 
-                                            <div>
-                                                <input 
-                                                    v-model="prenomNomCourrierArrivee"
-                                                    type="search"
-                                                    id="default-search"
-                                                    aria-label="Rechercher"
-                                                    class="h-10 block w-24 rounded-xl bg-white px-3 text-sm text-primary-txt border border-primary-only placeholder:text-primary-txt/50 focus:outline-none focus:ring-2 focus:ring-primary-menu/40 focus:border-primary-menu"
-                                                    placeholder="Prénom Nom"
-                                                />
-                                            </div>
-                                                                                        
-                                            <div>
-                                                <input 
-                                                    v-model="refCourrierArrivee"
-                                                    type="search"
-                                                    id="default-search"
-                                                    aria-label="Rechercher"
-                                                    class="h-10 block w-24 rounded-xl bg-white px-3 text-sm text-primary-txt border border-primary-only placeholder:text-primary-txt/50 focus:outline-none focus:ring-2 focus:ring-primary-menu/40 focus:border-primary-menu"
-                                                    placeholder="Ref.C.A"
-                                                />
-                                            </div>
-                                                   
-                                            <div>
-                                                <select
-                                                    v-model="refDesignation"
-                                                    class="h-10 block w-28 rounded-xl bg-white px-3 text-sm text-primary-txt border border-primary-only focus:outline-none focus:ring-2 focus:ring-primary-menu/40 focus:border-primary-menu"
-                                                >
-                                                    <option value="">Tous</option> 
-                                                    <option
-                                                        v-for="designation in uniqueDesignations"
-                                                        :key="designation"
-                                                        :value="designation"
-                                                    >
-                                                        {{ designation }}
-                                                    </option>
-                                                </select>
-                                            </div> 
-                                        </div>
+                                        <BaseInput v-model="mois" type="search" maxlength="4" placeholder="Mois" wrapper-class="w-20" />
+                                        <BaseInput v-model="annee" type="search" maxlength="4" placeholder="Années" wrapper-class="w-20" />
+                                        <BaseInput v-model="numeroCA" type="search" placeholder="N° Ordre" wrapper-class="w-28" />
+                                        <BaseInput v-model="prenomNomCourrierArrivee" type="search" placeholder="Prénom Nom" wrapper-class="w-32" />
+                                        <BaseInput v-model="refCourrierArrivee" type="search" placeholder="Ref.C.A" wrapper-class="w-28" />
+                                        <BaseSelect
+                                            v-model="refDesignation"
+                                            :options="uniqueDesignations"
+                                            placeholder="Tous"
+                                            wrapper-class="w-36"
+                                        />
                                     </form>
                                 </div>
                             </div>
@@ -603,29 +542,6 @@ thead th {
     padding: 10px 10px !important;
     font-size: 0.70rem !important;
     background-color: #E6C5A2;
-}
-
-.overflow-x-auto {
-    scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 #f1f5f9;
-}
-
-.overflow-x-auto::-webkit-scrollbar {
-    height: 6px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 4px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
 }
 
 tr:hover td {

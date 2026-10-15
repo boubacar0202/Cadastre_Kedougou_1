@@ -1,5 +1,7 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';  
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BaseInput from '@/Components/BaseInput.vue';
+import BaseSelect from '@/Components/BaseSelect.vue';
 import { defineProps, onMounted } from 'vue'; 
 import { ref, computed, watch } from 'vue';
 import { Head, router, Link as InertiaLink } from '@inertiajs/vue3';
@@ -202,57 +204,31 @@ function supprimerCourrierDepart(depart) {
                                     </h1>  
 
                                     <form @submit.prevent class="flex flex-wrap items-center gap-2">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <div>
-                                                <input 
-                                                    v-model="annee"
-                                                    type="search"
-                                                    maxlength="4"
-                                                    id="default-search"
-                                                    aria-label="Rechercher"
-                                                    class="h-10 block w-20 rounded-xl bg-white px-3 text-sm text-primary-txt border border-primary-only placeholder:text-primary-txt/50 focus:outline-none focus:ring-2 focus:ring-primary-menu/40 focus:border-primary-menu"
-                                                    placeholder="année"
-                                                /> 
-                                            </div>   
-
-                                            <div>
-                                                <input 
-                                                    v-model="numeroCD"
-                                                    type="search"
-                                                    id="default-search"
-                                                    aria-label="Rechercher"
-                                                    class="h-10 block w-28 rounded-xl bg-white px-3 text-sm text-primary-txt border border-primary-only placeholder:text-primary-txt/50 focus:outline-none focus:ring-2 focus:ring-primary-menu/40 focus:border-primary-menu"
-                                                    placeholder="N° Ordre"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <input 
-                                                    v-model="refCA"
-                                                    type="search"
-                                                    id="default-search"
-                                                    aria-label="Rechercher"
-                                                    class="h-10 block w-25 rounded-xl bg-white px-3 text-sm text-primary-txt border border-primary-only placeholder:text-primary-txt/50 focus:outline-none focus:ring-2 focus:ring-primary-menu/40 focus:border-primary-menu"
-                                                    placeholder="Référence C.A"
-                                                />
-                                            </div>
- 
-                                            <div> 
-                                                <select
-                                                    v-model="refCourrierArrivee"
-                                                    class="h-10 block w-44 rounded-xl bg-white px-3 text-sm text-primary-txt border border-primary-only focus:outline-none focus:ring-2 focus:ring-primary-menu/40 focus:border-primary-menu"
-                                                >
-                                                    <option value="">Refetrence C.Arrivées</option> 
-                                                    <option
-                                                        v-for="depart in uniqueReferences"
-                                                        :key="depart"
-                                                        :value="depart"
-                                                    >
-                                                        {{ depart }}
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
+                                        <BaseInput
+                                            v-model="annee"
+                                            type="search"
+                                            maxlength="4"
+                                            placeholder="année"
+                                            wrapper-class="w-20"
+                                        />
+                                        <BaseInput
+                                            v-model="numeroCD"
+                                            type="search"
+                                            placeholder="N° Ordre"
+                                            wrapper-class="w-28"
+                                        />
+                                        <BaseInput
+                                            v-model="refCA"
+                                            type="search"
+                                            placeholder="Référence C.A"
+                                            wrapper-class="w-36"
+                                        />
+                                        <BaseSelect
+                                            v-model="refCourrierArrivee"
+                                            :options="uniqueReferences"
+                                            placeholder="Refetrence C.Arrivées"
+                                            wrapper-class="w-44"
+                                        />
                                     </form>
                                 </div>
                             </div>
@@ -416,29 +392,6 @@ thead th {
     padding: 10px 10px !important;
     font-size: 0.70rem !important;
     background-color: #E6C5A2;
-}
-
-.overflow-x-auto {
-    scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 #f1f5f9;
-}
-
-.overflow-x-auto::-webkit-scrollbar {
-    height: 6px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 4px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
 }
 
 tr:hover td {

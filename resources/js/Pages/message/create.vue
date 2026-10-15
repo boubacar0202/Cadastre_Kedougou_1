@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import BaseInput from "@/Components/BaseInput.vue";
 import { Head, usePage } from "@inertiajs/vue3";
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from "vue";
 import axios from "axios";
@@ -410,9 +411,9 @@ async function updateMessage() {
 
         <div class="px-4 py-6" v-if="user">
             <div class="mx-auto w-full max-w-8xl">
-                <div class="flex h-[calc(100vh-9rem)] min-h-[560px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
+                <div class="flex h-[calc(100vh-9rem)] min-h-[560px] overflow-hidden rounded-3xl border border-primary-only bg-white shadow-xl">
 
-                    <aside class="flex w-full max-w-xs flex-col border-r border-gray-100 bg-gray-50">
+                    <aside class="app-sidepanel flex w-full max-w-xs flex-col">
                         <div class="bg-primary px-5 py-4 text-white">
                             <p class="text-xs uppercase tracking-wide text-white/70">Connecté</p>
                             <p class="truncate text-lg font-semibold">{{ user.name }}</p>
@@ -507,11 +508,11 @@ async function updateMessage() {
                         </div>
 
                         <form v-if="receiverId" @submit.prevent="handleSubmit" class="flex items-center gap-2 border-t border-gray-100 bg-white px-4 py-3">
-                            <input
+                            <BaseInput
                                 v-model="newMessage"
                                 type="text"
-                                class="h-11 flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 text-sm text-primary-txt outline-none transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
                                 placeholder="Écrire un message..."
+                                wrapper-class="flex-1"
                             />
                             <button
                                 v-if="editingMessageId"
@@ -569,28 +570,9 @@ async function updateMessage() {
 
 .messages-container {
     scroll-behavior: smooth;
-    background-color: #f4f7fb;
+    background-color: #faefe6;
     background-image:
-        radial-gradient(circle at 15% 20%, rgba(255, 122, 24, 0.10), transparent 42%),
-        radial-gradient(circle at 85% 0%, rgba(106, 17, 203, 0.08), transparent 36%);
-}
-
-/* Scrollbar personnalisée */
-.messages-container::-webkit-scrollbar {
-    width: 6px;
-}
-
-.messages-container::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
-}
-
-.messages-container::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 3px;
-}
-
-.messages-container::-webkit-scrollbar-thumb:hover {
-    background: #555;
+        radial-gradient(circle at 15% 20%, rgba(199, 129, 46, 0.14), transparent 42%),
+        radial-gradient(circle at 85% 0%, rgba(230, 197, 162, 0.55), transparent 36%);
 }
 </style>

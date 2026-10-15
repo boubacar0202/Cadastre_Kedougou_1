@@ -1,9 +1,7 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
+import BaseInput from '@/Components/BaseInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 defineProps({
@@ -40,24 +38,19 @@ const submit = () => {
         </div>
 
         <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" class="text-primary" />
-
-                <TextInput
-                    id="email"
-                    type="email"
-                    placeholder="votre@email.com"
-                    class="mt-1 block w-full h-10 text-lg px-3 py-2 rounded-md bg-white text-base text-primary-txt
-                        outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-primary-txt/50
-                        focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary-dark sm:text-sm/6"
-                    v-model="form.email"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
-
-                <InputError class="mt-2" :message="form.errors.email" />
-            </div>
+            <BaseInput
+                id="email"
+                name="email"
+                label="Email"
+                type="email"
+                placeholder="votre@email.com"
+                v-model="form.email"
+                required
+                autofocus
+                autocomplete="username"
+                wrapper-class="w-full"
+                :error="form.errors.email"
+            />
 
             <div class="mt-4 flex items-center justify-end">
                 <PrimaryButton

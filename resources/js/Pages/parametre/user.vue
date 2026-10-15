@@ -248,6 +248,7 @@ const confirmerSuppressionUtilisateur = async ({ adminCode } = {}) => {
                                                 label="Rôle"
                                                 name="role"
                                                 required
+                                                placeholder="Choisir un rôle"
                                                 :options="roleOptions"
                                                 v-model="form.role"
                                                 :custom-error="form.errors.role"

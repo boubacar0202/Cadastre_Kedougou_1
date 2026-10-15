@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BaseInput from '@/Components/BaseInput.vue';
+import BaseSelect from '@/Components/BaseSelect.vue';
 import { ref, computed, watch, onMounted } from 'vue';
 import { Head, router, Link } from '@inertiajs/vue3';
 import { toast } from "@/Components/AppToast";
@@ -284,48 +286,17 @@ const getNicadBadgeClass = (terrain) => {
                                     ({{ totalPageActuelle }} avec filtres)
                                 </span>
                             </div>
-                            <div class="flex flex-wrap items-center gap-1">
-                                <input 
-                                    v-model="filters.mois"
-                                    type="number"
-                                    min="1"
-                                    max="12"
-                                    class="h-8 w-20 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
-                                    placeholder="Mois"
-                                />
-                                <input 
-                                    v-model="filters.annee"
-                                    type="number"
-                                    min="2000"
-                                    max="2100"
-                                    class="h-8 w-20 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
-                                    placeholder="Année"
-                                />
-                                <input 
-                                    v-model="filters.numero"
-                                    type="text"
-                                    class="h-8 w-32 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
-                                    placeholder="N° dossier"
-                                />
-                                <input 
-                                    v-model="filters.prenomNom"
-                                    type="text"
-                                    class="h-8 w-40 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
-                                    placeholder="Prénom Nom"
-                                />
-                                <select
+                            <div class="flex flex-wrap items-center gap-2">
+                                <BaseInput v-model="filters.mois" type="number" min="1" max="12" placeholder="Mois" wrapper-class="w-20" />
+                                <BaseInput v-model="filters.annee" type="number" min="2000" max="2100" placeholder="Année" wrapper-class="w-24" />
+                                <BaseInput v-model="filters.numero" type="text" placeholder="N° dossier" wrapper-class="w-32" />
+                                <BaseInput v-model="filters.prenomNom" type="text" placeholder="Prénom Nom" wrapper-class="w-40" />
+                                <BaseSelect
                                     v-model="filters.refServiceRendu"
-                                    class="h-8 w-44 rounded-xl bg-white text-primary-txt px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
-                                >
-                                    <option value="">Tous les services</option>
-                                    <option 
-                                        v-for="service in uniqueServices" 
-                                        :key="service" 
-                                        :value="service"
-                                    >
-                                        {{ service }}
-                                    </option>
-                                </select>
+                                    :options="uniqueServices"
+                                    placeholder="Tous les services"
+                                    wrapper-class="w-44"
+                                />
                                 <button 
                                     @click="resetFilters"
                                     class="h-8 px-4 bg-white/20 text-white rounded-xl text-sm hover:bg-white/30 transition font-medium"
@@ -349,59 +320,59 @@ const getNicadBadgeClass = (terrain) => {
                             <div class="max-h-[600px] overflow-x-auto shadow-md rounded-xl">
                                 <table class="table table-auto w-full text-base text-left text-primary-txt">
                                     <thead 
-                                        class="sticky top-0 z-10 text-primary-txt text-font-bold text-center uppercase bg-primary-form bg-gray-50 dark:bg-gray-700 dark:text-primary-txt whitespace-nowrap bg-primary-only"
+                                        class="sticky top-0 z-10 text-primary-txt text-font-bold text-center uppercase bg-primary-only dark:bg-gray-700 dark:text-primary-txt whitespace-nowrap bg-primary-only"
                                     >
                                         <tr class="h-10">
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N°</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° dossier</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Region</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Depart.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Arrond.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Commune</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Service Rendue</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Etat Cession.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Cession. définitive.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Date création</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° Parcelle</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Lotissement</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Hors lotissement</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° lotissement</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° Section</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Appartement</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° titre</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Surface</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Doc admin</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° délib.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Date délib.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">NICAD</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Statut NICAD</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Motif Annulation NICAD</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Signalement/Désignation</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Immatric,.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Dép. domaine</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Ussu born.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Titre mère</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Livre Fon.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° réquis.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Surf. born.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Date born.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Nom géom.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Titulaire</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">National.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Civilité</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Prénom - Nom - Dénomination</th> 
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Pièce</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">N° Pièce</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Date déliv.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Date naiss.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Lieu naiss.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Adresse</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Tél.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Email</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Représ.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Tél Rép.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">Date éval.</th>
-                                            <th class="px-2 py-2 text-xs text-primary text-center font-semibold whitespace-nowrap">PDF</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">N°</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">N° dossier</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Region</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Depart.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Arrond.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Commune</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Service Rendue</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Etat Cession.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Cession. définitive.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Date création</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">N° Parcelle</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Lotissement</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Hors lotissement</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">N° lotissement</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">N° Section</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Appartement</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">N° titre</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Surface</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Doc admin</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">N° délib.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Date délib.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">NICAD</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Statut NICAD</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Motif Annulation NICAD</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Signalement/Désignation</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Immatric,.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Dép. domaine</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Ussu born.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Titre mère</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Livre Fon.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">N° réquis.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Surf. born.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Date born.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Nom géom.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Titulaire</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">National.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Civilité</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Prénom - Nom - Dénomination</th> 
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Pièce</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">N° Pièce</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Date déliv.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Date naiss.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Lieu naiss.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Adresse</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Tél.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Email</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Représ.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Tél Rép.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">Date éval.</th>
+                                            <th class="px-2 py-2 text-xs text-white text-center font-semibold whitespace-nowrap">PDF</th>
                                             <th class="px-2 py-2 text-xs text-center bg-primary-only font-semibold whitespace-nowrap">ACTIONS</th>
                                         </tr>
                                     </thead>
@@ -579,30 +550,6 @@ thead th {
 white-space: nowrap !important;
 padding: 6px 8px !important;
 font-size: 0.70rem !important;
-}
-
-/* Scroll horizontal */
-.overflow-x-auto {
-scrollbar-width: thin;
-scrollbar-color: #cbd5e1 #f1f5f9;
-}
-
-.overflow-x-auto::-webkit-scrollbar {
-height: 6px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-track {
-background: #f1f5f9;
-border-radius: 4px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb {
-background: #cbd5e1;
-border-radius: 4px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb:hover {
-background: #94a3b8;
 }
 
 /* Survol des lignes */

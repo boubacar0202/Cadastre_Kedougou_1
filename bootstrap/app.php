@@ -22,6 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\JournaliserActivite::class,
         ]);
 
+        $middleware->alias([
+            'role' => \App\Http\Middleware\CheckRole::class,
+        ]);
+
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -13,8 +13,14 @@ class CheckRole
     {
         $user = Auth::user();
 
-        if (!$user || !in_array($user->role, $roles)) {
-            abort(403, 'Accès non autorisé.');
+        if (! $user || ! in_array($user->role, $roles, true)) {
+            if ($request->expectsJson() && ! $request->header('X-Inertia')) {
+                abort(403, 'Accès réservé aux administrateurs.');
+            }
+
+            return redirect()
+                ->route('dashboard')
+                ->with('error', 'Accès réservé aux administrateurs.');
         }
 
         return $next($request);

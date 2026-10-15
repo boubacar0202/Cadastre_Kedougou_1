@@ -389,6 +389,7 @@ class ParametreController extends Controller
 
         $request->merge([
             'email' => strtolower(trim((string) $request->input('email'))),
+            'role' => User::normalizeRole($request->input('role')),
         ]);
 
         $validated = $request->validate([
@@ -1330,12 +1331,7 @@ class ParametreController extends Controller
         $fin = $debut->copy()->addMonths(3)->subSecond();
         $label = ['1er', '2e', '3e', '4e'][$trimestre - 1].' trimestre '.$annee;
 
-        $roleColumn = null;
-        if (Schema::hasColumn('users', 'txt_roleUser')) {
-            $roleColumn = 'txt_roleUser';
-        } elseif (Schema::hasColumn('users', 'role')) {
-            $roleColumn = 'role';
-        }
+        $roleColumn = Schema::hasColumn('users', 'role') ? 'role' : null;
 
         $columns = ['id', 'name'];
         if ($roleColumn) {

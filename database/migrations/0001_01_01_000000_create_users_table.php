@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('txt_roleUser'); 
-            $table->boolean('is_validated')->default(false)->after('role');
+            $table->string('role'); 
+            $table->boolean('is_validated')->default(false);
             $table->rememberToken();
             $table->timestamps();
         });

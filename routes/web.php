@@ -84,7 +84,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('matriceCadastrale', MatriceCadastraleController::class);
     Route::resource('/message', MessageController::class);
     Route::resource('mutation', MutationController::class); 
-    Route::resource('lotissement', ParametreController::class); 
+    Route::resource('lotissement', ParametreController::class)->middleware('role:admin'); 
     Route::resource('plan', PlanController::class);
 
     // ✅ Arrivee
@@ -169,10 +169,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/dossier/verifyLotissement', [MutationController::class, 'verifyLotissement']);
     Route::get('/mutation/create', [MutationController::class, 'create'])->name('mutation.create');
     Route::post('/mutation/store', [MutationController::class, 'store'])->name('mutation.store');
-    Route::delete('/pointDensifier/destroy/{id}', [ParametreController::class, 'destroyPoint'])->name('parametre.pointDensifier.destroy');
+    Route::delete('/pointDensifier/destroy/{id}', [ParametreController::class, 'destroyPoint'])
+        ->middleware('role:admin')
+        ->name('parametre.pointDensifier.destroy');
  
-    // ✅ Paramétrages
-    Route::prefix('parametre')->group(function () {
+    // ✅ Paramétrages — réservé aux administrateurs
+    Route::prefix('parametre')->middleware('role:admin')->group(function () {
         // 👤 Admin - Gestion des utilisateurs
         Route::get('/admin', [ParametreController::class, 'admin'])->name('parametre.admin');
         Route::get('/user', [ParametreController::class, 'user'])->name('parametre.user');
@@ -234,10 +236,12 @@ Route::middleware('auth')->group(function () {
         Route::delete('/bareme/{bareme}', [BaremeEvaluationController::class, 'destroy'])->name('parametre.bareme.destroy');
     });
 
-    // ✅ Routes API pour les graphiques (en dehors du préfixe 'parametre') 
-    Route::get('/api/chart-data', [ParametreController::class, 'getChartData'])->name('api.chart.data');
-    Route::get('/api/stats', [ParametreController::class, 'getStatsData'])->name('api.stats');
-    Route::get('/api/cession-data', [ParametreController::class, 'getCessionData'])->name('api.cession.data');
+    // ✅ Routes API pour les graphiques d'évaluation — réservé aux administrateurs
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/api/chart-data', [ParametreController::class, 'getChartData'])->name('api.chart.data');
+        Route::get('/api/stats', [ParametreController::class, 'getStatsData'])->name('api.stats');
+        Route::get('/api/cession-data', [ParametreController::class, 'getCessionData'])->name('api.cession.data');
+    });
 
     // ✅ Listes des lotissements
     Route::get('/departements', [ParametreController::class, 'getDepartements']);

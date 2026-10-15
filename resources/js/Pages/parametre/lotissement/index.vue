@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import BaseInput from "@/Components/BaseInput.vue";
 import DefaultLayout from "@/Layouts/DefaultLayout.vue";
 import MazBtn from "maz-ui/components/MazBtn";
 import DeleteModal from "@/Components/DeleteModal.vue";
@@ -125,18 +126,13 @@ const confirmerSuppression = async (code) => {
                 </span> 
               </h1>
    
-              <div>
-                  <input 
-                      v-model="lotissementFilter"
-                      type="search" 
-                      id="default-search"
-                      aria-label="Rechercher"
-                      class="h-9 block w-26 rounded-xl bg-white px-3 py-1.5 text-base text-primary-txt 
-                          border border-primary-menu  placeholder:text-primary-txt/50 
-                          focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                      placeholder="Lotissement"
-                  /> 
-              </div>   
+              <BaseInput
+                  v-model="lotissementFilter"
+                  type="search"
+                  id="default-search"
+                  placeholder="Lotissement"
+                  wrapper-class="w-48"
+              />   
             </div>
 
             <div>

@@ -1,6 +1,8 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue"; 
 import { Head, useForm } from "@inertiajs/vue3";
+import BaseInput from "@/Components/BaseInput.vue";
+import BaseSelect from "@/Components/BaseSelect.vue";
 import MazBtn from "maz-ui/components/MazBtn";
 import MazRadio from "maz-ui/components/MazRadio";
 import { onMounted, ref, watch, computed  } from "vue";
@@ -26,6 +28,19 @@ const txt_num_section = ref('');
 const txt_num_parcelle = ref('');
 const txt_appartement = ref('');
 const today = new Date().toISOString().split('T')[0];
+const TITULAIRE_OPTIONS = [
+    { label: "Personne Physique", value: "Personne Physique" },
+    { label: "Personne Morale", value: "Personne Morale" },
+    { label: "État", value: "Etat" },
+];
+const CIVILITE_OPTIONS = [
+    { label: "Mr", value: "Mr" },
+    { label: "Mme", value: "Mme" },
+];
+const PIECE_OPTIONS = [
+    { label: "CNI", value: "CNI" },
+    { label: "Passeport", value: "Passeport" },
+];
 const fichierPDF = ref(null); 
 const activeTab = ref("");   
 const show = ref(false);
@@ -246,20 +261,15 @@ const submitForm = function () {  // Ajoutez `async` ici
                                     <div
                                         class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full max-w-2xl "
                                     > 
-                                        <div class="sm:col-span-4">
-                                            <input
-                                                type="text"
-                                                name="txt_numdossier"
-                                                v-model="form.txt_numdossier"
-                                                id="txt_numdossier"
-                                                required
-                                                class="h-8 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                    placeholder="Entrer le numéro dossier"
-                                                
-                                            > 
-                                        </div>  
+                                        <BaseInput
+                                            type="text"
+                                            name="txt_numdossier"
+                                            v-model="form.txt_numdossier"
+                                            id="txt_numdossier"
+                                            required
+                                            placeholder="Entrer le numéro dossier"
+                                            wrapper-class="sm:col-span-4"
+                                        />  
                                         <MazBtn 
                                             :loading="isLoading"
                                             type="button"
@@ -281,373 +291,48 @@ const submitForm = function () {  // Ajoutez `async` ici
                                 </h5>
                                 <br /> 
                                 <div class="mb-6">
-                                    <div
-                                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"
-                                    >
-                                        <div class="sm:col-span-2">
-                                            <label
-                                                for="Titulaire"
-                                                class="block text-sm font-medium text-primary-txt"
-                                                >Titulaire</label
-                                            >
-                                            <div class="mt-2 grid grid-cols-1">
-                                                <select
-                                                    name="slt_titulaire"
-                                                    v-model="form.slt_titulaire"
-                                                    id="Titulaire"
-                                                    required
-                                                    class="h- block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                   
-                                                >
-                                                    >
-                                                    <option selected disabled>
-                                                        Choisir ici
-                                                    </option>
-                                                    <option
-                                                        value="Personne Physique"
-                                                    >
-                                                        Personne Physique
-                                                    </option>
-                                                    <option
-                                                        value="Personne Morale"
-                                                    >
-                                                        Personne Morale
-                                                    </option>
-                                                    <option value="Etat">
-                                                        État
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="Nationalite"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Nationalite</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_nationalite"
-                                                    v-model="
-                                                        form.txt_nationalite
-                                                    " 
-                                                    id="Nationalite"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div  class="sm:col-span-1">
-                                            <label
-                                                for="Civilite"
-                                                class="block text-sm font-medium text-primary-txt"
-                                                >Civilité</label
-                                            >
-                                            <div class="mt-2">
-                                                <select
-                                                    name="slt_civilite"
-                                                    v-model="form.slt_civilite" 
-                                                    id="Civilite"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                >
-                                                    <option selected disabled>
-                                                        Choisir ici
-                                                    </option>
-                                                    <option value="Mr">
-                                                        Mr
-                                                    </option>
-                                                    <option value="Mme">
-                                                        Mme
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="Prenom"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Prénom</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_prenom"
-                                                    v-model="form.txt_prenom" 
-                                                    id="Prenom"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="nom"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Nom</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_nom"
-                                                    v-model="form.txt_nom" 
-                                                    id="nom"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="selectePiece"
-                                                class="block text-sm font-medium text-primary-txt"
-                                                >Types de Piece</label
-                                            >
-                                            <div class="mt-2">
-                                                <select
-                                                    name="slt_piece"
-                                                    v-model="form.slt_piece" 
-                                                    id="selectePiece"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                >
-                                                    <option selected disabled>
-                                                        Choisir ici
-                                                    </option>
-                                                    <option value="CNI">
-                                                        CNI
-                                                    </option>
-                                                    <option value="Passeport">
-                                                        Passeport
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="numPiece"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >N° Pièce</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_num_piece"
-                                                    v-model="form.txt_numPiece" 
-                                                    id="numPiece"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="dateDelivrance"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Date Delivrance</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="date"
-                                                    name="dt_date_delivrance"
-                                                    v-model="
-                                                        form.dt_date_delivrance
-                                                    " 
-                                                    :max="new Date().toISOString().split('T')[0]"
-                                                    id="dateDelivrance"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="dateNaissance"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Date de Naissance</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="date"
-                                                    name="dt_date_naissance"
-                                                    v-model="
-                                                        form.dt_date_naissance
-                                                    "
-                                                    :max="new Date().toISOString().split('T')[0]" 
-                                                    id="dateNaissance"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="lieuNaissance"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Lieu de Naissance</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_lieu_naissance"
-                                                    v-model="
-                                                        form.txt_lieu_naissance
-                                                    " 
-                                                    id="lieuNaissance"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="adresse"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Adresse</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_adresse"
-                                                    v-model="form.txt_adresse" 
-                                                    id="adresse"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="telephone"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Telephone</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="tel"
-                                                    name="tel_telephone"
-                                                    v-model="form.tel_telephone" 
-                                                    id="telephone"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div> 
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="Email"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Email</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="email"
-                                                    name="eml_email"
-                                                    v-model="form.eml_email"
-                                                    id="Email"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="txt_representant"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Representant</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="txt_representant"
-                                                    v-model="
-                                                        form.txt_representant
-                                                    "
-                                                    id="txt_representant"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-1">
-                                            <label
-                                                for="tel_telRepresentant"
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Telephone Representant</label
-                                            >
-                                            <div class="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="tel_telRepresentant"
-                                                    v-model="
-                                                        form.tel_telRepresentant
-                                                    "
-                                                    id="tel_telRepresentant"
-                                                    autocomplete="address-level2"
-                                                    class="h-7 block w-full rounded-md bg-white px-3 py-1.5 text-base text-primary-txt 
-                                                            outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                                                            focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6"
-                                                />
-                                            </div>
-                                        </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                                        <BaseSelect
+                                            label="Titulaire"
+                                            name="slt_titulaire"
+                                            id="Titulaire"
+                                            v-model="form.slt_titulaire"
+                                            :options="TITULAIRE_OPTIONS"
+                                            placeholder="Choisir ici"
+                                            required
+                                            wrapper-class="sm:col-span-2"
+                                        />
+                                        <BaseInput label="Nationalite" name="txt_nationalite" id="Nationalite" v-model="form.txt_nationalite" autocomplete="address-level2" />
+                                        <BaseSelect label="Civilité" name="slt_civilite" id="Civilite" v-model="form.slt_civilite" :options="CIVILITE_OPTIONS" placeholder="Choisir ici" />
+                                        <BaseInput label="Prénom" name="txt_prenom" id="Prenom" v-model="form.txt_prenom" autocomplete="address-level2" />
+                                        <BaseInput label="Nom" name="txt_nom" id="nom" v-model="form.txt_nom" autocomplete="address-level2" />
+                                        <BaseSelect label="Types de Piece" name="slt_piece" id="selectePiece" v-model="form.slt_piece" :options="PIECE_OPTIONS" placeholder="Choisir ici" />
+                                        <BaseInput label="N° Pièce" name="txt_num_piece" id="numPiece" v-model="form.txt_numPiece" autocomplete="address-level2" />
+                                        <BaseInput label="Date Delivrance" name="dt_date_delivrance" id="dateDelivrance" type="date" v-model="form.dt_date_delivrance" :max="today" autocomplete="address-level2" />
+                                        <BaseInput label="Date de Naissance" name="dt_date_naissance" id="dateNaissance" type="date" v-model="form.dt_date_naissance" :max="today" autocomplete="address-level2" />
+                                        <BaseInput label="Lieu de Naissance" name="txt_lieu_naissance" id="lieuNaissance" v-model="form.txt_lieu_naissance" autocomplete="address-level2" />
+                                        <BaseInput label="Adresse" name="txt_adresse" id="adresse" v-model="form.txt_adresse" autocomplete="address-level2" />
+                                        <BaseInput label="Telephone" name="tel_telephone" id="telephone" type="tel" v-model="form.tel_telephone" autocomplete="address-level2" />
+                                        <BaseInput label="Email" name="eml_email" id="Email" type="email" v-model="form.eml_email" autocomplete="address-level2" />
+                                        <BaseInput label="Representant" name="txt_representant" id="txt_representant" v-model="form.txt_representant" autocomplete="address-level2" />
+                                        <BaseInput label="Telephone Representant" name="tel_telRepresentant" id="tel_telRepresentant" v-model="form.tel_telRepresentant" autocomplete="address-level2" />
                                     </div>
-                                    
-                                    <!-- Section acquereurre -->
+
                                     <h5 class="text-lg text-primary-txt font-bold mt-8">
                                         Références du nouvelle acquéreur
                                     </h5>
                                     <br />
                                     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-   
-                                        <div  class="sm:col-span-2"> 
-                                            <label 
-                                                for="fichierPDF" 
-                                                class="block text-sm/6 font-medium text-primary-txt"
-                                                >Importer le fichier</label
-                                            >
-                                            <div class="mt-2">
-                                                <input 
-                                                type="file"  
-                                                name="fichierPDF"
-                                                accept="application/pdf"
-                                                @change="handleFileUpload" 
-                                                id="fichierPDF"
-                                                autocomplete="off"  
-                                                class="h-7 block w-full rounded-md bg-white 
-                                                    px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 
-                                                    outline-primary-only placeholder:text-primary-txt/50 focus:outline focus:outline-2 
-                                                    focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
-                                            </div> 
-                                        </div>
-                                         
+                                        <BaseInput
+                                            label="Importer le fichier"
+                                            type="file"
+                                            name="fichierPDF"
+                                            accept="application/pdf"
+                                            id="fichierPDF"
+                                            autocomplete="off"
+                                            wrapper-class="sm:col-span-2"
+                                            @change="handleFileUpload"
+                                        />
                                     </div>
                                 </div>
                                 <br />

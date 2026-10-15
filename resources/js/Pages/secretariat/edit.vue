@@ -1829,13 +1829,17 @@ async function submit() {
                                   <BaseInput v-model="form.dt_dateEvaluation" id="dt_dateEvaluation" type="date" label="Date d'évaluation" class="w-64" />
                                 </div>
                                 <div class="sm:col-span-2">
-                                  <div class="sm:col-span-1">
-                                    <label for="fichierPDF" class="block font-medium text-primary-txt">Importer le Fichier PDF</label>
-                                    <input type="file" name="fichierPDF" accept=".pdf" id="fichierPDF" @change="handleFileChangePDF"
-                                      class="block w-64 rounded-md bg-white px-3 py-1.5 text-base text-primary-txt outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6" />
-                                    <div v-if="form.fichierPDF && typeof form.fichierPDF === 'string'" class="mt-2">
-                                      <a :href="`/storage/${form.fichierPDF}`" target="_blank" class="text-primary underline">Voir le fichier</a>
-                                    </div>
+                                  <BaseInput
+                                    label="Importer le Fichier PDF"
+                                    type="file"
+                                    name="fichierPDF"
+                                    accept=".pdf"
+                                    id="fichierPDF"
+                                    wrapper-class="w-64"
+                                    @change="handleFileChangePDF"
+                                  />
+                                  <div v-if="form.fichierPDF && typeof form.fichierPDF === 'string'" class="mt-2">
+                                    <a :href="`/storage/${form.fichierPDF}`" target="_blank" class="text-primary underline">Voir le fichier</a>
                                   </div>
                                 </div>
                               </div>

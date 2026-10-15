@@ -410,35 +410,19 @@ onMounted(() => {
                                             Aucun enregistrement
                                         </span>
                                     </h1>
-                                    <div class="flex items-start space-x-2">
-                                        <div>
-                                            <input
-                                                v-model="refTitre"
-                                                type="search"
-                                                aria-label="Rechercher"
-                                                class="h-9 block w-64 rounded-xl bg-white px-3 py-1.5 text-base text-primary-txt
-                                                    border border-primary-menu placeholder:text-primary-txt/50
-                                                    focus:outline focus:outline-2 focus:outline-primary sm:text-sm/6"
-                                                placeholder="Rechercher Description"
-                                            />
-                                        </div>
-                                        <div>
-                                            <select
-                                                v-model="refPoint"
-                                                class="h-8 block w-30 rounded-xl bg-white px-3 py-1.5 text-base text-primary-txt
-                                                    border border-primary-menu placeholder:text-primary-txt/50
-                                                    focus:outline focus:outline-2 focus:outline-primary sm:text-sm/6"
-                                            >
-                                                <option value="">Tous</option>
-                                                <option
-                                                    v-for="point in uniquePoints"
-                                                    :key="point"
-                                                    :value="point"
-                                                >
-                                                    {{ point }}
-                                                </option>
-                                            </select>
-                                        </div>
+                                    <div class="flex items-center gap-2">
+                                        <BaseInput
+                                            v-model="refTitre"
+                                            type="search"
+                                            placeholder="Rechercher Description"
+                                            wrapper-class="w-64"
+                                        />
+                                        <BaseSelect
+                                            v-model="refPoint"
+                                            :options="uniquePoints"
+                                            placeholder="Tous"
+                                            wrapper-class="w-40"
+                                        />
                                     </div>
                                 </div>
                             </div>

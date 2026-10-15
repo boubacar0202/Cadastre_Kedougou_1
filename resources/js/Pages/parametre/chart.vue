@@ -1,6 +1,7 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue"; 
 import BaseInput from "@/Components/BaseInput.vue"
+import BaseSelect from "@/Components/BaseSelect.vue"
 import { Head } from "@inertiajs/vue3";
 import MazBtn from "maz-ui/components/MazBtn";
 import { onMounted, ref, watch, watchEffect, computed } from "vue";
@@ -646,13 +647,9 @@ watchEffect((onInvalidate) => {
                         </p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                        <select v-model.number="annee" class="h-10 rounded-xl border border-gray-300 bg-white px-3 text-sm text-primary-txt">
-                            <option v-for="year in annees" :key="year" :value="year">{{ year }}</option>
-                        </select>
-                        <select v-model.number="trimestre" class="h-10 rounded-xl border border-gray-300 bg-white px-3 text-sm text-primary-txt">
-                            <option v-for="item in trimestresOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
-                        </select>
-                        <BaseInput v-model="searchQuery" placeholder="Rechercher un utilisateur..." class="w-56" />
+                        <BaseSelect v-model.number="annee" :options="annees" wrapper-class="w-28" />
+                        <BaseSelect v-model.number="trimestre" :options="trimestresOptions" wrapper-class="w-44" />
+                        <BaseInput v-model="searchQuery" placeholder="Rechercher un utilisateur..." wrapper-class="w-56" />
                         <MazBtn @click="exportEvaluation" color="success" size="sm">Exporter CSV</MazBtn>
                     </div>
                 </div>

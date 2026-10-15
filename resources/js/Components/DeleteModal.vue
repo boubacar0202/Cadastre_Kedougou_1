@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue"; 
 import MazBtn from "maz-ui/components/MazBtn";
 import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline';
+import BaseInput from "@/Components/BaseInput.vue";
 
 const props = defineProps({
     show: { type: Boolean, required: true },
@@ -83,49 +84,45 @@ const toggleDeletePassword = () => {
                 <span class="font-semibold text-primary">{{ displayName }}</span>
             </p>
 
-            <!-- Code administrateur avec toggle -->
-            <div class="relative mb-2">
-                <input 
-                    :type="showAdminPassword ? 'text' : 'password'"
-                    autocomplete="off"
-                    autocorrect="off" 
-                    v-model="adminCode" 
-                    placeholder="Code administrateur"
-                    class="h-10 block w-full rounded-xl bg-white px-3 py-1.5 text-base text-primary-txt 
-                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6 pr-12"
-                />
-                <button 
-                    type="button"
-                    @click="toggleAdminPassword"
-                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-primary-txt/60 hover:text-primary"
-                >
-                    <EyeIcon v-if="!showAdminPassword" class="h-5 w-5" />
-                    <EyeSlashIcon v-else class="h-5 w-5" />
-                </button>
-            </div>
+            <BaseInput
+                v-model="adminCode"
+                label="Code administrateur"
+                :type="showAdminPassword ? 'text' : 'password'"
+                autocomplete="off"
+                placeholder="Code administrateur"
+                wrapper-class="mb-2 w-full"
+            >
+                <template #append>
+                    <button
+                        type="button"
+                        @click="toggleAdminPassword"
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-primary-txt/60 hover:text-primary"
+                    >
+                        <EyeIcon v-if="!showAdminPassword" class="h-5 w-5" />
+                        <EyeSlashIcon v-else class="h-5 w-5" />
+                    </button>
+                </template>
+            </BaseInput>
 
-            <!-- Code de suppression avec toggle -->
-            <div class="relative mb-4">
-                <input 
-                    :type="showDeletePassword ? 'text' : 'password'"
-                    autocomplete="off"
-                    autocorrect="off" 
-                    v-model="deleteCode" 
-                    placeholder="Entrez votre code de suppression"
-                    class="h-10 block w-full rounded-xl bg-white px-3 py-1.5 text-base text-primary-txt 
-                    outline outline-1 -outline-offset-1 outline-primary-only placeholder:text-primary-txt/50 
-                    focus:outline focus:outline-2 focus:-outline-2 focus:outline-primary sm:text-sm/6 pr-12"
-                />
-                <button 
-                    type="button"
-                    @click="toggleDeletePassword"
-                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-primary-txt/60 hover:text-primary"
-                >
-                    <EyeIcon v-if="!showDeletePassword" class="h-5 w-5"/>
-                    <EyeSlashIcon v-else class="h-5 w-5" />
-                </button>
-            </div>
+            <BaseInput
+                v-model="deleteCode"
+                label="Code de suppression"
+                :type="showDeletePassword ? 'text' : 'password'"
+                autocomplete="off"
+                placeholder="Entrez votre code de suppression"
+                wrapper-class="mb-4 w-full"
+            >
+                <template #append>
+                    <button
+                        type="button"
+                        @click="toggleDeletePassword"
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-primary-txt/60 hover:text-primary"
+                    >
+                        <EyeIcon v-if="!showDeletePassword" class="h-5 w-5"/>
+                        <EyeSlashIcon v-else class="h-5 w-5" />
+                    </button>
+                </template>
+            </BaseInput>
 
             <div class="flex justify-center items-center gap-3">
                 <MazBtn

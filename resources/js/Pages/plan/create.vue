@@ -3,6 +3,8 @@
 // 1. IMPORTS
 // ============================================================
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BaseInput from '@/Components/BaseInput.vue';
+import BaseSelect from '@/Components/BaseSelect.vue';
 import { Head } from '@inertiajs/vue3';
 import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import L from 'leaflet';
@@ -225,7 +227,7 @@ function selectLocation(result) {
     const { x, y } = gpsToUtm(lat, lon);
     const infoHtml = `
         <div style="min-width: 200px; padding: 5px;">
-            <h4 style="margin: 0 0 8px 0; color: #2563eb;">📍 Localisation</h4>
+            <h4 style="margin: 0 0 8px 0; color: #613104;">📍 Localisation</h4>
             <hr>
             <p><b>Latitude :</b> ${lat.toFixed(6)}</p>
             <p><b>Longitude :</b> ${lon.toFixed(6)}</p>
@@ -271,12 +273,12 @@ function addPointsToMap() {
 
         const popupContent = `
             <div style="min-width: 220px; padding: 5px;">
-                <h3 style="margin: 0 0 8px 0; color: #2563eb; font-weight: bold;">📍 ${point.txt_nomPoint || 'Point'}</h3>
+                <h3 style="margin: 0 0 8px 0; color: #613104; font-weight: bold;">📍 ${point.txt_nomPoint || 'Point'}</h3>
                 <hr>
                 <p><b>Est (X) :</b> ${point.txt_estPoint || '-'}</p>
                 <p><b>Nord (Y) :</b> ${point.txt_nordPoint || '-'}</p>
                 <p><b>Hauteur (Z) :</b> ${point.txt_hauteurPoint || '-'}</p>
-                ${point.txt_documentsAfferants ? `<p><a href="/storage/${point.txt_documentsAfferants}" target="_blank" style="color: #2563eb;">📄 Voir PDF</a></p>` : ''}
+                ${point.txt_documentsAfferants ? `<p><a href="/storage/${point.txt_documentsAfferants}" target="_blank" style="color: #613104;">📄 Voir PDF</a></p>` : ''}
             </div>
         `;
         marker.bindPopup(popupContent);
@@ -314,12 +316,12 @@ function localiserPoint(point) {
 
     const popupContent = `
         <div style="min-width: 200px; padding: 5px;">
-            <h4 style="margin: 0 0 8px 0; color: #2563eb;">📍 ${point.txt_nomPoint || 'Point'}</h4>
+            <h4 style="margin: 0 0 8px 0; color: #613104;">📍 ${point.txt_nomPoint || 'Point'}</h4>
             <hr>
             <p><b>Est (X) :</b> ${point.txt_estPoint || '-'}</p>
             <p><b>Nord (Y) :</b> ${point.txt_nordPoint || '-'}</p>
             <p><b>Hauteur (Z) :</b> ${point.txt_hauteurPoint || '-'}</p>
-            ${point.txt_documentsAfferants ? `<p><a href="/storage/${point.txt_documentsAfferants}" target="_blank" style="color: #2563eb;">📄 Voir PDF</a></p>` : ''}
+            ${point.txt_documentsAfferants ? `<p><a href="/storage/${point.txt_documentsAfferants}" target="_blank" style="color: #613104;">📄 Voir PDF</a></p>` : ''}
         </div>
     `;
     if (map.value) {
@@ -947,13 +949,13 @@ onBeforeUnmount(() => {
                 </h2>
 
                 <div class="flex min-w-0 flex-wrap items-center gap-2">
-                    <span class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-800 bg-blue-100 rounded-full shadow-sm">
-                        <span class="flex items-center justify-center w-6 h-6 text-xs text-white bg-blue-600 rounded-full">📌</span>
+                    <span class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-txt bg-primary-form rounded-full shadow-sm">
+                        <span class="flex items-center justify-center w-6 h-6 text-xs text-white bg-primary rounded-full">📌</span>
                         {{ stats.total }} points densifiés
                     </span>
 
                     <button @click="openShapefileModal('list')"
-                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition bg-emerald-600 rounded-lg shadow-sm hover:bg-emerald-700">
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition bg-primary rounded-lg shadow-sm hover:bg-primary-dark">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
@@ -964,7 +966,7 @@ onBeforeUnmount(() => {
                     </button>
 
                     <button @click="toggleList"
-                        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary-txt transition bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50">
+                        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary-txt transition bg-white border border-primary-only rounded-lg shadow-sm hover:bg-primary-form">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
@@ -972,7 +974,7 @@ onBeforeUnmount(() => {
                     </button>
 
                     <button @click="getUserLocation" :disabled="locationLoading"
-                        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white transition bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 disabled:opacity-60">
+                        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white transition bg-primary rounded-lg shadow-sm hover:bg-primary-dark disabled:opacity-60">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -984,7 +986,7 @@ onBeforeUnmount(() => {
         </template>
 
         <div class="p-6">
-            <div class="relative overflow-hidden bg-white border border-gray-100 rounded-2xl shadow-xl">
+            <div class="relative overflow-hidden bg-white border border-primary-only rounded-2xl shadow-xl">
                 <div id="map" class="w-full h-[700px]"></div>
 
                 <div v-if="currentZoom < ZOOM_THRESHOLD_POINTS"
@@ -994,18 +996,24 @@ onBeforeUnmount(() => {
 
                 <div class="absolute top-4 left-1/2 z-[1000] w-11/12 max-w-md -translate-x-1/2">
                     <div class="relative">
-                        <input v-model="searchQuery" @input="searchLocation"
+                        <BaseInput
+                            v-model="searchQuery"
                             type="text"
-                            placeholder="🔍 Rechercher une localité (ex: Kédougou, Saraya…)"
-                            class="w-full px-5 py-3 pr-12 text-sm bg-white/95 rounded-xl border-0 shadow-lg backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-                        <svg class="absolute right-4 top-3.5 w-5 h-5 text-primary-txt/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
+                            placeholder="Rechercher une localité (ex: Kédougou, Saraya…)"
+                            wrapper-class="w-full"
+                            @input="searchLocation"
+                        >
+                            <template #append>
+                                <svg class="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-primary-txt/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </template>
+                        </BaseInput>
                         <div v-if="searchResults.length > 0"
-                            class="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 max-h-60 overflow-y-auto divide-y divide-gray-100">
+                            class="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-primary-only max-h-60 overflow-y-auto divide-y divide-primary-only">
                             <div v-for="result in searchResults" :key="result.place_id"
                                 @click="selectLocation(result)"
-                                class="flex items-start gap-3 px-4 py-3 transition cursor-pointer hover:bg-blue-50">
+                                class="flex items-start gap-3 px-4 py-3 transition cursor-pointer hover:bg-primary-form">
                                 <span class="mt-0.5 text-primary">📍</span>
                                 <div>
                                     <div class="text-sm font-medium text-primary-txt">{{ result.display_name.split(',').slice(0,3).join(',') }}</div>
@@ -1017,11 +1025,11 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div class="absolute top-24 left-4 z-[1000]">
-                    <div class="flex flex-col items-center gap-1 p-2 bg-white/90 rounded-2xl shadow-lg border border-gray-200 backdrop-blur-sm">
+                    <div class="flex flex-col items-center gap-1 p-2 bg-white/90 rounded-2xl shadow-lg border border-primary-only backdrop-blur-sm">
                         <span class="text-[10px] font-medium tracking-wider text-primary-txt uppercase">Projection</span>
                         <button @click="convert"
                             class="relative w-14 h-8 rounded-full transition-all duration-300 shadow-inner overflow-hidden"
-                            :class="convertToUTM ? 'bg-green-500' : 'bg-gray-300'">
+                            :class="convertToUTM ? 'bg-green-500' : 'bg-primary-only'">
                             <div class="absolute inset-0 bg-white/20 backdrop-blur-sm"></div>
                             <div class="absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 flex items-center justify-center text-[10px] font-bold"
                                 :class="convertToUTM ? 'left-7' : 'left-1'">
@@ -1031,7 +1039,7 @@ onBeforeUnmount(() => {
                     </div>
                 </div>
 
-                <div class="absolute bottom-6 left-1/2 z-[1000] -translate-x-1/2 bg-white/90 backdrop-blur-sm px-5 py-2 rounded-full shadow-xl border border-gray-200/80 text-sm font-medium flex items-center gap-2 select-none">
+                <div class="absolute bottom-6 left-1/2 z-[1000] -translate-x-1/2 bg-white/90 backdrop-blur-sm px-5 py-2 rounded-full shadow-xl border border-primary-only text-sm font-medium flex items-center gap-2 select-none">
                     <span class="text-primary-txt">Échelle :</span>
                     <span class="font-mono font-bold text-primary-txt">1 / {{ scaleDenominator.toLocaleString() }}</span>
                 </div>
@@ -1064,29 +1072,31 @@ onBeforeUnmount(() => {
                     leave-from-class="opacity-100 translate-x-0"
                     leave-to-class="opacity-0 -translate-x-4">
                     <div v-if="!showList"
-                        class="absolute bottom-6 left-6 z-[1000] w-80 max-h-[60%] bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col">
-                        <div class="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-600 to-blue-500 border-blue-700">
+                        class="app-sidepanel absolute bottom-6 left-6 z-[1000] w-80 max-h-[60%] backdrop-blur-md overflow-hidden flex flex-col">
+                        <div class="flex items-center justify-between p-4 border-b border-primary-only bg-gradient-to-r from-primary to-primary-menu rounded-t-3xl">
                             <h3 class="flex items-center gap-2 font-semibold text-white">
                                 <span class="flex items-center justify-center w-6 h-6 text-xs bg-white/25 rounded-full">📍</span>
                                 Points densifiés
                             </h3>
-                            <span class="px-3 py-1 text-xs font-bold text-blue-700 bg-white rounded-full shadow-sm">
+                            <span class="px-3 py-1 text-xs font-bold text-primary bg-primary-form rounded-full shadow-sm">
                                 {{ filteredPoints.length }}
                             </span>
                         </div>
                         <div class="flex-1 p-3 space-y-1 overflow-y-auto">
-                            <input v-model="searchQueryList"
+                            <BaseInput
+                                v-model="searchQueryList"
                                 type="text"
-                                placeholder="🔍 Filtrer les points…"
-                                class="w-full px-3 py-2 mb-2 text-sm bg-white/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                                placeholder="Filtrer les points…"
+                                wrapper-class="mb-2 w-full"
+                            />
                             <div v-if="filteredPoints.length === 0" class="py-8 text-sm text-center text-primary-txt/60">
                                 <span class="block text-3xl mb-2">🔍</span>
                                 Aucun point trouvé
                             </div>
                             <div v-for="point in filteredPoints" :key="point.id"
                                 :data-point-id="point.id"
-                                class="point-list-item flex items-start gap-3 p-3 transition-all border border-transparent rounded-xl cursor-pointer hover:bg-blue-50 hover:border-blue-200"
-                                :class="{ 'active bg-blue-100 border-blue-400 shadow-sm': selectedPointId === point.id }"
+                                class="point-list-item flex items-start gap-3 p-3 transition-all border border-transparent rounded-xl cursor-pointer hover:bg-primary-form hover:border-primary-only"
+                                :class="{ 'active bg-primary-form border-primary-menu shadow-sm': selectedPointId === point.id }"
                                 @click="localiserPoint(point)">
                                 <span class="mt-0.5 text-primary">📍</span>
                                 <div class="flex-1 min-w-0">
@@ -1114,26 +1124,22 @@ onBeforeUnmount(() => {
                     leave-from-class="opacity-100 translate-x-0"
                     leave-to-class="opacity-0 translate-x-4">
                     <div v-if="showInfo && selectedInfo"
-                        class="absolute bottom-6 right-6 z-[1000] w-80 max-h-[70%] bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border-2 overflow-y-auto p-5"
-                        :class="selectedInfo.type === 'point' ? 'border-blue-200' : 'border-red-300'">
+                        class="plan-info app-sidepanel absolute bottom-6 right-6 z-[1000] w-80 max-h-[70%] overflow-y-auto p-5">
                         <div class="flex items-start justify-between mb-3">
-                            <h3 class="flex items-center gap-2 text-lg font-bold"
-                                :class="selectedInfo.type === 'point' ? 'text-blue-700' : 'text-red-700'">
-                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-white text-sm"
-                                    :class="selectedInfo.type === 'point' ? 'bg-blue-600' : 'bg-red-600'">
+                            <h3 class="flex items-center gap-2 text-lg font-bold text-primary">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-xl text-white text-sm bg-primary-menu">
                                     {{ selectedInfo.type === 'point' ? '📍' : '🏠' }}
                                 </span>
                                 <span>{{ selectedInfo.type === 'point' ? 'Point densifié' : 'Parcelle' }}</span>
                             </h3>
                             <button @click="showInfo = false; resetParcelleSelection()"
-                                class="p-1.5 text-primary-txt/60 transition rounded-lg hover:text-primary hover:bg-gray-100">
+                                class="p-1.5 text-primary-txt/60 transition rounded-xl hover:text-primary hover:bg-primary-form">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
-                        <div class="my-3 border-t"
-                            :class="selectedInfo.type === 'point' ? 'border-blue-100' : 'border-red-100'"></div>
+                        <div class="my-3 border-t border-primary-only"></div>
 
                         <template v-if="selectedInfo.type === 'point'">
                             <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
@@ -1156,13 +1162,13 @@ onBeforeUnmount(() => {
                             </div>
                             <div v-if="selectedInfo.point.txt_documentsAfferants" class="mt-3">
                                 <a :href="`/storage/${selectedInfo.point.txt_documentsAfferants}`" target="_blank"
-                                    class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-blue-800">
+                                    class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-dark">
                                     📄 Voir le PDF
                                 </a>
                             </div>
                             <div class="mt-4">
                                 <button @click="localiserPoint(selectedInfo.point)"
-                                        class="flex items-center justify-center w-full gap-2 py-2.5 text-sm font-medium text-white transition bg-blue-600 rounded-xl shadow-sm hover:bg-blue-700">
+                                        class="flex items-center justify-center w-full gap-2 py-2.5 text-sm font-medium text-white transition bg-primary rounded-xl shadow-sm hover:bg-primary-dark">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1173,16 +1179,16 @@ onBeforeUnmount(() => {
                         </template>
 
                         <template v-else>
-                            <div class="p-3 mb-3 rounded-xl bg-gradient-to-br from-red-50 to-red-100 border border-red-200">
+                            <div class="p-3 mb-3 rounded-xl bg-gradient-to-br from-primary-form to-primary-only/70 border border-primary-only">
                                 <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
-                                    <span class="font-medium text-red-700">Parcelle</span>
-                                    <span class="font-bold text-red-900">{{ selectedInfo.parcelle || '—' }}</span>
-                                    <span class="font-medium text-red-700">Section</span>
-                                    <span class="font-bold text-red-900">{{ selectedInfo.section || 'Non définie' }}</span>
+                                    <span class="font-medium text-primary">Parcelle</span>
+                                    <span class="font-bold text-primary-txt">{{ selectedInfo.parcelle || '—' }}</span>
+                                    <span class="font-medium text-primary">Section</span>
+                                    <span class="font-bold text-primary-txt">{{ selectedInfo.section || 'Non définie' }}</span>
                                 </div>
                             </div>
 
-                            <div v-if="selectedInfo.loading" class="flex items-center justify-center gap-2 py-6 text-red-500">
+                            <div v-if="selectedInfo.loading" class="flex items-center justify-center gap-2 py-6 text-primary">
                                 <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -1191,19 +1197,19 @@ onBeforeUnmount(() => {
                             </div>
 
                             <div v-else-if="selectedInfo.data" class="space-y-2 text-sm">
-                                <div class="flex items-center justify-between py-1.5 border-b border-gray-100">
+                                <div class="flex items-center justify-between py-1.5 border-b border-primary-only/70">
                                     <span class="font-medium text-primary-txt">N° Dossier</span>
                                     <span class="font-semibold text-primary-txt">{{ selectedInfo.data.txt_num_dossier || '-' }}</span>
                                 </div>
-                                <div class="flex items-center justify-between py-1.5 border-b border-gray-100">
+                                <div class="flex items-center justify-between py-1.5 border-b border-primary-only/70">
                                     <span class="font-medium text-primary-txt">NICAD</span>
                                     <span class="font-semibold text-primary-txt">{{ selectedInfo.data.txt_nicad || '-' }}</span>
                                 </div>
-                                <div class="flex items-center justify-between py-1.5 border-b border-gray-100">
+                                <div class="flex items-center justify-between py-1.5 border-b border-primary-only/70">
                                     <span class="font-medium text-primary-txt">Surface</span>
                                     <span class="font-semibold text-primary-txt">{{ selectedInfo.data.nbr_surface || '-' }} m²</span>
                                 </div>
-                                <div class="flex items-center justify-between py-1.5 border-b border-gray-100">
+                                <div class="flex items-center justify-between py-1.5 border-b border-primary-only/70">
                                     <span class="font-medium text-primary-txt">N° Lot</span>
                                     <span class="font-semibold text-primary-txt">{{ selectedInfo.data.txt_num_lotissement || '-' }}</span>
                                 </div>
@@ -1238,9 +1244,9 @@ onBeforeUnmount(() => {
                         <div v-if="showShapefileModal"
                             class="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
 
-                            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-emerald-100/50">
+                            <div class="flex items-center justify-between px-6 py-4 border-b border-primary-only bg-gradient-to-r from-primary-form to-primary-footer">
                                 <div class="flex items-center gap-3">
-                                    <span class="flex items-center justify-center w-10 h-10 text-white bg-emerald-600 rounded-xl shadow-md">
+                                    <span class="flex items-center justify-center w-10 h-10 text-white bg-primary rounded-xl shadow-md">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                                         </svg>
@@ -1251,31 +1257,31 @@ onBeforeUnmount(() => {
                                     </div>
                                 </div>
                                 <button @click="closeShapefileModal"
-                                    class="text-primary-txt/60 transition rounded-lg hover:text-primary hover:bg-gray-100 p-1.5">
+                                    class="text-primary-txt/60 transition rounded-lg hover:text-primary hover:bg-primary-form p-1.5">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                     </svg>
                                 </button>
                             </div>
 
-                            <div class="flex border-b border-gray-200 bg-gray-50">
+                            <div class="flex border-b border-primary-only bg-primary-form">
                                 <button @click="activeTab = 'list'"
                                     class="flex-1 px-4 py-3 text-sm font-medium transition relative"
-                                    :class="activeTab === 'list' ? 'text-emerald-700 bg-white' : 'text-primary-txt hover:text-primary'">
+                                    :class="activeTab === 'list' ? 'text-primary bg-white' : 'text-primary-txt hover:text-primary'">
                                     <span class="inline-flex items-center gap-2">
                                         📋 Plans importés
                                         <span class="px-2 py-0.5 text-xs rounded-full"
-                                            :class="activeTab === 'list' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-primary-txt'">
+                                            :class="activeTab === 'list' ? 'bg-primary-form text-primary' : 'bg-primary-only text-primary-txt'">
                                             {{ shapefiles.length }}
                                         </span>
                                     </span>
-                                    <span v-if="activeTab === 'list'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600"></span>
+                                    <span v-if="activeTab === 'list'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></span>
                                 </button>
                                 <button @click="activeTab = 'upload'"
                                     class="flex-1 px-4 py-3 text-sm font-medium transition relative"
-                                    :class="activeTab === 'upload' ? 'text-emerald-700 bg-white' : 'text-primary-txt hover:text-primary'">
+                                    :class="activeTab === 'upload' ? 'text-primary bg-white' : 'text-primary-txt hover:text-primary'">
                                     <span class="inline-flex items-center gap-2">⬆️ Importer un shapefile</span>
-                                    <span v-if="activeTab === 'upload'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600"></span>
+                                    <span v-if="activeTab === 'upload'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></span>
                                 </button>
                             </div>
 
@@ -1284,67 +1290,74 @@ onBeforeUnmount(() => {
                                     <div v-if="!shapefiles.length" class="flex flex-col items-center justify-center py-12 text-primary-txt/60">
                                         <p class="text-sm font-medium">Aucun plan importé</p>
                                         <button @click="activeTab = 'upload'"
-                                            class="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700">
+                                            class="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark">
                                             ⬆️ Importer maintenant
                                         </button>
                                     </div>
 
                                     <div v-for="shp in shapefiles" :key="shp.id"
-                                        class="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl hover:border-emerald-300 hover:shadow-sm transition group">
+                                        class="flex items-center gap-3 p-3 bg-white border border-primary-only rounded-xl hover:border-primary hover:shadow-sm transition group">
                                         <span class="flex-shrink-0 w-4 h-4 rounded-full ring-2 ring-white shadow"
                                             :style="{ background: shp.couleur || '#3388ff' }"></span>
                                         <div class="flex-1 min-w-0">
                                             <div class="flex items-center gap-2">
                                                 <p class="text-sm font-semibold text-primary-txt truncate">{{ shp.nom }}</p>
-                                                <span v-if="!shp.visible" class="px-2 py-0.5 text-[10px] font-medium text-primary-txt bg-gray-100 rounded-full">Masqué</span>
+                                                <span v-if="!shp.visible" class="px-2 py-0.5 text-[10px] font-medium text-primary-txt bg-primary-form rounded-full">Masqué</span>
                                             </div>
                                             <p class="text-xs text-primary-txt mt-0.5">{{ shp.nb_entites }} entité(s) · SRID {{ shp.srid }}</p>
                                         </div>
                                         <div class="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
                                             <button @click="toggleShapefileVisibility(shp)" class="p-2 rounded-lg transition"
-                                                :class="shp.visible ? 'text-emerald-600 hover:bg-emerald-50' : 'text-primary-txt/60 hover:bg-gray-100'">
+                                                :class="shp.visible ? 'text-primary hover:bg-primary-form' : 'text-primary-txt/60 hover:bg-primary-form'">
                                                 👁
                                             </button>
-                                            <button @click="zoomToShapefile(shp)" class="p-2 text-primary rounded-lg hover:bg-blue-50 transition">🔍</button>
+                                            <button @click="zoomToShapefile(shp)" class="p-2 text-primary rounded-lg hover:bg-primary-form transition">🔍</button>
                                             <button @click="deleteShapefile(shp)" class="p-2 text-red-600 rounded-lg hover:bg-red-50 transition">🗑</button>
                                         </div>
                                     </div>
                                 </div>
 
                                 <form v-else @submit.prevent="uploadShapefile" class="space-y-5">
-                                    <div>
-                                        <label class="block mb-1.5 text-sm font-medium text-primary-txt">Nom du plan <span class="text-red-500">*</span></label>
-                                        <input v-model="form.nom" required type="text" placeholder="Ex : Plan cadastral Dinguessou"
-                                            class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
-                                    </div>
-                                    <div>
-                                        <label class="block mb-1.5 text-sm font-medium text-primary-txt">Projection</label>
-                                        <select v-model="form.srid" class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white">
-                                            <option value="4326">🌍 WGS84 — EPSG:4326</option>
-                                            <option value="32628">📐 UTM 28N — EPSG:32628</option>
-                                            <option value="2154">📐 Lambert 93 — EPSG:2154</option>
-                                        </select>
-                                    </div>
-                                    <div class="p-4 border border-gray-200 rounded-xl bg-gray-50/50 space-y-3">
+                                    <BaseInput
+                                        v-model="form.nom"
+                                        label="Nom du plan"
+                                        name="nom"
+                                        required
+                                        type="text"
+                                        placeholder="Ex : Plan cadastral Dinguessou"
+                                        wrapper-class="w-full"
+                                    />
+                                    <BaseSelect
+                                        v-model="form.srid"
+                                        label="Projection"
+                                        name="srid"
+                                        :options="[
+                                            { label: 'WGS84 — EPSG:4326', value: '4326' },
+                                            { label: 'UTM 28N — EPSG:32628', value: '32628' },
+                                            { label: 'Lambert 93 — EPSG:2154', value: '2154' },
+                                        ]"
+                                        wrapper-class="w-full"
+                                    />
+                                    <div class="p-4 border border-primary-only rounded-xl bg-white space-y-3">
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <label v-for="ext in ['shp', 'shx', 'dbf', 'prj']" :key="ext" class="cursor-pointer">
-                                                <span class="block text-xs font-medium text-primary-txt mb-1">
-                                                    .{{ ext }} <span v-if="ext !== 'prj'" class="text-red-500">*</span>
-                                                </span>
-                                                <div class="flex items-center gap-2 px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:border-emerald-400 transition"
-                                                    :class="form[ext] ? 'border-emerald-400 bg-emerald-50' : ''">
-                                                    <span class="truncate text-primary-txt">{{ form[ext]?.name || 'Choisir…' }}</span>
-                                                </div>
-                                                <input type="file" :accept="'.' + ext" :required="ext !== 'prj'" class="hidden"
-                                                    @change="e => form[ext] = e.target.files[0]" />
-                                            </label>
+                                            <BaseInput
+                                                v-for="ext in ['shp', 'shx', 'dbf', 'prj']"
+                                                :key="ext"
+                                                :label="'.' + ext"
+                                                type="file"
+                                                :name="ext"
+                                                :accept="'.' + ext"
+                                                :required="ext !== 'prj'"
+                                                wrapper-class="w-full"
+                                                @change="e => form[ext] = e.target.files?.[0] || null"
+                                            />
                                         </div>
                                     </div>
-                                    <div class="flex items-center justify-end gap-3 pt-2 border-t border-gray-200">
+                                    <div class="flex items-center justify-end gap-3 pt-2 border-t border-primary-only">
                                         <button type="button" @click="closeShapefileModal"
-                                            class="px-4 py-2 text-sm font-medium text-primary-txt bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
+                                            class="px-4 py-2 text-sm font-medium text-primary-txt bg-white border border-primary-only rounded-lg hover:bg-primary-form">Annuler</button>
                                         <button type="submit" :disabled="uploading"
-                                            class="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-60">
+                                            class="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-60">
                                             {{ uploading ? 'Import…' : 'Importer' }}
                                         </button>
                                     </div>
@@ -1360,17 +1373,34 @@ onBeforeUnmount(() => {
 
 <style>
 .leaflet-popup-content-wrapper {
-    border-radius: 12px !important;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15) !important;
+    border-radius: 1.25rem !important;
+    background: #fff9f4 !important;
+    color: #643407 !important;
+    border: 1px solid #e6c5a2 !important;
+    box-shadow: 0 16px 40px rgba(97, 49, 4, 0.16) !important;
 }
 .leaflet-popup-content {
     margin: 12px !important;
     font-size: 13px;
     line-height: 1.5;
+    color: #643407 !important;
 }
-.leaflet-popup-tip { background: white !important; }
+.leaflet-popup-content h3,
+.leaflet-popup-content h4,
+.leaflet-popup-content a {
+    color: #613104 !important;
+}
+.leaflet-popup-tip { background: #fff9f4 !important; }
 
-.leaflet-container { cursor: grab; background: #f8fafc; }
+.plan-info.app-sidepanel {
+    background: linear-gradient(180deg, #fff9f4 0%, #faefe6 100%);
+    border: 1px solid #e6c5a2;
+    border-radius: 1.5rem;
+    box-shadow: 0 16px 40px rgba(97, 49, 4, 0.16);
+    color: #643407;
+}
+
+.leaflet-container { cursor: grab; background: #faefe6; }
 .leaflet-container:active { cursor: grabbing; }
 .leaflet-interactive { cursor: pointer; }
 
@@ -1381,14 +1411,9 @@ onBeforeUnmount(() => {
 }
 
 .point-list-item.active {
-    background-color: #eff6ff !important;
-    border-color: #3b82f6 !important;
+    background-color: #ffe5c5 !important;
+    border-color: #c7812e !important;
 }
-
-.overflow-y-auto::-webkit-scrollbar { width: 6px; }
-.overflow-y-auto::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-.overflow-y-auto::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-.overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
 
 @media (max-width: 640px) {
     .absolute {

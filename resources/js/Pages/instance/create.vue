@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BaseInput from '@/Components/BaseInput.vue';
 import { ref, computed  } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import { defineProps, onMounted } from 'vue';
@@ -128,16 +129,13 @@ const formatDate = (dateString) => {
                                         <span class="text-primary-dark">{{ totalInstance }}</span>
                                     </h2>
 
-                                    <div>
-                                        <input
-                                            v-model="refCourrierArrivee"
-                                            type="search"
-                                            id="default-search"
-                                            aria-label="Rechercher"
-                                            class="h-10 block w-64 rounded-xl border border-primary-only bg-white px-3 text-sm text-primary-txt placeholder:text-primary-txt/50 focus:border-primary-menu focus:outline-none focus:ring-2 focus:ring-primary-menu/40"
-                                            placeholder="Référence courrier arrivée"
-                                        />
-                                    </div>
+                                    <BaseInput
+                                        v-model="refCourrierArrivee"
+                                        type="search"
+                                        id="default-search"
+                                        placeholder="Référence courrier arrivée"
+                                        wrapper-class="w-64"
+                                    />
                                 </div>
                             </div>
 

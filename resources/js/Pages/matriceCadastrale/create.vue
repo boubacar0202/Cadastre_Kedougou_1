@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import BaseInput from "@/Components/BaseInput.vue";
 import { Head, router, Link } from '@inertiajs/vue3';
 import { ref, computed, onMounted, watch } from 'vue';
 import { debounce } from 'lodash';
@@ -274,30 +275,10 @@ const exportToExcel = () => {
                                 </span>
                             </div>
                             <div class="flex flex-wrap items-center gap-2">
-                                <input 
-                                    v-model="filters.numero"
-                                    type="text"
-                                    class="h-8 w-32 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
-                                    placeholder="N° dossier"
-                                />
-                                <input 
-                                    v-model="filters.nicad"
-                                    type="text"
-                                    class="h-8 w-32 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
-                                    placeholder="NICAD"
-                                />
-                                <input 
-                                    v-model="filters.titulaire"
-                                    type="text"
-                                    class="h-8 w-40 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
-                                    placeholder="Titulaire"
-                                />
-                                <input 
-                                    v-model="filters.commune"
-                                    type="text"
-                                    class="h-8 w-32 rounded-xl bg-white text-primary-txt placeholder:text-primary-txt/50 px-3 py-1.5 text-sm border border-primary-menu focus:outline focus:outline-2 focus:outline-primary"
-                                    placeholder="Commune"
-                                />
+                                <BaseInput v-model="filters.numero" type="text" placeholder="N° dossier" wrapper-class="w-32" />
+                                <BaseInput v-model="filters.nicad" type="text" placeholder="NICAD" wrapper-class="w-32" />
+                                <BaseInput v-model="filters.titulaire" type="text" placeholder="Titulaire" wrapper-class="w-40" />
+                                <BaseInput v-model="filters.commune" type="text" placeholder="Commune" wrapper-class="w-32" />
                                 <button 
                                     @click="resetFilters"
                                     class="h-8 px-4 bg-white/20 text-white rounded-xl text-sm hover:bg-white/50 transition font-medium"
@@ -478,29 +459,6 @@ thead th {
     white-space: nowrap !important;
     padding: 6px 8px !important;
     font-size: 0.65rem !important;
-}
-
-.overflow-x-auto {
-    scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 #f1f5f9;
-}
-
-.overflow-x-auto::-webkit-scrollbar {
-    height: 6px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 4px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
 }
 
 tr:hover td {
