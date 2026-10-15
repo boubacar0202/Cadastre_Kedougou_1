@@ -205,11 +205,19 @@ class ShapefileController extends Controller
      * SUPPRESSION
      * ============================================================
      */
-    public function destroy(Shapefile $shapefile)
+    public function destroy(Request $request, Shapefile $shapefile)
     {
         $path = "shapefiles/{$shapefile->nom_table}.geojson";
         Storage::disk('public')->delete($path);
         $shapefile->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Shapefile supprimé',
+            ]);
+        }
+
         return back()->with('success', '✅ Shapefile supprimé');
     }
 

@@ -463,7 +463,7 @@ const form = useForm({
   txt_adressePM: terrain?.titulaire?.txt_adressePM || "",
   slt_etablissementPA: terrain?.titulaire?.slt_etablissementPA || "",
   txt_personneResponsablePA: terrain?.titulaire?.txt_personneResponsablePA || "",
-  txt_fonctionResponsablePA: terrain?.titulaire?.txt_fonctionResponsablePA || "",
+  txt_fonctionResponsablePA: terrain?.titulaire?.txt_fonctionResponsablePA || "", 
   txt_telephonePA: terrain?.titulaire?.txt_telephonePA || "",
   txt_emailPA: terrain?.titulaire?.txt_emailPA || "",
   txt_ministereTutelePA: terrain?.titulaire?.txt_ministereTutelePA || "",

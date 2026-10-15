@@ -250,6 +250,26 @@ const getNicadBadgeClass = (terrain) => {
 
 };
 
+function representantTitulaire(titulaire) {
+    if (!titulaire) return '';
+    const type = String(titulaire.slt_titulaire || '').trim().toLowerCase();
+    if (type === 'personne morale') return String(titulaire.txt_perssonneRepresentantPM || '').trim();
+    if (type === 'etat' || type === 'état') return String(titulaire.txt_personneResponsablePA || '').trim();
+    if (type === 'personne physique') return String(titulaire.txt_representant || '').trim();
+    return [titulaire.txt_representant, titulaire.txt_perssonneRepresentantPM, titulaire.txt_personneResponsablePA]
+        .map((valeur) => String(valeur || '').trim())
+        .filter(Boolean)
+        .join(' · ');
+}
+
+function telephoneRepresentant(titulaire) {
+    if (!titulaire) return '';
+    const type = String(titulaire.slt_titulaire || '').trim().toLowerCase();
+    if (type === 'personne morale') return String(titulaire.txt_telephonePM || '').trim();
+    if (type === 'etat' || type === 'état') return String(titulaire.txt_telephonePA || '').trim();
+    return String(titulaire.tel_telRepresentant || '').trim();
+}
+
 </script>
 
 <template>
@@ -434,8 +454,8 @@ const getNicadBadgeClass = (terrain) => {
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.txt_adresse || '' }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.tel_telephone || '' }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.eml_email || '' }}</td>
-                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.txt_representant || '' }}</td>
-                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.tel_telRepresentant || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ representantTitulaire(terrain.titulaire) }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ telephoneRepresentant(terrain.titulaire) }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ formatDate(terrain.evaluations_terrains?.dt_dateEvaluation) || '' }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">
                                                 <a 

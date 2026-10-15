@@ -325,21 +325,29 @@ class ParametreController extends Controller
         ]);
     }
 
+    private function compteProtege(User $user): bool
+    {
+        return (int) $user->id === 4
+            && strcasecmp(trim((string) $user->email), 'mbengueboubacar095@gmail.com') === 0;
+    }
+
     public function adminEdit($id)
     {
-        $user = User::findOrFail($id);
-
-        return Inertia::render('parametre/adminEdit', [
-            'user' => $user
-        ]);
+        return $this->editUser($id);
     }
 
 
     // Modifier un utilisateur
     public function editUser($id)
     {
-        $user = User::findOrFail($id); 
- 
+        $user = User::findOrFail($id);
+
+        if ($this->compteProtege($user)) {
+            $message = 'Impossible de modifier le compte de ' . $user->name . ' car il est protégé.';
+
+            return redirect()->route('parametre.admin')->with('error', $message);
+        }
+
         return Inertia::render('parametre/adminEdit', [
             'user' => $user
         ]);
@@ -380,10 +388,7 @@ class ParametreController extends Controller
             $data['password'] = $validated['password'];
         }
 
-        $compteProtege = (int) $user->id === 4
-            && strcasecmp(trim((string) $user->email), 'mbengueboubacar095@gmail.com') === 0;
-
-        if ($compteProtege) {
+        if ($this->compteProtege($user)) {
             $message = 'La modification de l\'utilisateur ' . $user->name . ' n\'est pas autorisée.';
 
             return back()
@@ -456,6 +461,13 @@ class ParametreController extends Controller
 
         $user = User::findOrFail($id);
 
+        if ($this->compteProtege($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Impossible de modifier le compte de ' . $user->name . ' car il est protégé.',
+            ], 403);
+        }
+
         if ($user->is_validated) {
             return response()->json([
                 'success' => false,
@@ -501,6 +513,14 @@ class ParametreController extends Controller
 
         // Récupérer l'utilisateur  
         $user = User::findOrFail($id);
+
+        if ($this->compteProtege($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Impossible de supprimer le compte de ' . $user->name . ' car il est protégé.',
+            ], 403);
+        }
+
         try {
             $user->delete();
         } catch (QueryException $e) {

@@ -91,8 +91,27 @@ const showShapefileModal = ref(false);
 const activeTab = ref('list');
 const uploading = ref(false);
 const form = ref({ nom: '', shp: null, shx: null, dbf: null, prj: null, srid: '4326' });
+const editingShapefile = ref(null);
+const savingShapefile = ref(false);
 const shapefileCache = new Map();
+const featuredShapefileId = ref(null);
+const tableAttributs = ref(null);
+const listeEntites = ref(null);
+const rechercheEntites = ref('');
+const rechercheAttributs = ref('');
+const chargementTableAttributs = ref(false);
+const surlignageShapefile = ref(null);
 let shapefileReloadTimer = null;
+
+const ORDRE_CHAMPS_QGIS = ['TEXT', 'LAYER', 'ENTITYHAND', 'SUBCLASSES', 'LINETYPE', 'PAPERSPACE'];
+const LIBELLES_CHAMPS_QGIS = {
+    TEXT: 'Texte',
+    LAYER: 'Couche',
+    ENTITYHAND: 'Identifiant',
+    SUBCLASSES: 'Type d’entité',
+    LINETYPE: 'Type de ligne',
+    PAPERSPACE: 'Espace papier',
+};
 let currentZoomAnimation = null;
 
 // Sites historiques
@@ -189,6 +208,7 @@ function utmToGps(est, nord) {
 
 function isHeavyShapefile(shp) {
     const nb = shp.nb_entites || 0;
+    if (nb > 0 && nb <= 500) return false;
     if (nb > LARGE_SHAPEFILE_THRESHOLD) return true;
     const name = (shp.nom || '').toLowerCase();
     const table = (shp.nom_table || '').toLowerCase();
@@ -689,8 +709,13 @@ async function chargerShapefiles() {
     if (!shapefiles.value.length) return;
 
     const zoom = map.value.getZoom();
+    const ordre = [...shapefiles.value].sort((a, b) => {
+        if (a.id === featuredShapefileId.value) return 1;
+        if (b.id === featuredShapefileId.value) return -1;
+        return 0;
+    });
 
-    for (const shp of shapefiles.value) {
+    for (const shp of ordre) {
         if (!shp.visible) continue;
 
         if (isHeavyShapefile(shp) && zoom < ZOOM_THRESHOLD_POINTS) {
@@ -714,40 +739,346 @@ async function chargerShapefiles() {
         }
 
         const isPointLayer = data.features[0]?.geometry?.type === 'Point';
+        const enAvant = featuredShapefileId.value === shp.id;
 
+        let featureIndex = 0;
         const layer = L.geoJSON(data, {
             pointToLayer: isPointLayer
-                ? (feature, latlng) => L.circleMarker(latlng, {
-                    radius: 4,
-                    fillColor: shp.couleur || '#3388ff',
-                    color: '#ffffff',
-                    weight: 1,
-                    fillOpacity: 0.9
-                })
+                ? (feature, latlng) => marqueurEntite(feature, latlng, shp, enAvant)
                 : undefined,
-            style: {
-                color: shp.couleur || '#3388ff',
-                weight: 2,
-                fillColor: shp.couleur || '#3388ff',
-                fillOpacity: 0.25,
-            },
+            style: styleShapefile(shp, enAvant),
             onEachFeature: (feature, lyr) => {
-                const props = feature.properties || {};
-                const rows = Object.entries(props)
-                    .filter(([k]) => !k.startsWith('geom') && k !== 'id')
-                    .slice(0, 8)
-                    .map(([k, v]) => `<p><b>${k}:</b> ${v ?? '-'}</p>`)
-                    .join('');
-                lyr.bindPopup(`
-                    <div style="min-width:220px">
-                        <h4 style="margin:0 0 6px;color:${shp.couleur}">📐 ${shp.nom}</h4>
-                        <hr>${rows}
-                    </div>
-                `);
+                const index = featureIndex++;
+                lyr.on('click', (e) => {
+                    if (e.originalEvent) L.DomEvent.stopPropagation(e);
+                    selectionnerShapefile(shp, feature, index);
+                });
             },
         }).addTo(shapefilesLayerGroup.value);
 
         layer._shpId = shp.id;
+        if (enAvant) layer.bringToFront();
+    }
+}
+
+function marqueurEntite(feature, latlng, shp, enAvant) {
+    const texte = String(feature?.properties?.TEXT ?? '').trim();
+    if (texte) {
+        return L.marker(latlng, {
+            icon: L.divIcon({
+                className: 'shp-numero',
+                html: `<span class="${enAvant ? 'is-active' : ''}">${escapeHtml(texte)}</span>`,
+                iconSize: [42, 24],
+                iconAnchor: [21, 12],
+            }),
+        });
+    }
+    return L.circleMarker(latlng, {
+        radius: enAvant ? 7 : 5,
+        fillColor: shp.couleur || '#3388ff',
+        color: enAvant ? '#613104' : '#ffffff',
+        weight: enAvant ? 2 : 1,
+        fillOpacity: 0.9,
+    });
+}
+
+function escapeHtml(valeur) {
+    return String(valeur)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function styleShapefile(shp, enAvant) {
+    const couleur = shp.couleur || '#3388ff';
+    return {
+        color: enAvant ? '#613104' : couleur,
+        weight: enAvant ? 4 : 2,
+        fillColor: couleur,
+        fillOpacity: enAvant ? 0.55 : 0.25,
+    };
+}
+
+function libelleChamp(cle) {
+    return LIBELLES_CHAMPS_QGIS[cle] || cle;
+}
+
+function trierClesAttributs(cles) {
+    return [...cles].sort((a, b) => {
+        const ia = ORDRE_CHAMPS_QGIS.indexOf(a);
+        const ib = ORDRE_CHAMPS_QGIS.indexOf(b);
+        if (ia === -1 && ib === -1) return String(a).localeCompare(String(b));
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+    });
+}
+
+function libelleGeometrie(type) {
+    return {
+        Point: 'Point',
+        MultiPoint: 'Multipoint',
+        LineString: 'Ligne',
+        MultiLineString: 'Multiligne',
+        Polygon: 'Polygone',
+        MultiPolygon: 'Multipolygone',
+    }[type] || type || '';
+}
+
+function attributsShapefile(feature) {
+    const proprietes = feature?.properties || {};
+    return trierClesAttributs(Object.keys(proprietes).filter((cle) => !String(cle).startsWith('geom')))
+        .map((cle) => {
+            const brut = proprietes[cle];
+            return {
+                key: cle,
+                label: libelleChamp(cle),
+                value: brut === null || brut === undefined || String(brut).trim() === '' ? '' : String(brut),
+            };
+        });
+}
+
+function colonnesShapefile(features) {
+    const vues = new Set();
+    features.forEach((feature) => {
+        Object.keys(feature?.properties || {}).forEach((cle) => {
+            if (!String(cle).startsWith('geom')) vues.add(cle);
+        });
+    });
+    return trierClesAttributs(vues);
+}
+
+function valeurAttribut(feature, cle) {
+    const brut = feature?.properties?.[cle];
+    if (brut === null || brut === undefined || String(brut).trim() === '') return '';
+    return String(brut);
+}
+
+const lignesTableAttributs = computed(() => {
+    const table = tableAttributs.value;
+    if (!table) return [];
+    const q = rechercheAttributs.value.trim().toLowerCase();
+    return table.features
+        .map((feature, index) => ({ feature, index }))
+        .filter(({ feature }) => {
+            if (!q) return true;
+            return Object.values(feature.properties || {}).some((valeur) =>
+                String(valeur ?? '').toLowerCase().includes(q)
+            );
+        });
+});
+
+const resumeSelectionShapefile = computed(() => {
+    if (selectedInfo.value?.type !== 'shapefile') return '';
+    const attributs = selectedInfo.value.attributes || [];
+    const texte = attributs.find((item) => item.key === 'TEXT' && item.value);
+    const couche = attributs.find((item) => item.key === 'LAYER' && item.value);
+    const identifiant = attributs.find((item) => item.key === 'ENTITYHAND' && item.value);
+    return [texte?.value, couche?.value, identifiant ? `#${identifiant.value}` : '']
+        .filter(Boolean)
+        .join(' · ');
+});
+
+function retirerSurlignageShapefile() {
+    if (surlignageShapefile.value && map.value) {
+        try { map.value.removeLayer(surlignageShapefile.value); } catch (e) {}
+    }
+    surlignageShapefile.value = null;
+}
+
+function surlignerEntiteShapefile(feature) {
+    retirerSurlignageShapefile();
+    if (!map.value || !feature?.geometry) return;
+    surlignageShapefile.value = L.geoJSON(feature, {
+        interactive: false,
+        pointToLayer: (item, latlng) => L.circleMarker(latlng, {
+            radius: 11,
+            color: '#613104',
+            weight: 3,
+            fillColor: '#f6b26b',
+            fillOpacity: 0.85,
+        }),
+        style: {
+            color: '#613104',
+            weight: 4,
+            fillColor: '#f6b26b',
+            fillOpacity: 0.35,
+        },
+    }).addTo(map.value);
+}
+
+function zoomSurEntite(feature) {
+    if (!map.value || !feature?.geometry) return;
+    const couche = L.geoJSON(feature);
+    const bounds = couche.getBounds();
+    if (!bounds.isValid()) return;
+    const type = feature.geometry.type;
+    if (type === 'Point' || type === 'MultiPoint') {
+        const centre = bounds.getCenter();
+        safeFlyTo(centre.lat, centre.lng, Math.max(map.value.getZoom(), 18));
+        return;
+    }
+    safeFitBounds(bounds, { padding: [80, 80], maxZoom: 19 });
+}
+
+function selectionnerShapefile(shp, feature = null, index = null) {
+    resetParcelleSelection();
+    selectedPointId.value = null;
+
+    selectedInfo.value = {
+        type: 'shapefile',
+        shapefile: shp,
+        feature,
+        featureIndex: index,
+        geometrie: libelleGeometrie(feature?.geometry?.type),
+        attributes: attributsShapefile(feature),
+    };
+    showInfo.value = true;
+    if (feature) surlignerEntiteShapefile(feature);
+    else retirerSurlignageShapefile();
+}
+
+function effacerSelectionShapefile() {
+    retirerSurlignageShapefile();
+    if (selectedInfo.value?.type === 'shapefile') {
+        selectedInfo.value = null;
+        showInfo.value = false;
+    }
+}
+
+function fermerPanneauInfo() {
+    showInfo.value = false;
+    resetParcelleSelection();
+    retirerSurlignageShapefile();
+    if (selectedInfo.value?.type === 'shapefile') {
+        selectedInfo.value = null;
+    }
+}
+
+function titreEntite(feature, index) {
+    const texte = String(feature?.properties?.TEXT ?? '').trim();
+    if (texte) return texte;
+    const identifiant = String(feature?.properties?.ENTITYHAND ?? '').trim();
+    if (identifiant) return `Entité ${identifiant}`;
+    return `Entité ${index + 1}`;
+}
+
+function detailEntite(feature) {
+    const couche = String(feature?.properties?.LAYER ?? '').trim();
+    const geometrie = libelleGeometrie(feature?.geometry?.type);
+    return [couche, geometrie].filter(Boolean).join(' · ');
+}
+
+const entitesFiltrees = computed(() => {
+    const liste = listeEntites.value;
+    if (!liste) return [];
+    const q = rechercheEntites.value.trim().toLowerCase();
+    return liste.features
+        .map((feature, index) => ({
+            feature,
+            index,
+            titre: titreEntite(feature, index),
+            detail: detailEntite(feature),
+        }))
+        .filter((item) => !q || `${item.titre} ${item.detail}`.toLowerCase().includes(q))
+        .sort((a, b) => a.titre.localeCompare(b.titre, 'fr', { numeric: true }));
+});
+
+async function donneesShapefile(shp) {
+    let data = shapefileCache.get(shp.id);
+    if (!data) {
+        const response = await axios.get(`/api/shapefiles/${shp.id}/geojson`);
+        data = response.data;
+        if (data?.features) shapefileCache.set(shp.id, data);
+    }
+    return data;
+}
+
+async function ouvrirListeEntites(shp) {
+    if (!shp || chargementTableAttributs.value) return;
+    chargementTableAttributs.value = true;
+    try {
+        const data = await donneesShapefile(shp);
+        if (!data?.features?.length) {
+            toast.error('Aucune entité dans ce plan.');
+            return;
+        }
+        listeEntites.value = { shp, features: data.features };
+        rechercheEntites.value = '';
+        closeShapefileModal();
+        if (!shp.visible) {
+            await axios.patch(`/shapefiles/${shp.id}`, { visible: true });
+            shp.visible = true;
+            await chargerShapefiles();
+        }
+        await zoomToShapefile(shp);
+    } catch (e) {
+        toast.error('Impossible de lire les entités de ce plan.');
+    } finally {
+        chargementTableAttributs.value = false;
+    }
+}
+
+function fermerListeEntites() {
+    listeEntites.value = null;
+    rechercheEntites.value = '';
+}
+
+function choisirEntite(feature, index) {
+    const shp = listeEntites.value?.shp;
+    if (!shp) return;
+    selectionnerShapefile(shp, feature, index);
+    zoomSurEntite(feature);
+}
+
+async function ouvrirTableAttributs(shp) {
+    if (!shp || chargementTableAttributs.value) return;
+    chargementTableAttributs.value = true;
+    try {
+        let data = shapefileCache.get(shp.id);
+        if (!data) {
+            const response = await axios.get(`/api/shapefiles/${shp.id}/geojson`);
+            data = response.data;
+            if (!data?.features) {
+                toast.error('Aucune entité dans ce plan.');
+                return;
+            }
+            shapefileCache.set(shp.id, data);
+        }
+        tableAttributs.value = {
+            shp,
+            features: data.features || [],
+            columns: colonnesShapefile(data.features || []),
+        };
+        rechercheAttributs.value = '';
+        closeShapefileModal();
+    } catch (e) {
+        toast.error('Impossible de lire les attributs de ce plan.');
+    } finally {
+        chargementTableAttributs.value = false;
+    }
+}
+
+function fermerTableAttributs() {
+    tableAttributs.value = null;
+    rechercheAttributs.value = '';
+}
+
+function choisirLigneAttribut(feature, index) {
+    const shp = tableAttributs.value?.shp;
+    if (!shp) return;
+    selectionnerShapefile(shp, feature, index);
+    zoomSurEntite(feature);
+}
+
+async function mettreShapefileEnAvant(shp) {
+    featuredShapefileId.value = featuredShapefileId.value === shp.id ? null : shp.id;
+    selectionnerShapefile(shp);
+    closeShapefileModal();
+    await chargerShapefiles();
+    if (featuredShapefileId.value === shp.id) {
+        toast.success(`« ${shp.nom} » est au premier plan`);
     }
 }
 
@@ -800,31 +1131,113 @@ async function toggleShapefileVisibility(shp) {
     }
 }
 
+function editShapefile(shp) {
+    editingShapefile.value = {
+        id: shp.id,
+        nom: shp.nom || '',
+        couleur: shp.couleur || '#3388ff',
+    };
+}
+
+function cancelShapefileEdit() {
+    editingShapefile.value = null;
+}
+
+async function saveShapefileEdit() {
+    const edition = editingShapefile.value;
+    if (!edition?.id || savingShapefile.value) return;
+
+    const nom = edition.nom.trim();
+    if (!nom) {
+        toast.error('Le nom du plan est obligatoire.');
+        return;
+    }
+
+    savingShapefile.value = true;
+    try {
+        const { data } = await axios.patch(`/shapefiles/${edition.id}`, {
+            nom,
+            couleur: edition.couleur || '#3388ff',
+        });
+
+        const index = shapefiles.value.findIndex((item) => item.id === edition.id);
+        if (index !== -1) {
+            shapefiles.value[index] = { ...shapefiles.value[index], ...data };
+        }
+
+        editingShapefile.value = null;
+        await chargerShapefiles();
+        toast.success('Plan mis à jour');
+    } catch (e) {
+        toast.error(e.response?.data?.message || 'Impossible d\'enregistrer la modification.');
+    } finally {
+        savingShapefile.value = false;
+    }
+}
+
 async function deleteShapefile(shp) {
     if (!confirm(`Supprimer "${shp.nom}" ?`)) return;
     try {
         await axios.delete(`/shapefiles/${shp.id}`);
-        shapefiles.value = shapefiles.value.filter(s => s.id !== shp.id);
+        if (editingShapefile.value?.id === shp.id) {
+            editingShapefile.value = null;
+        }
+        const { data } = await axios.get('/shapefiles');
+        shapefiles.value = data;
         shapefileCache.delete(shp.id);
         await chargerShapefiles();
         toast.success('Shapefile supprimé');
     } catch (e) {
-        toast.error('Erreur suppression');
+        toast.error(e.response?.data?.message || 'Erreur suppression');
     }
 }
 
+function zoomToStoredBounds(shp) {
+    if (!Array.isArray(shp.bbox) || shp.bbox.length !== 4) return false;
+
+    const [minX, minY, maxX, maxY] = shp.bbox.map(Number);
+    if ([minX, minY, maxX, maxY].some((value) => Number.isNaN(value))) return false;
+
+    const bounds = L.latLngBounds([minY, minX], [maxY, maxX]);
+    if (!bounds.isValid()) return false;
+
+    safeFitBounds(bounds, { padding: [20, 20], maxZoom: 18 });
+    return true;
+}
+
 async function zoomToShapefile(shp) {
-    if (!shapefilesLayerGroup.value) return;
+    if (!map.value) return;
+
     let targetLayer = null;
-    shapefilesLayerGroup.value.eachLayer(layer => {
+    shapefilesLayerGroup.value?.eachLayer((layer) => {
         if (layer._shpId === shp.id) targetLayer = layer;
     });
+
     if (targetLayer && targetLayer.getBounds().isValid()) {
-        safeFitBounds(targetLayer.getBounds(), { padding: [40, 40], maxZoom: 18 });
+        safeFitBounds(targetLayer.getBounds(), { padding: [20, 20], maxZoom: 18 });
         closeShapefileModal();
-    } else {
-        toast.warning('Shapefile masqué ou vide');
+        return;
     }
+
+    if (zoomToStoredBounds(shp)) {
+        closeShapefileModal();
+        return;
+    }
+
+    try {
+        const { data } = await axios.get(`/api/shapefiles/${shp.id}/geojson`);
+        const layer = L.geoJSON(data);
+        if (layer.getBounds().isValid()) {
+            safeFitBounds(layer.getBounds(), { padding: [20, 20], maxZoom: 18 });
+            closeShapefileModal();
+            return;
+        }
+    } catch (e) {
+        toast.error('Impossible de lire ce plan.');
+        return;
+    }
+
+    toast.warning('Shapefile masqué ou vide');
 }
 
 // ============================================================
@@ -1051,16 +1464,36 @@ onBeforeUnmount(() => {
                     leave-active-class="transition ease-in duration-200"
                     leave-from-class="opacity-100 translate-y-0"
                     leave-to-class="opacity-0 translate-y-2">
-                    <div v-if="selectedInfo?.type === 'parcelle' && selectedParcelleFeature"
-                        class="absolute top-20 right-6 z-[1000] flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-full shadow-lg">
-                        <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-                        Parcelle {{ selectedInfo.parcelle }} — Section {{ selectedInfo.section }}
-                        <button @click="resetParcelleSelection(); selectedInfo = null; showInfo = false"
-                            class="ml-1 hover:bg-red-700 rounded-full p-0.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
+                    <div v-if="(selectedInfo?.type === 'parcelle' && selectedParcelleFeature) || selectedInfo?.type === 'shapefile'"
+                        class="absolute top-20 right-6 z-[1000] max-w-sm px-4 py-2 text-sm font-medium text-white shadow-lg"
+                        :class="selectedInfo?.type === 'parcelle' ? 'flex items-center gap-2 rounded-full bg-red-600' : 'rounded-2xl'"
+                        :style="selectedInfo?.type === 'shapefile' ? { background: selectedInfo.shapefile?.couleur || '#613104' } : undefined">
+                        <template v-if="selectedInfo?.type === 'parcelle'">
+                            <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                            Parcelle {{ selectedInfo.parcelle }} — Section {{ selectedInfo.section }}
+                            <button @click="resetParcelleSelection(); selectedInfo = null; showInfo = false"
+                                class="ml-1 hover:bg-red-700 rounded-full p-0.5">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </template>
+                        <template v-else>
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                                <span class="truncate">{{ selectedInfo.shapefile?.nom }}</span>
+                                <span class="shrink-0 text-xs text-white/80">{{ selectedInfo.shapefile?.nb_entites }} entité(s)</span>
+                                <button type="button" @click="effacerSelectionShapefile"
+                                    class="ml-1 rounded-full p-0.5 hover:bg-black/20">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <p v-if="resumeSelectionShapefile" class="mt-1 text-xs font-normal text-white/90 truncate">
+                                {{ resumeSelectionShapefile }}
+                            </p>
+                        </template>
                     </div>
                 </Transition>
 
@@ -1071,7 +1504,55 @@ onBeforeUnmount(() => {
                     leave-active-class="transition ease-in duration-200"
                     leave-from-class="opacity-100 translate-x-0"
                     leave-to-class="opacity-0 -translate-x-4">
-                    <div v-if="!showList"
+                    <div v-if="listeEntites"
+                        class="app-sidepanel absolute bottom-6 left-6 z-[1000] w-80 max-h-[60%] backdrop-blur-md overflow-hidden flex flex-col">
+                        <div class="flex items-center justify-between gap-2 p-4 border-b border-primary-only bg-gradient-to-r from-primary to-primary-menu rounded-t-3xl">
+                            <h3 class="flex items-center gap-2 min-w-0 font-semibold text-white">
+                                <span class="flex items-center justify-center w-6 h-6 text-xs bg-white/25 rounded-full">☰</span>
+                                <span class="truncate">{{ listeEntites.shp.nom }}</span>
+                            </h3>
+                            <div class="flex items-center gap-2">
+                                <span class="px-3 py-1 text-xs font-bold text-primary bg-primary-form rounded-full shadow-sm">
+                                    {{ entitesFiltrees.length }}
+                                </span>
+                                <button type="button" @click="fermerListeEntites" class="rounded-full p-1 text-white/80 hover:bg-white/20">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex-1 p-3 space-y-1 overflow-y-auto">
+                            <BaseInput
+                                v-model="rechercheEntites"
+                                type="text"
+                                placeholder="Filtrer les entités…"
+                                wrapper-class="mb-2 w-full"
+                            />
+                            <div v-if="entitesFiltrees.length === 0" class="py-8 text-sm text-center text-primary-txt/60">
+                                Aucune entité trouvée
+                            </div>
+                            <div v-for="item in entitesFiltrees" :key="item.index"
+                                class="point-list-item flex items-start gap-3 p-3 transition-all border border-transparent rounded-xl cursor-pointer hover:bg-primary-form hover:border-primary-only"
+                                :class="{ 'active bg-primary-form border-primary-menu shadow-sm': selectedInfo?.type === 'shapefile' && selectedInfo.shapefile?.id === listeEntites.shp.id && selectedInfo.featureIndex === item.index }"
+                                @click="choisirEntite(item.feature, item.index)">
+                                <span class="mt-0.5 inline-flex min-w-8 items-center justify-center rounded-md bg-primary px-1.5 py-0.5 text-xs font-bold text-white">{{ item.titre }}</span>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-primary-txt truncate">{{ item.detail || 'Entité du plan' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
+                <Transition
+                    enter-active-class="transition ease-out duration-300"
+                    enter-from-class="opacity-0 -translate-x-4"
+                    enter-to-class="opacity-100 translate-x-0"
+                    leave-active-class="transition ease-in duration-200"
+                    leave-from-class="opacity-100 translate-x-0"
+                    leave-to-class="opacity-0 -translate-x-4">
+                    <div v-if="!showList && !listeEntites"
                         class="app-sidepanel absolute bottom-6 left-6 z-[1000] w-80 max-h-[60%] backdrop-blur-md overflow-hidden flex flex-col">
                         <div class="flex items-center justify-between p-4 border-b border-primary-only bg-gradient-to-r from-primary to-primary-menu rounded-t-3xl">
                             <h3 class="flex items-center gap-2 font-semibold text-white">
@@ -1124,15 +1605,19 @@ onBeforeUnmount(() => {
                     leave-from-class="opacity-100 translate-x-0"
                     leave-to-class="opacity-0 translate-x-4">
                     <div v-if="showInfo && selectedInfo"
-                        class="plan-info app-sidepanel absolute bottom-6 right-6 z-[1000] w-80 max-h-[70%] overflow-y-auto p-5">
+                        class="plan-info app-sidepanel absolute right-6 z-[1200] max-h-[70%] overflow-y-auto p-5"
+                        :class="[
+                            selectedInfo.type === 'shapefile' ? 'w-[26rem]' : 'w-80',
+                            tableAttributs ? 'bottom-[48%]' : 'bottom-6',
+                        ]">
                         <div class="flex items-start justify-between mb-3">
                             <h3 class="flex items-center gap-2 text-lg font-bold text-primary">
                                 <span class="inline-flex items-center justify-center w-8 h-8 rounded-xl text-white text-sm bg-primary-menu">
-                                    {{ selectedInfo.type === 'point' ? '📍' : '🏠' }}
+                                    {{ selectedInfo.type === 'point' ? '📍' : selectedInfo.type === 'shapefile' ? '📐' : '🏠' }}
                                 </span>
-                                <span>{{ selectedInfo.type === 'point' ? 'Point densifié' : 'Parcelle' }}</span>
+                                <span>{{ selectedInfo.type === 'point' ? 'Point densifié' : selectedInfo.type === 'shapefile' ? 'Shapefile' : 'Parcelle' }}</span>
                             </h3>
-                            <button @click="showInfo = false; resetParcelleSelection()"
+                            <button @click="fermerPanneauInfo"
                                 class="p-1.5 text-primary-txt/60 transition rounded-xl hover:text-primary hover:bg-primary-form">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -1174,6 +1659,46 @@ onBeforeUnmount(() => {
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
                                     Localiser
+                                </button>
+                            </div>
+                        </template>
+
+                        <template v-else-if="selectedInfo.type === 'shapefile'">
+                            <div class="p-3 mb-3 rounded-xl bg-gradient-to-br from-primary-form to-primary-only/70 border border-primary-only">
+                                <div class="grid grid-cols-[7.5rem_1fr] gap-x-3 gap-y-2 text-sm">
+                                    <span class="font-medium text-primary">Plan</span>
+                                    <span class="font-bold text-primary-txt break-words">{{ selectedInfo.shapefile?.nom || '—' }}</span>
+                                    <span class="font-medium text-primary">Entités</span>
+                                    <span class="font-bold text-primary-txt">{{ selectedInfo.shapefile?.nb_entites ?? '—' }}</span>
+                                    <span class="font-medium text-primary">Géométrie</span>
+                                    <span class="font-bold text-primary-txt">{{ selectedInfo.geometrie || '—' }}</span>
+                                </div>
+                            </div>
+                            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">Attributs</p>
+                            <div v-if="selectedInfo.attributes?.length" class="space-y-0 text-sm">
+                                <div v-for="item in selectedInfo.attributes" :key="item.key" class="grid grid-cols-[7.5rem_1fr] gap-3 py-2 border-b border-primary-only/70">
+                                    <span class="font-medium text-primary-txt">
+                                        {{ item.label }}
+                                        <span class="block text-[10px] font-normal uppercase tracking-wide text-primary-txt/50">{{ item.key }}</span>
+                                    </span>
+                                    <span class="font-semibold text-primary-txt text-right break-words" :class="{ 'font-normal text-primary-txt/40': !item.value }">
+                                        {{ item.value || '—' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <p v-else class="text-sm text-primary-txt/70">Cliquez une entité du plan, ou ouvrez la table d’attributs.</p>
+                            <div class="mt-4 space-y-2">
+                                <button v-if="selectedInfo.feature" type="button" @click="zoomSurEntite(selectedInfo.feature)"
+                                    class="flex items-center justify-center w-full gap-2 py-2.5 text-sm font-medium text-white transition bg-primary rounded-xl shadow-sm hover:bg-primary-dark">
+                                    Zoomer sur l’entité
+                                </button>
+                                <button type="button" @click="ouvrirListeEntites(selectedInfo.shapefile)"
+                                    class="flex items-center justify-center w-full gap-2 py-2.5 text-sm font-medium text-white transition bg-primary rounded-xl shadow-sm hover:bg-primary-dark">
+                                    Toutes les entités
+                                </button>
+                                <button type="button" @click="ouvrirTableAttributs(selectedInfo.shapefile)"
+                                    class="flex items-center justify-center w-full gap-2 py-2.5 text-sm font-medium text-primary transition bg-white border border-primary-only rounded-xl hover:bg-primary-form">
+                                    Table d’attributs
                                 </button>
                             </div>
                         </template>
@@ -1221,6 +1746,57 @@ onBeforeUnmount(() => {
                         </template>
                     </div>
                 </Transition>
+
+                <div v-if="tableAttributs"
+                    class="shp-table absolute inset-x-0 bottom-0 z-[1100] flex h-[46%] flex-col border-t border-primary-only bg-[#fff9f4] shadow-[0_-12px_30px_rgba(97,49,4,0.16)]">
+                    <div class="flex items-center gap-3 border-b border-primary-only px-4 py-2">
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-bold text-primary">Table d’attributs — {{ tableAttributs.shp.nom }}</p>
+                            <p class="text-xs text-primary-txt/70">{{ lignesTableAttributs.length }} / {{ tableAttributs.features.length }} entité(s)</p>
+                        </div>
+                        <input
+                            v-model="rechercheAttributs"
+                            type="search"
+                            placeholder="Rechercher un attribut…"
+                            class="w-56 rounded-lg border border-primary-only bg-white px-3 py-1.5 text-sm text-primary-txt outline-none focus:border-primary"
+                        >
+                        <button type="button" @click="fermerTableAttributs"
+                            class="rounded-lg p-1.5 text-primary-txt/60 hover:bg-primary-form hover:text-primary">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="min-h-0 flex-1 overflow-auto">
+                        <table class="w-full border-collapse text-left text-sm">
+                            <thead class="sticky top-0 z-10 bg-primary-form text-primary">
+                                <tr>
+                                    <th class="whitespace-nowrap border-b border-primary-only px-3 py-2 font-semibold">#</th>
+                                    <th v-for="colonne in tableAttributs.columns" :key="colonne" class="whitespace-nowrap border-b border-primary-only px-3 py-2 font-semibold">
+                                        {{ libelleChamp(colonne) }}
+                                        <span class="block text-[10px] font-normal uppercase tracking-wide text-primary-txt/50">{{ colonne }}</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-if="!lignesTableAttributs.length">
+                                    <td :colspan="tableAttributs.columns.length + 1" class="px-3 py-6 text-center text-primary-txt/60">Aucune entité ne correspond à la recherche.</td>
+                                </tr>
+                                <tr v-for="ligne in lignesTableAttributs" :key="ligne.index"
+                                    class="cursor-pointer border-b border-primary-only/60 hover:bg-primary-form"
+                                    :class="{ 'bg-[#ffe5c5]': selectedInfo?.type === 'shapefile' && selectedInfo.shapefile?.id === tableAttributs.shp.id && selectedInfo.featureIndex === ligne.index }"
+                                    @click="choisirLigneAttribut(ligne.feature, ligne.index)">
+                                    <td class="whitespace-nowrap px-3 py-2 font-medium text-primary-txt/70">{{ ligne.index + 1 }}</td>
+                                    <td v-for="colonne in tableAttributs.columns" :key="colonne" class="max-w-[16rem] px-3 py-2 text-primary-txt">
+                                        <span class="block truncate" :class="{ 'text-primary-txt/35': !valeurAttribut(ligne.feature, colonne) }" :title="valeurAttribut(ligne.feature, colonne)">
+                                            {{ valeurAttribut(ligne.feature, colonne) || '—' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <Transition
@@ -1287,6 +1863,27 @@ onBeforeUnmount(() => {
 
                             <div class="flex-1 overflow-y-auto p-6">
                                 <div v-if="activeTab === 'list'" class="space-y-3">
+                                    <form v-if="editingShapefile" class="p-4 border border-primary-only rounded-xl bg-primary-form space-y-3" @submit.prevent="saveShapefileEdit">
+                                        <p class="text-sm font-semibold text-primary-txt">Modifier le plan</p>
+                                        <BaseInput
+                                            v-model="editingShapefile.nom"
+                                            label="Nom du plan"
+                                            name="edit-nom"
+                                            required
+                                            type="text"
+                                            wrapper-class="w-full"
+                                        />
+                                        <label class="block text-sm font-medium text-primary-txt">
+                                            Couleur
+                                            <input v-model="editingShapefile.couleur" type="color" class="mt-2 h-10 w-16 cursor-pointer rounded-lg border border-primary-only bg-white p-1">
+                                        </label>
+                                        <div class="flex justify-end gap-2">
+                                            <button type="button" @click="cancelShapefileEdit" class="px-4 py-2 text-sm font-medium text-primary-txt bg-white border border-primary-only rounded-lg hover:bg-white">Annuler</button>
+                                            <button type="submit" :disabled="savingShapefile" class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-60">
+                                                {{ savingShapefile ? 'Enregistrement…' : 'Enregistrer' }}
+                                            </button>
+                                        </div>
+                                    </form>
                                     <div v-if="!shapefiles.length" class="flex flex-col items-center justify-center py-12 text-primary-txt/60">
                                         <p class="text-sm font-medium">Aucun plan importé</p>
                                         <button @click="activeTab = 'upload'"
@@ -1311,20 +1908,40 @@ onBeforeUnmount(() => {
                                                 :class="shp.visible ? 'text-primary hover:bg-primary-form' : 'text-primary-txt/60 hover:bg-primary-form'">
                                                 👁
                                             </button>
-                                            <button @click="zoomToShapefile(shp)" class="p-2 text-primary rounded-lg hover:bg-primary-form transition">🔍</button>
-                                            <button @click="deleteShapefile(shp)" class="p-2 text-red-600 rounded-lg hover:bg-red-50 transition">🗑</button>
+                                            <button type="button" @click="mettreShapefileEnAvant(shp)" class="p-2 rounded-lg transition" :class="featuredShapefileId === shp.id ? 'bg-primary text-white' : 'text-primary hover:bg-primary-form'" title="Mettre en avant">⬆</button>
+                                            <button type="button" @click="ouvrirListeEntites(shp)" class="p-2 text-primary rounded-lg hover:bg-primary-form transition" title="Toutes les entités">☰</button>
+                                            <button type="button" @click="selectionnerShapefile(shp); closeShapefileModal()" class="p-2 text-primary rounded-lg hover:bg-primary-form transition" title="Informations">ℹ</button>
+                                            <button type="button" @click="editShapefile(shp)" class="p-2 text-primary rounded-lg hover:bg-primary-form transition" title="Modifier">✏️</button>
+                                            <button type="button" @click="zoomToShapefile(shp)" class="p-2 text-primary rounded-lg hover:bg-primary-form transition" title="Zoomer">🔍</button>
+                                            <button type="button" @click="deleteShapefile(shp)" class="p-2 text-red-600 rounded-lg hover:bg-red-50 transition" title="Supprimer">🗑</button>
+                                            <button @click="downloadShapefile(shp)" class="p-2 text-primary rounded-lg hover:bg-primary-form transition">💾</button>
                                         </div>
                                     </div>
                                 </div>
 
                                 <form v-else @submit.prevent="uploadShapefile" class="space-y-5">
+                                    <BaseSelect
+                                        v-model="form.type"
+                                        label="Type d'entité"
+                                        name="type"
+                                        :options="[ 
+                                            { label: 'Limite Région', value: 'limite_region' }, 
+                                            { label: 'Limite Département', value: 'limite_departement' },
+                                            { label: 'Limite Arrondissement', value: 'limite_arrondissement' },  
+                                            { label: 'Limite Commune', value: 'limite_commune' },
+                                            { label: 'Limite Section', value: 'limite_section' },   
+                                            { label: 'Limite Parcelle', value: 'limite_parcelle' },
+                                        ]"
+                                        required
+                                        wrapper-class="w-full"
+                                    />
                                     <BaseInput
                                         v-model="form.nom"
-                                        label="Nom du plan"
+                                        label="Nom Entité"
                                         name="nom"
                                         required
                                         type="text"
-                                        placeholder="Ex : Plan cadastral Dinguessou"
+                                        placeholder="Ex : Entité "
                                         wrapper-class="w-full"
                                     />
                                     <BaseSelect
@@ -1372,6 +1989,46 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
+.shp-numero {
+    background: transparent !important;
+    border: none !important;
+}
+.shp-numero span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 22px;
+    padding: 0 4px;
+    background: #fff9f4;
+    border: 2px solid #613104;
+    border-radius: 6px;
+    color: #613104;
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 1;
+    box-shadow: 0 2px 8px rgba(97, 49, 4, 0.28);
+}
+.shp-numero span.is-active {
+    background: #613104;
+    color: #fff9f4;
+}
+
+.shp-etiquette {
+    background: rgba(255, 249, 244, 0.94) !important;
+    border: 1px solid #613104 !important;
+    color: #613104 !important;
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 1.2;
+    padding: 1px 5px !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+}
+.shp-etiquette::before {
+    display: none !important;
+}
+
 .leaflet-popup-content-wrapper {
     border-radius: 1.25rem !important;
     background: #fff9f4 !important;
@@ -1416,7 +2073,7 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 640px) {
-    .absolute {
+    .absolute:not(.shp-table) {
         position: relative !important;
         left: auto !important;
         right: auto !important;
