@@ -84,7 +84,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('matriceCadastrale', MatriceCadastraleController::class);
     Route::resource('/message', MessageController::class);
     Route::resource('mutation', MutationController::class); 
-    Route::resource('lotissement', ParametreController::class)->middleware('role:admin'); 
+    Route::get('/lotissement', [ParametreController::class, 'index'])->name('lotissement.index');
+    Route::resource('lotissement', ParametreController::class)->except(['index'])->middleware('role:admin'); 
     Route::resource('plan', PlanController::class);
 
     // ✅ Arrivee
@@ -172,6 +173,18 @@ Route::middleware('auth')->group(function () {
     Route::delete('/pointDensifier/destroy/{id}', [ParametreController::class, 'destroyPoint'])
         ->middleware('role:admin')
         ->name('parametre.pointDensifier.destroy');
+
+        
+    // 🏘️ Lotissements : la liste est ouverte, l'ajout et la modification restent aux administrateurs
+    Route::get('/lotissement/index', [ParametreController::class, 'index'])->name('parametre.lotissement.index');
+    Route::post('/dossier/verifyLotissement', [MutationController::class, 'verifyLotissement'])->name('dossier.verifyLotissement');
+    Route::middleware('role:admin')->group(function () {
+        Route::post('/store', [ParametreController::class, 'store'])->name('parametre.store');
+        Route::get('/lotissement/create', [ParametreController::class, 'create'])->name('parametre.lotissement.create');
+        Route::get('/lotissement/edit/{id}', [ParametreController::class, 'edit'])->name('parametre.lotissement.edit');
+        Route::put('/lotissement/update/{id}', [ParametreController::class, 'update'])->name('parametre.lotissement.update');
+        Route::delete('/lotissement/destroy/{id}', [ParametreController::class, 'destroy'])->name('parametre.lotissement.destroy');
+    });
  
     // ✅ Paramétrages — réservé aux administrateurs
     Route::prefix('parametre')->middleware('role:admin')->group(function () {
@@ -189,17 +202,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/mutationEdit/{id}', [ParametreController::class, 'editMutation'])->name('parametre.mutation.edit');
         Route::put('/mutation/update/{id}', [ParametreController::class, 'updateMutation'])->name('parametre.updateMutation'); 
         Route::delete('/mutation/destroy/{id}', [ParametreController::class, 'destroyMutation'])->name('parametre.mutation.destroy'); 
-        
-        // 🏘️ Lotissements
-        Route::post('/store', [ParametreController::class, 'store'])->name('parametre.store');  
-        Route::get('/lotissement/index', [ParametreController::class, 'index'])->name('parametre.lotissement.index');
-        Route::get('/lotissement/create', [ParametreController::class, 'create'])->name('parametre.lotissement.create');
-        Route::get('/lotissement/edit/{id}', [ParametreController::class, 'edit'])->name('parametre.lotissement.edit'); 
-        Route::put('/lotissement/update/{id}', [ParametreController::class, 'update'])->name('parametre.lotissement.update');
-        Route::delete('/lotissement/destroy/{id}', [ParametreController::class, 'destroy'])->name('parametre.lotissement.destroy');
-        Route::post('/dossier/verifyLotissement', [MutationController::class, 'verifyLotissement'])->name('dossier.verifyLotissement');
-
-
+ 
         // 🏘️ Points
         Route::get('/pointDensifier/createPoint', [ParametreController::class, 'createPoint'])->name('parametre.pointDensifier.createPoint'); 
         Route::post('/pointDensifier/storePoint', [ParametreController::class, 'storePoint'])->name('parametre.pointDensifier.storePoint');

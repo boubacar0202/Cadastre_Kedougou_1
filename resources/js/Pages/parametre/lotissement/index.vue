@@ -5,7 +5,7 @@ import DefaultLayout from "@/Layouts/DefaultLayout.vue";
 import MazBtn from "maz-ui/components/MazBtn";
 import DeleteModal from "@/Components/DeleteModal.vue";
 import { Link } from '@inertiajs/vue3';
-import { Head } from "@inertiajs/vue3";
+import { Head, usePage } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
 import axios from "axios";
 import { toast } from "@/Components/AppToast";  
@@ -26,6 +26,7 @@ const showDeleteModal = ref(false)
 const deleteCode = ref("")
 const selectedLotissement = ref(null) 
 const lotissementFilter = ref('')
+const isAdmin = computed(() => usePage().props.auth?.user?.role === 'admin')
  
 // Fonction de normalisation
 const normalize = (str = "") =>
@@ -162,7 +163,7 @@ const confirmerSuppression = async (code) => {
                           <th class="px-4 py-1 text-xs text-white text-center border bg-primary font-semibold">Superficie (ha)</th>
                           <th class="px-4 py-1 text-xs text-white text-center border bg-primary font-semibold">Nombre de Parcelles</th>
                           <th class="px-4 py-1 text-xs text-white text-center border bg-primary font-semibold">Documents Afferants</th>
-                          <th class="px-4 py-1 text-xs text-center bg-primary-only font-semibold">ACTIONS</th>
+                          <th v-if="isAdmin" class="px-4 py-1 text-xs text-center bg-primary-only font-semibold">ACTIONS</th>
                         </tr>
                       </thead>
 
@@ -182,16 +183,16 @@ const confirmerSuppression = async (code) => {
                           <td class="px-2 py-1 text-xs border">
                             <div v-if="lot.txt_documentsAfferants">
                               <a :href="`/storage/${lot.txt_documentsAfferants}?t=${Date.now()}`" target="_blank" class="text-primary underline">
-                                Voir PDF
+                                <img src="/iconePDF.png" alt="PDF" class="w-8 h-8 mx-auto">
                               </a>
                             </div>
                             <div v-else class="text-primary-txt/60 italic">Aucun PDF</div>
                           </td>
 
-                          <!-- Actions -->
-                          <td class="px-2 py-1 border flex justify-center gap-2">
+                          <!-- Actions réservées aux administrateurs -->
+                          <td v-if="isAdmin" class="px-2 py-1 border flex justify-center gap-2">
                             <!-- Edit -->  
-                            <Link :href="`/parametre/lotissement/edit/${lot.id}`">
+                            <Link :href="route('parametre.lotissement.edit', lot.id)">
                               <MazBtn 
                                   size="large"  
                                   :loading="loading"
@@ -219,7 +220,7 @@ const confirmerSuppression = async (code) => {
 
                         <!-- si aucun lot -->
                         <tr v-if="!lotissements || lotissements.length === 0">
-                          <td class="px-6 py-4 text-center text-primary-txt/60 italic" colspan="9">Aucun lotissement trouvé.</td>
+                          <td class="px-6 py-4 text-center text-primary-txt/60 italic" :colspan="isAdmin ? 9 : 8">Aucun lotissement trouvé.</td>
                         </tr>
                       </tbody>
                     </table>

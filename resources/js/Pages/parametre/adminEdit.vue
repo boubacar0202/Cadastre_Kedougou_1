@@ -5,6 +5,7 @@ import { Head, useForm } from "@inertiajs/vue3";
 import MazBtn from "maz-ui/components/MazBtn";
 import { toast } from "@/Components/AppToast";
 import BaseInput from "@/Components/BaseInput.vue";
+import BaseSelect from "@/Components/BaseSelect.vue";
 import { ref } from "vue";
 
 defineOptions({ layout: DefaultLayout });
@@ -19,24 +20,36 @@ const { user } = defineProps({
 const showPassword = ref(false);
 const showPasswordConfirmation = ref(false);
 
+const roleOptions = [
+    { label: "Administrateur", value: "admin" },
+    { label: "Utilisateur", value: "user" },
+];
+
 const form = useForm({
     name: user?.name || "",
     email: user?.email || "",
     password: "",
     password_confirmation: "",
+    role: user?.role || "",
 });
 
 const submitForm = () => {
     form.put(route("parametre.updateUser", user.id), {
         preserveScroll: true,
         onSuccess: (page) => {
+            if (page.props.flash?.error) {
+                toast.error(page.props.flash.error);
+                return;
+            }
+
             toast.success(page.props.flash?.success || "Utilisateur modifié avec succès.");
             form.reset("password", "password_confirmation");
             showPassword.value = false;
             showPasswordConfirmation.value = false;
         },
-        onError: () => {
-            toast.error("Erreur lors de la modification.");
+        onError: (errors) => {
+            const message = Object.values(errors || {}).find((value) => typeof value === "string");
+            toast.error(message || "Erreur lors de la modification.");
         },
     });
 };
@@ -48,7 +61,7 @@ const submitForm = () => {
     <AuthenticatedLayout>
         <template #header>
             <h2 class="text-xl font-semibold leading-tight text-primary-txt">
-                Modifier un administrateur
+                Modifier un Utilisateur
             </h2>
         </template>
 
@@ -60,7 +73,7 @@ const submitForm = () => {
                         <!-- En-tête -->
                         <div class="p-4 border-b bg-primary rounded-t-xl">
                             <h1 class="text-lg text-white font-semibold">
-                                Modification de l'utilisateur
+                                Modification de l'Utilisateur
                             </h1>
                         </div>
 
@@ -128,6 +141,16 @@ const submitForm = () => {
                                             </button>
                                         </template>
                                     </BaseInput>
+
+                                    <BaseSelect
+                                        label="Rôle"
+                                        name="role"
+                                        required
+                                        placeholder="Choisir un rôle"
+                                        :options="roleOptions"
+                                        v-model="form.role"
+                                        :custom-error="form.errors.role"
+                                    /> 
 
                                 </div>
 

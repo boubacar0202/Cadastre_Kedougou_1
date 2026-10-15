@@ -293,7 +293,7 @@ watch(isMenuOpen, (newValue) => {
                                 Mutations
                             </NavLink>
  
-                            <NavLink v-if="isAdmin"
+                            <NavLink
                                     :href="route('lotissement.index')" :active="(route().current() || '') === 'lotissement.index'"
                                     class="relative hover:bg-primary-dark hover:text-white hover:font-bold hover:text-1xl p-2 
                                     rounded-xl text-lg text-primary-txt border-l-8 border flex items-center"

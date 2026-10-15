@@ -182,7 +182,7 @@ const confirmerSuppression = async (code) => {
                           <td class="px-2 py-1 text-xs border">
                             <div v-if="lot.txt_documentsAfferants">
                               <a :href="`/storage/${lot.txt_documentsAfferants}?t=${Date.now()}`" target="_blank" class="text-primary underline">
-                                Voir PDF
+                                <img src="/iconePDF.png" alt="PDF" class="w-8 h-8 mx-auto">
                               </a>
                             </div>
                             <div v-else class="text-primary-txt/60 italic">Aucun PDF</div>

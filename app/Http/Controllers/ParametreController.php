@@ -350,10 +350,15 @@ class ParametreController extends Controller
     {
         $user = User::findOrFail($id);
 
+        $request->merge([
+            'role' => User::normalizeRole($request->input('role')),
+        ]);
+ 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $id,
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
+            'role' => 'required|string|in:admin,user',
         ], [
             'name.required' => 'Le nom complet est obligatoire.',
             'email.required' => "L'adresse email est obligatoire.",
@@ -361,15 +366,29 @@ class ParametreController extends Controller
             'email.unique' => 'Cette adresse email est déjà utilisée.',
             'password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
             'password.min' => 'Le mot de passe doit contenir au moins :min caractères.',
+            'role.required' => 'Le rôle est obligatoire.',
+            'role.in' => 'Le rôle choisi est invalide.',
         ]);
 
         $data = [
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'role' => $validated['role'],
         ];
 
         if (! empty($validated['password'])) {
             $data['password'] = $validated['password'];
+        }
+
+        $compteProtege = (int) $user->id === 4
+            && strcasecmp(trim((string) $user->email), 'mbengueboubacar095@gmail.com') === 0;
+
+        if ($compteProtege) {
+            $message = 'La modification de l\'utilisateur ' . $user->name . ' n\'est pas autorisée.';
+
+            return back()
+                ->withErrors(['role' => $message])
+                ->with('error', $message);
         }
 
         $user->update($data);
