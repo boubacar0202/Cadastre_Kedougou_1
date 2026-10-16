@@ -90,7 +90,7 @@ const shapefilesLayerGroup = ref(null);
 const showShapefileModal = ref(false);
 const activeTab = ref('list');
 const uploading = ref(false);
-const form = ref({ nom: '', shp: null, shx: null, dbf: null, prj: null, srid: '4326' });
+const form = ref({ nom: '', type_entite: '', shp: null, shx: null, dbf: null, prj: null, srid: '4326' });
 const editingShapefile = ref(null);
 const savingShapefile = ref(false);
 const shapefileCache = new Map();
@@ -104,6 +104,15 @@ const surlignageShapefile = ref(null);
 let shapefileReloadTimer = null;
 
 const ORDRE_CHAMPS_QGIS = ['TEXT', 'LAYER', 'ENTITYHAND', 'SUBCLASSES', 'LINETYPE', 'PAPERSPACE'];
+const TYPES_ENTITE = [
+    { value: 'limite_region', label: 'Limite Région', ordre: 1, fill: 0.08, weight: 3 },
+    { value: 'limite_departement', label: 'Limite Département', ordre: 2, fill: 0.12, weight: 2.5 },
+    { value: 'limite_arrondissement', label: 'Limite Arrondissement', ordre: 3, fill: 0.14, weight: 2 },
+    { value: 'limite_commune', label: 'Limite Commune', ordre: 4, fill: 0.18, weight: 2 },
+    { value: 'limite_section', label: 'Limite Section', ordre: 5, fill: 0.22, weight: 2 },
+    { value: 'limite_parcelle', label: 'Limite Parcelle', ordre: 6, fill: 0.28, weight: 1.5 },
+];
+const optionsTypeEntite = TYPES_ENTITE.map(({ value, label }) => ({ value, label }));
 const LIBELLES_CHAMPS_QGIS = {
     TEXT: 'Texte',
     LAYER: 'Couche',
@@ -691,7 +700,7 @@ function openShapefileModal(tab = 'list') {
 
 function closeShapefileModal() {
     showShapefileModal.value = false;
-    form.value = { nom: '', shp: null, shx: null, dbf: null, prj: null, srid: '4326' };
+    form.value = { nom: '', type_entite: '', shp: null, shx: null, dbf: null, prj: null, srid: '4326' };
     document.querySelectorAll('input[type="file"]').forEach(i => i.value = '');
 }
 
@@ -712,7 +721,7 @@ async function chargerShapefiles() {
     const ordre = [...shapefiles.value].sort((a, b) => {
         if (a.id === featuredShapefileId.value) return 1;
         if (b.id === featuredShapefileId.value) return -1;
-        return 0;
+        return rangTypeEntite(a) - rangTypeEntite(b);
     });
 
     for (const shp of ordre) {
@@ -790,13 +799,34 @@ function escapeHtml(valeur) {
         .replace(/"/g, '&quot;');
 }
 
+function metaTypeEntite(type) {
+    return TYPES_ENTITE.find((item) => item.value === type) || null;
+}
+
+function rangTypeEntite(shp) {
+    return metaTypeEntite(shp?.type_entite)?.ordre ?? 99;
+}
+
+function libelleTypeEntite(type) {
+    return metaTypeEntite(type)?.label || '';
+}
+
+const shapefilesTries = computed(() => {
+    return [...shapefiles.value].sort((a, b) => {
+        const rang = rangTypeEntite(a) - rangTypeEntite(b);
+        if (rang !== 0) return rang;
+        return String(a.nom || '').localeCompare(String(b.nom || ''), 'fr');
+    });
+});
+
 function styleShapefile(shp, enAvant) {
+    const meta = metaTypeEntite(shp?.type_entite);
     const couleur = shp.couleur || '#3388ff';
     return {
         color: enAvant ? '#613104' : couleur,
-        weight: enAvant ? 4 : 2,
+        weight: enAvant ? 4 : (meta?.weight ?? 2),
         fillColor: couleur,
-        fillOpacity: enAvant ? 0.55 : 0.25,
+        fillOpacity: enAvant ? 0.55 : (meta?.fill ?? 0.25),
     };
 }
 
@@ -1107,10 +1137,12 @@ async function uploadShapefile() {
         await chargerShapefiles();
 
         activeTab.value = 'list';
-        form.value = { nom: '', shp: null, shx: null, dbf: null, prj: null, srid: '4326' };
+        form.value = { nom: '', type_entite: '', shp: null, shx: null, dbf: null, prj: null, srid: '4326' };
         document.querySelectorAll('input[type="file"]').forEach(i => i.value = '');
     } catch (e) {
-        const msg = e.response?.data?.errors?.shp || e.response?.data?.message || 'Erreur import';
+        const errors = e.response?.data?.errors;
+        const first = errors ? Object.values(errors).flat()[0] : null;
+        const msg = first || e.response?.data?.message || 'Erreur import';
         toast.error(msg);
     } finally {
         uploading.value = false;
@@ -1135,6 +1167,7 @@ function editShapefile(shp) {
     editingShapefile.value = {
         id: shp.id,
         nom: shp.nom || '',
+        type_entite: shp.type_entite || '',
         couleur: shp.couleur || '#3388ff',
     };
 }
@@ -1157,6 +1190,7 @@ async function saveShapefileEdit() {
     try {
         const { data } = await axios.patch(`/shapefiles/${edition.id}`, {
             nom,
+            type_entite: edition.type_entite || null,
             couleur: edition.couleur || '#3388ff',
         });
 
@@ -1482,6 +1516,7 @@ onBeforeUnmount(() => {
                             <div class="flex items-center gap-2">
                                 <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
                                 <span class="truncate">{{ selectedInfo.shapefile?.nom }}</span>
+                                <span v-if="libelleTypeEntite(selectedInfo.shapefile?.type_entite)" class="shrink-0 text-xs text-white/80">{{ libelleTypeEntite(selectedInfo.shapefile?.type_entite) }}</span>
                                 <span class="shrink-0 text-xs text-white/80">{{ selectedInfo.shapefile?.nb_entites }} entité(s)</span>
                                 <button type="button" @click="effacerSelectionShapefile"
                                     class="ml-1 rounded-full p-0.5 hover:bg-black/20">
@@ -1668,6 +1703,8 @@ onBeforeUnmount(() => {
                                 <div class="grid grid-cols-[7.5rem_1fr] gap-x-3 gap-y-2 text-sm">
                                     <span class="font-medium text-primary">Plan</span>
                                     <span class="font-bold text-primary-txt break-words">{{ selectedInfo.shapefile?.nom || '—' }}</span>
+                                    <span class="font-medium text-primary">Type</span>
+                                    <span class="font-bold text-primary-txt break-words">{{ libelleTypeEntite(selectedInfo.shapefile?.type_entite) || '—' }}</span>
                                     <span class="font-medium text-primary">Entités</span>
                                     <span class="font-bold text-primary-txt">{{ selectedInfo.shapefile?.nb_entites ?? '—' }}</span>
                                     <span class="font-medium text-primary">Géométrie</span>
@@ -1873,6 +1910,13 @@ onBeforeUnmount(() => {
                                             type="text"
                                             wrapper-class="w-full"
                                         />
+                                        <BaseSelect
+                                            v-model="editingShapefile.type_entite"
+                                            label="Type d'entité"
+                                            name="edit-type"
+                                            :options="optionsTypeEntite"
+                                            wrapper-class="w-full"
+                                        />
                                         <label class="block text-sm font-medium text-primary-txt">
                                             Couleur
                                             <input v-model="editingShapefile.couleur" type="color" class="mt-2 h-10 w-16 cursor-pointer rounded-lg border border-primary-only bg-white p-1">
@@ -1892,7 +1936,7 @@ onBeforeUnmount(() => {
                                         </button>
                                     </div>
 
-                                    <div v-for="shp in shapefiles" :key="shp.id"
+                                    <div v-for="shp in shapefilesTries" :key="shp.id"
                                         class="flex items-center gap-3 p-3 bg-white border border-primary-only rounded-xl hover:border-primary hover:shadow-sm transition group">
                                         <span class="flex-shrink-0 w-4 h-4 rounded-full ring-2 ring-white shadow"
                                             :style="{ background: shp.couleur || '#3388ff' }"></span>
@@ -1901,7 +1945,9 @@ onBeforeUnmount(() => {
                                                 <p class="text-sm font-semibold text-primary-txt truncate">{{ shp.nom }}</p>
                                                 <span v-if="!shp.visible" class="px-2 py-0.5 text-[10px] font-medium text-primary-txt bg-primary-form rounded-full">Masqué</span>
                                             </div>
-                                            <p class="text-xs text-primary-txt mt-0.5">{{ shp.nb_entites }} entité(s) · SRID {{ shp.srid }}</p>
+                                            <p class="text-xs text-primary-txt mt-0.5">
+                                                <span v-if="libelleTypeEntite(shp.type_entite)">{{ libelleTypeEntite(shp.type_entite) }} · </span>{{ shp.nb_entites }} entité(s) · SRID {{ shp.srid }}
+                                            </p>
                                         </div>
                                         <div class="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
                                             <button @click="toggleShapefileVisibility(shp)" class="p-2 rounded-lg transition"
@@ -1921,20 +1967,14 @@ onBeforeUnmount(() => {
 
                                 <form v-else @submit.prevent="uploadShapefile" class="space-y-5">
                                     <BaseSelect
-                                        v-model="form.type"
+                                        v-model="form.type_entite"
                                         label="Type d'entité"
-                                        name="type"
-                                        :options="[ 
-                                            { label: 'Limite Région', value: 'limite_region' }, 
-                                            { label: 'Limite Département', value: 'limite_departement' },
-                                            { label: 'Limite Arrondissement', value: 'limite_arrondissement' },  
-                                            { label: 'Limite Commune', value: 'limite_commune' },
-                                            { label: 'Limite Section', value: 'limite_section' },   
-                                            { label: 'Limite Parcelle', value: 'limite_parcelle' },
-                                        ]"
+                                        name="type_entite"
+                                        :options="optionsTypeEntite"
                                         required
                                         wrapper-class="w-full"
                                     />
+
                                     <BaseInput
                                         v-model="form.nom"
                                         label="Nom Entité"
@@ -1944,6 +1984,7 @@ onBeforeUnmount(() => {
                                         placeholder="Ex : Entité "
                                         wrapper-class="w-full"
                                     />
+                                    
                                     <BaseSelect
                                         v-model="form.srid"
                                         label="Projection"

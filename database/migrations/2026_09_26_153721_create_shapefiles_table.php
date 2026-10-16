@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('couleur')->default('#3388ff');
             $table->boolean('visible')->default(true);
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete(); // ✅ null si user supprimé
+            $table->string('type_entite')->nullable();
 
             $table->index('visible');                  // ✅ index (optionnel)
 
@@ -28,5 +29,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('shapefiles');
+        
     }
 };

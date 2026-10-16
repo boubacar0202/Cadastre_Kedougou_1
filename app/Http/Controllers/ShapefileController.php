@@ -55,14 +55,17 @@ class ShapefileController extends Controller
     {
         // 1. Validation
         $request->validate([
-            'nom'  => 'required|string|max:255',
-            'shp'  => 'required|file',
-            'shx'  => 'required|file',
-            'dbf'  => 'required|file',
-            'prj'  => 'nullable|file',
-            'srid' => 'nullable|string|max:10',
+            'nom'         => 'required|string|max:255',
+            'type_entite' => 'required|string|in:limite_region,limite_departement,limite_arrondissement,limite_commune,limite_section,limite_parcelle',
+            'shp'         => 'required|file',
+            'shx'         => 'required|file',
+            'dbf'         => 'required|file',
+            'prj'         => 'nullable|file',
+            'srid'        => 'nullable|string|max:10',
         ], [
             'nom.required' => 'Le nom du plan est requis.',
+            'type_entite.required' => 'Le type d\'entité est requis.',
+            'type_entite.in' => 'Le type d\'entité choisi est invalide.',
             'shp.required' => 'Le fichier .shp est requis.',
             'shx.required' => 'Le fichier .shx est requis.',
             'dbf.required' => 'Le fichier .dbf est requis.',
@@ -165,14 +168,25 @@ class ShapefileController extends Controller
         @rmdir($tmpPath);
 
         // 10. Enregistrer en base
+        $typeEntite = $request->input('type_entite');
+        $couleurs = [
+            'limite_region'         => '#1e3a8a',
+            'limite_departement'    => '#0f766e',
+            'limite_arrondissement' => '#6d28d9',
+            'limite_commune'        => '#c2410c',
+            'limite_section'        => '#b45309',
+            'limite_parcelle'       => '#15803d',
+        ];
+
         $shapefile = Shapefile::create([
-            'nom'        => $request->nom,
-            'nom_table'  => $nomTable,
-            'srid'       => '4326',
-            'nb_entites' => $nbEntites,
-            'bbox'       => $bbox,
-            'couleur'    => '#3388ff',
-            'visible'    => true,
+            'nom'         => $request->nom,
+            'type_entite' => $typeEntite,
+            'nom_table'   => $nomTable,
+            'srid'        => '4326',
+            'nb_entites'  => $nbEntites,
+            'bbox'        => $bbox,
+            'couleur'     => $couleurs[$typeEntite] ?? '#3388ff',
+            'visible'     => true,
             // 'user_id'    => auth()->id(),
         ]);
 
@@ -229,9 +243,10 @@ class ShapefileController extends Controller
     public function update(Request $request, Shapefile $shapefile)
     {
         $validated = $request->validate([
-            'nom'     => 'sometimes|string|max:255',
-            'couleur' => 'sometimes|string|max:20',
-            'visible' => 'sometimes|boolean',
+            'nom'         => 'sometimes|string|max:255',
+            'type_entite' => 'sometimes|nullable|string|in:limite_region,limite_departement,limite_arrondissement,limite_commune,limite_section,limite_parcelle',
+            'couleur'     => 'sometimes|string|max:20',
+            'visible'     => 'sometimes|boolean',
         ]);
         $shapefile->update($validated);
         return response()->json($shapefile);

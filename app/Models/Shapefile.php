@@ -8,6 +8,7 @@ class Shapefile extends Model
 {
     protected $fillable = [
         'nom',
+        'type_entite',
         'nom_table',
         'srid',
         'nb_entites',
