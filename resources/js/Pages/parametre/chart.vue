@@ -4,7 +4,7 @@ import BaseInput from "@/Components/BaseInput.vue"
 import BaseSelect from "@/Components/BaseSelect.vue"
 import { Head } from "@inertiajs/vue3";
 import MazBtn from "maz-ui/components/MazBtn";
-import { onMounted, ref, watch, watchEffect, computed } from "vue";
+import { onMounted, onUnmounted, ref, watch, watchEffect, computed } from "vue";
 import axios from "axios";
 import { toast } from "@/Components/AppToast";   
 import Chart from 'chart.js/auto';
@@ -100,6 +100,16 @@ const sortColumn = ref('score');
 const sortDirection = ref('desc');
 const isRefreshing = ref(false);
 const isLoadingEvaluation = ref(false);
+const detailOuvert = ref(false);
+const detailChargement = ref(false);
+const detail = ref(null);
+const filtreDetail = ref('tous');
+const filtresDetail = [
+    { value: 'tous', label: 'Tous' },
+    { value: 'enregistrement', label: 'Enregistrements' },
+    { value: 'modification', label: 'Modifications' },
+    { value: 'recherche', label: 'Recherches' },
+];
 
 const annees = [new Date().getFullYear(), new Date().getFullYear() - 1, new Date().getFullYear() - 2];
 const trimestresOptions = [
@@ -167,6 +177,75 @@ const evaluationTotals = computed(() => {
         return acc;
     }, { enregistrements: 0, modifications: 0, recherches: 0, score: 0 });
 });
+
+const traitementsFiltres = computed(() => {
+    const lignes = detail.value?.traitements || [];
+    if (filtreDetail.value === 'tous') return lignes;
+    return lignes.filter(item => item.action === filtreDetail.value);
+});
+
+function libelleAction(action) {
+    if (action === 'enregistrement') return 'Enregistrement';
+    if (action === 'modification') return 'Modification';
+    if (action === 'recherche') return 'Recherche';
+    return action || 'Traitement';
+}
+
+function actionClass(action) {
+    if (action === 'enregistrement') return 'bg-emerald-100 text-emerald-800';
+    if (action === 'modification') return 'bg-sky-100 text-sky-800';
+    if (action === 'recherche') return 'bg-amber-100 text-amber-800';
+    return 'bg-gray-100 text-gray-600';
+}
+
+async function afficherInformations(row) {
+    if (!row?.user_id) {
+        toast.error("Impossible d'identifier cet utilisateur.");
+        return;
+    }
+    filtreDetail.value = 'tous';
+    detail.value = {
+        utilisateur: row.utilisateur,
+        role: row.role,
+        trimestre: row.trimestre,
+        totaux: {
+            enregistrements: row.enregistrements || 0,
+            modifications: row.modifications || 0,
+            recherches: row.recherches || 0,
+        },
+        traitements: [],
+        total: 0,
+        tronque: false,
+    };
+    detailOuvert.value = true;
+    detailChargement.value = true;
+    try {
+        const { data } = await axios.get('/api/evaluation-utilisateur', {
+            params: {
+                user_id: row.user_id,
+                annee: annee.value,
+                trimestre: trimestre.value,
+            },
+        });
+        detail.value = data;
+    } catch (error) {
+        console.error('Erreur détail traitements:', error);
+        toast.error("Impossible de charger le détail des traitements.");
+        detailOuvert.value = false;
+    } finally {
+        detailChargement.value = false;
+    }
+}
+
+function fermerDetail() {
+    detailOuvert.value = false;
+}
+
+function onEscapeDetail(event) {
+    if (event.key === 'Escape' && detailOuvert.value) {
+        fermerDetail();
+    }
+}
 
 function appreciationClass(appreciation) {
     if (appreciation === 'Excellente') return 'bg-green-100 text-green-800';
@@ -402,6 +481,11 @@ onMounted(() => {
     createCharts();
     loadCessionData('Délimitation', cessionDataDelimitation, offsetDelimitation.value);
     loadCessionData('Extrait de plan', cessionDataExtrait, offsetExtrait.value);
+    window.addEventListener('keydown', onEscapeDetail);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', onEscapeDetail);
 });
 
 watchEffect((onInvalidate) => {
@@ -636,7 +720,7 @@ watchEffect((onInvalidate) => {
                     </div>
                 </div>
             </div>
-
+            
             <!-- Évaluation des utilisateurs -->
             <div class="bg-white rounded-lg shadow-lg p-6 mt-8">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
@@ -665,14 +749,15 @@ watchEffect((onInvalidate) => {
                                         <span v-if="sortColumn === col.key" class="text-xs">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
                                     </div>
                                 </th>
+                                <th class="px-4 py-3 text-center text-xs font-medium text-primary-txt uppercase tracking-wider">Détail</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <tr v-if="isLoadingEvaluation">
-                                <td :colspan="colonnesEvaluation.length" class="px-6 py-4 text-center text-primary-txt">Chargement de l'évaluation...</td>
+                                <td :colspan="colonnesEvaluation.length + 1" class="px-6 py-4 text-center text-primary-txt">Chargement de l'évaluation...</td>
                             </tr>
                             <template v-else>
-                            <tr v-for="(row, index) in filteredEvaluation" :key="`${row.utilisateur}-${index}`" class="hover:bg-gray-50 transition-colors">
+                            <tr v-for="row in filteredEvaluation" :key="row.user_id" class="hover:bg-gray-50 transition-colors">
                                 <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary-txt">{{ row.utilisateur }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-primary-txt">{{ row.role }}</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-primary-txt">{{ row.trimestre }}</td>
@@ -685,10 +770,13 @@ watchEffect((onInvalidate) => {
                                         {{ row.appreciation }}
                                     </span>
                                 </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-primary-txt">
+                                    <MazBtn @click="afficherInformations(row)" color="primary" size="sm">Voir</MazBtn>
+                                </td>
                             </tr>
                             </template>
                             <tr v-if="!isLoadingEvaluation && filteredEvaluation.length === 0">
-                                <td :colspan="colonnesEvaluation.length" class="px-6 py-4 text-center text-primary-txt">Aucun utilisateur pour ce trimestre</td>
+                                <td :colspan="colonnesEvaluation.length + 1" class="px-6 py-4 text-center text-primary-txt">Aucun utilisateur pour ce trimestre</td>
                             </tr>
                         </tbody>
                     </table>
@@ -705,6 +793,77 @@ watchEffect((onInvalidate) => {
                     </div>
                     <p class="text-xs text-primary-txt/70">
                         Appréciation : Aucune activité (0), Faible (1 à 9), Moyenne (10 à 24), Bonne (25 à 49), Excellente (50 et plus).
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="detailOuvert" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/40" @click="fermerDetail"></div>
+            <div class="relative flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+                <div class="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-primary-txt">{{ detail?.utilisateur }}</h3>
+                        <p class="mt-1 text-sm text-primary-txt/70">
+                            {{ detail?.role || '—' }} · {{ detail?.trimestre }}
+                        </p>
+                    </div>
+                    <button type="button" class="rounded-lg px-2 py-1 text-sm text-primary-txt hover:bg-gray-100" @click="fermerDetail">
+                        Fermer
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap gap-3 border-b border-gray-100 px-6 py-3 text-sm text-primary-txt">
+                    <span>Enregistrements : {{ detail?.totaux?.enregistrements || 0 }}</span>
+                    <span>Modifications : {{ detail?.totaux?.modifications || 0 }}</span>
+                    <span>Recherches : {{ detail?.totaux?.recherches || 0 }}</span>
+                </div>
+
+                <div class="flex flex-wrap gap-2 px-6 py-3">
+                    <button
+                        v-for="filtre in filtresDetail"
+                        :key="filtre.value"
+                        type="button"
+                        class="rounded-full px-3 py-1 text-xs font-semibold transition-colors"
+                        :class="filtreDetail === filtre.value ? 'bg-primary text-white' : 'bg-gray-100 text-primary-txt'"
+                        @click="filtreDetail = filtre.value"
+                    >
+                        {{ filtre.label }}
+                    </button>
+                </div>
+
+                <div class="overflow-y-auto px-6 pb-6">
+                    <p v-if="detailChargement" class="py-8 text-center text-sm text-primary-txt">Chargement des traitements...</p>
+                    <p v-else-if="traitementsFiltres.length === 0" class="py-8 text-center text-sm text-primary-txt">
+                        Aucun traitement pour ce filtre sur le trimestre.
+                    </p>
+                    <table v-else class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium uppercase text-primary-txt">Date</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium uppercase text-primary-txt">Action</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium uppercase text-primary-txt">Module</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium uppercase text-primary-txt">Référence</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                            <tr v-for="(item, index) in traitementsFiltres" :key="`${item.date}-${item.action}-${index}`">
+                                <td class="whitespace-nowrap px-3 py-2 text-sm text-primary-txt">{{ item.date }}</td>
+                                <td class="px-3 py-2 text-sm">
+                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="actionClass(item.action)">
+                                        {{ libelleAction(item.action) }}
+                                    </span>
+                                </td>
+                                <td class="px-3 py-2 text-sm text-primary-txt">
+                                    <div>{{ item.module || '—' }}</div>
+                                    <div class="text-xs text-primary-txt/60">{{ item.libelle }}</div>
+                                </td>
+                                <td class="px-3 py-2 text-sm text-primary-txt">{{ item.reference || '—' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p v-if="detail?.tronque" class="mt-3 text-xs text-primary-txt/70">
+                        Affichage des 300 traitements les plus récents sur {{ detail.total }}.
                     </p>
                 </div>
             </div>

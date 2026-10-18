@@ -29,7 +29,7 @@ input[type="checkbox"]:checked {
 }
 
 select {
-    overflow-y: auto;
+    overflow: visible;
 }
 
 @layer base {

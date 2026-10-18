@@ -16,11 +16,13 @@ class Shapefile extends Model
         'couleur',
         'visible',
         'user_id',
+        'verification',
     ];
 
     protected $casts = [
-        'bbox'       => 'array',
-        'visible'    => 'boolean',
+        'bbox'         => 'array',
+        'verification' => 'array',
+        'visible'      => 'boolean',
         'nb_entites' => 'integer',
         // ⚠️ 'srid' volontairement PAS casté en integer
         //    (reste une string, ex: "32628", "4326")

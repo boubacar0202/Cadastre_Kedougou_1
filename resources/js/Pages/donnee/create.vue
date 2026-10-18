@@ -67,7 +67,7 @@ const debouncedSearch = debounce((page = 1) => {
         replace: true,
         preserveScroll: true
     });
-}, 300);
+}, 1500);
 
 // Watcher sur les filtres
 watch(filters, () => {

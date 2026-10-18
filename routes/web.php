@@ -244,13 +244,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/api/chart-data', [ParametreController::class, 'getChartData'])->name('api.chart.data');
         Route::get('/api/stats', [ParametreController::class, 'getStatsData'])->name('api.stats');
         Route::get('/api/cession-data', [ParametreController::class, 'getCessionData'])->name('api.cession.data');
+        Route::get('/api/evaluation-utilisateur', [ParametreController::class, 'getEvaluationUtilisateur'])->name('api.evaluation.utilisateur');
     });
 
     // ✅ Listes des lotissements
     Route::get('/departements', [ParametreController::class, 'getDepartements']);
     Route::get('/arrondissements/{departement}', [ParametreController::class, 'getArrondissementByDepartement']);
     Route::get('/communes/{arrondissement}', [ParametreController::class, 'getCommunesByArrondissement']);  
-    Route::post('/terrain/search', [TerrainController::class, 'searchTerrain']); 
+    Route::post('/terrain/search', [TerrainController::class, 'searchTerrain']);
+    Route::post('/api/plan/parcelles', [TerrainController::class, 'consulterParcelles'])->name('plan.parcelles'); 
     Route::get('/parcelles/{numero}', [TerrainController::class, 'show']);
 
     // ✅ Shapefiles  
@@ -266,6 +268,7 @@ Route::middleware('auth')->group(function () {
 
     // API GeoJSON d'un shapefile
     Route::get('/api/shapefiles/{shapefile}/geojson', [ShapefileController::class, 'geojson'])->name('shapefiles.geojson');
+    Route::post('/api/plan/previsualiser', [ShapefileController::class, 'previsualiser'])->name('plan.previsualiser');
 
     // Génération de polygones à partir d'un centroïde
     Route::post('/api/generer-polygone', [ShapefileController::class, 'genererPolygone'])->name('api.generer.polygone');

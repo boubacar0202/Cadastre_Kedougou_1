@@ -1356,19 +1356,81 @@ class ParametreController extends Controller
     }
 
     /**
+     * Détail des traitements d'un utilisateur sur le trimestre affiché.
+     */
+    public function getEvaluationUtilisateur(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'annee' => ['nullable', 'integer'],
+            'trimestre' => ['nullable', 'integer', 'between:1,4'],
+        ]);
+
+        $periode = $this->bornesTrimestre(
+            isset($validated['annee']) ? (int) $validated['annee'] : null,
+            isset($validated['trimestre']) ? (int) $validated['trimestre'] : null,
+        );
+
+        $user = User::query()->findOrFail($validated['user_id']);
+        $roleColumn = Schema::hasColumn('users', 'role') ? 'role' : null;
+        $hasDetail = Schema::hasColumn('activites_utilisateurs', 'libelle');
+
+        $base = ActiviteUtilisateur::query()
+            ->where('user_id', $user->id)
+            ->whereBetween('created_at', [$periode['debut'], $periode['fin']]);
+
+        $totauxBruts = (clone $base)
+            ->select('action', DB::raw('COUNT(*) as total'))
+            ->groupBy('action')
+            ->pluck('total', 'action');
+
+        $total = (int) $totauxBruts->sum();
+        $lignes = (clone $base)
+            ->orderByDesc('created_at')
+            ->limit(300)
+            ->get();
+
+        $traitements = $lignes->map(function (ActiviteUtilisateur $activite) use ($hasDetail) {
+            $libelle = $hasDetail ? $activite->libelle : null;
+
+            return [
+                'date' => optional($activite->created_at)->format('d/m/Y H:i'),
+                'action' => $activite->action,
+                'module' => $hasDetail ? ($activite->module ?: null) : null,
+                'libelle' => $libelle ?: 'Traitement non détaillé',
+                'reference' => $hasDetail ? ($activite->reference ?: null) : null,
+                'chemin' => $hasDetail ? ($activite->chemin ?: null) : null,
+            ];
+        })->values();
+
+        return response()->json([
+            'user_id' => $user->id,
+            'utilisateur' => $user->name,
+            'role' => $roleColumn ? ($user->{$roleColumn} ?: '—') : '—',
+            'trimestre' => $periode['label'],
+            'totaux' => [
+                'enregistrements' => (int) ($totauxBruts['enregistrement'] ?? 0),
+                'modifications' => (int) ($totauxBruts['modification'] ?? 0),
+                'recherches' => (int) ($totauxBruts['recherche'] ?? 0),
+            ],
+            'total' => $total,
+            'tronque' => $total > $traitements->count(),
+            'traitements' => $traitements,
+        ]);
+    }
+
+    /**
      * Évaluation des utilisateurs pour un trimestre.
      * Score = enregistrements × 3 + modifications × 2 + recherches × 1.
      */
     private function getEvaluationUtilisateurs(?int $annee = null, ?int $trimestre = null): array
     {
-        $annee = $annee && $annee > 2000 ? $annee : (int) now()->year;
-        $trimestre = $trimestre && $trimestre >= 1 && $trimestre <= 4
-            ? $trimestre
-            : (int) ceil(now()->month / 3);
-
-        $debut = Carbon::create($annee, (($trimestre - 1) * 3) + 1, 1)->startOfDay();
-        $fin = $debut->copy()->addMonths(3)->subSecond();
-        $label = ['1er', '2e', '3e', '4e'][$trimestre - 1].' trimestre '.$annee;
+        $periode = $this->bornesTrimestre($annee, $trimestre);
+        $annee = $periode['annee'];
+        $trimestre = $periode['trimestre'];
+        $debut = $periode['debut'];
+        $fin = $periode['fin'];
+        $label = $periode['label'];
 
         $roleColumn = Schema::hasColumn('users', 'role') ? 'role' : null;
 
@@ -1397,6 +1459,7 @@ class ParametreController extends Controller
             $score = ($enregistrements * 3) + ($modifications * 2); //+ $recherches;
 
             return [
+                'user_id' => $user->id,
                 'utilisateur' => $user->name,
                 'role' => $roleColumn ? ($user->{$roleColumn} ?: '—') : '—',
                 'trimestre' => $label,
@@ -1413,6 +1476,25 @@ class ParametreController extends Controller
             'trimestre' => $trimestre,
             'label' => $label,
             'lignes' => $lignes,
+        ];
+    }
+
+    private function bornesTrimestre(?int $annee, ?int $trimestre): array
+    {
+        $annee = $annee && $annee > 2000 ? $annee : (int) now()->year;
+        $trimestre = $trimestre && $trimestre >= 1 && $trimestre <= 4
+            ? $trimestre
+            : (int) ceil(now()->month / 3);
+
+        $debut = Carbon::create($annee, (($trimestre - 1) * 3) + 1, 1)->startOfDay();
+        $fin = $debut->copy()->addMonths(3)->subSecond();
+
+        return [
+            'annee' => $annee,
+            'trimestre' => $trimestre,
+            'debut' => $debut,
+            'fin' => $fin,
+            'label' => ['1er', '2e', '3e', '4e'][$trimestre - 1].' trimestre '.$annee,
         ];
     }
 

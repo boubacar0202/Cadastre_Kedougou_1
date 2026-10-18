@@ -31,28 +31,32 @@ const props = defineProps({
 // ============================================================
 const ZOOM_THRESHOLD_POINTS = 16;
 const ZOOM_THRESHOLD_HISTORIC = 11;
-const LARGE_SHAPEFILE_THRESHOLD = 5000;
 const SHAPEFILE_RELOAD_DELAY = 500;
 
 const DEFAULT_PARCEL_STYLE = {
-    color: '#3388ff',
-    weight: 2,
-    fillColor: '#3388ff',
-    fillOpacity: 0.25
+    color: '#052e16',
+    weight: 1.6,
+    fillColor: '#16a34a',
+    fillOpacity: 0.28,
+    lineCap: 'butt',
+    lineJoin: 'miter'
 };
 const HOVER_PARCEL_STYLE = {
-    color: '#2563eb',
-    weight: 3,
-    fillColor: '#3b82f6',
-    fillOpacity: 0.45
+    color: '#14532d',
+    weight: 2.2,
+    fillColor: '#22c55e',
+    fillOpacity: 0.42,
+    lineCap: 'butt',
+    lineJoin: 'miter'
 };
 const SELECTED_PARCEL_STYLE = {
-    color: '#dc2626',
-    weight: 5,
-    fillColor: '#ef4444',
-    fillOpacity: 0.6,
+    color: '#7f1d1d',
+    weight: 2.4,
+    fillColor: '#dc2626',
+    fillOpacity: 0.38,
     opacity: 1,
-    lineJoin: 'round'
+    lineCap: 'butt',
+    lineJoin: 'miter'
 };
 
 // ============================================================
@@ -90,10 +94,20 @@ const shapefilesLayerGroup = ref(null);
 const showShapefileModal = ref(false);
 const activeTab = ref('list');
 const uploading = ref(false);
+const analyseEnCours = ref(false);
+const analyseParcelle = ref(null);
+const analyseProjet = ref([]);
+const projetAnalyse = ref(false);
 const form = ref({ nom: '', type_entite: '', shp: null, shx: null, dbf: null, prj: null, srid: '4326' });
 const editingShapefile = ref(null);
 const savingShapefile = ref(false);
 const shapefileCache = new Map();
+const shapefileEchecs = new Set();
+const couchesShapefile = new Map();
+let chargementShapefileToken = 0;
+let chargementParcelles = false;
+let dernierPlanEnAvant = null;
+let jetonSelection = 0;
 const featuredShapefileId = ref(null);
 const tableAttributs = ref(null);
 const listeEntites = ref(null);
@@ -101,16 +115,36 @@ const rechercheEntites = ref('');
 const rechercheAttributs = ref('');
 const chargementTableAttributs = ref(false);
 const surlignageShapefile = ref(null);
+let coucheParcelleRouge = null;
+const STYLE_PARCELLE_ROUGE = {
+    color: '#b91c1c',
+    weight: 3,
+    fillColor: '#ef4444',
+    fillOpacity: 0.55,
+    opacity: 1,
+};
 let shapefileReloadTimer = null;
 
 const ORDRE_CHAMPS_QGIS = ['TEXT', 'LAYER', 'ENTITYHAND', 'SUBCLASSES', 'LINETYPE', 'PAPERSPACE'];
+const COULEURS_FORTES = {
+    limite_region: '#1e3a8a',
+    limite_departement: '#115e59',
+    limite_arrondissement: '#5b21b6',
+    limite_commune: '#9a3412',
+    limite_section: '#9a3412',
+    limite_parcelle: '#052e16',
+    numero_section: '#7c2d12',
+    numero_parcelle: '#052e16',
+};
 const TYPES_ENTITE = [
-    { value: 'limite_region', label: 'Limite Région', ordre: 1, fill: 0.08, weight: 3 },
-    { value: 'limite_departement', label: 'Limite Département', ordre: 2, fill: 0.12, weight: 2.5 },
-    { value: 'limite_arrondissement', label: 'Limite Arrondissement', ordre: 3, fill: 0.14, weight: 2 },
-    { value: 'limite_commune', label: 'Limite Commune', ordre: 4, fill: 0.18, weight: 2 },
-    { value: 'limite_section', label: 'Limite Section', ordre: 5, fill: 0.22, weight: 2 },
-    { value: 'limite_parcelle', label: 'Limite Parcelle', ordre: 6, fill: 0.28, weight: 1.5 },
+    { value: 'limite_region', label: 'Limite Région', ordre: 1, fill: 0.16, weight: 2 },
+    { value: 'limite_departement', label: 'Limite Département', ordre: 2, fill: 0.16, weight: 1.8 },
+    { value: 'limite_arrondissement', label: 'Limite Arrondissement', ordre: 3, fill: 0.16, weight: 1.6 },
+    { value: 'limite_commune', label: 'Limite Commune', ordre: 4, fill: 0.18, weight: 1.6 },
+    { value: 'limite_section', label: 'Limite Section', ordre: 5, fill: 0.2, weight: 1.8 },
+    { value: 'limite_parcelle', label: 'Limite Parcelle', ordre: 6, fill: 0.32, weight: 1.5 },
+    { value: 'numero_section', label: 'Numéro Section', ordre: 7, fill: 0, weight: 1.2 },
+    { value: 'numero_parcelle', label: 'Numéro Parcelle', ordre: 8, fill: 0, weight: 1.2 },
 ];
 const optionsTypeEntite = TYPES_ENTITE.map(({ value, label }) => ({ value, label }));
 const LIBELLES_CHAMPS_QGIS = {
@@ -215,13 +249,15 @@ function utmToGps(est, nord) {
     }
 }
 
+const TYPES_LOURDS = new Set(['limite_parcelle', 'numero_parcelle']);
+
 function isHeavyShapefile(shp) {
+    if (TYPES_LOURDS.has(shp?.type_entite)) return true;
     const nb = shp.nb_entites || 0;
-    if (nb > 0 && nb <= 500) return false;
-    if (nb > LARGE_SHAPEFILE_THRESHOLD) return true;
+    if (nb > 1500) return true;
     const name = (shp.nom || '').toLowerCase();
     const table = (shp.nom_table || '').toLowerCase();
-    return name.includes('numero') || name.includes('parcelle') || table.includes('parcelle');
+    return name.includes('parcelle') || table.includes('parcelle');
 }
 
 // ============================================================
@@ -559,6 +595,7 @@ function loadGeoJSON() {
     }
 
     parcelsLayer.value = L.geoJSON(geojsonData.value, {
+        smoothFactor: 1.5,
         filter: (feature) =>
             feature.geometry.type === 'MultiPolygon' ||
             feature.geometry.type === 'Polygon',
@@ -707,71 +744,202 @@ function closeShapefileModal() {
 // ============================================================
 // 19. CHARGEMENT SHAPEFILES
 // ============================================================
+function shapefileVisibleAuZoom(shp, zoom) {
+    if (!shp.visible) return false;
+    if (featuredShapefileId.value === shp.id) return true;
+    return !(isHeavyShapefile(shp) && zoom < ZOOM_THRESHOLD_POINTS);
+}
+
+function normaliserGeojson(data) {
+    if (typeof data === 'string') {
+        try {
+            data = JSON.parse(data);
+        } catch (e) {
+            return null;
+        }
+    }
+    if (!data || !Array.isArray(data.features)) return null;
+    return data;
+}
+
+async function lireGeojsonShapefile(shp) {
+    const enCache = shapefileCache.get(shp.id);
+    if (enCache) return enCache;
+
+    const response = await axios.get(`/api/shapefiles/${shp.id}/geojson`);
+    const data = normaliserGeojson(response.data);
+    if (!data) return null;
+    shapefileCache.set(shp.id, data);
+    return data;
+}
+
+function limitesGeometrie(geometry) {
+    if (!geometry?.coordinates) return null;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    let trouve = false;
+
+    const visiter = (coords) => {
+        if (!Array.isArray(coords) || !coords.length) return;
+        if (typeof coords[0] === 'number') {
+            trouve = true;
+            const x = coords[0];
+            const y = coords[1];
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+            return;
+        }
+        coords.forEach(visiter);
+    };
+
+    visiter(geometry.coordinates);
+    return trouve ? [minX, minY, maxX, maxY] : null;
+}
+
+function boiteFeature(feature) {
+    if (feature._boite) return feature._boite;
+    feature._boite = limitesGeometrie(feature.geometry);
+    return feature._boite;
+}
+
+function geometrieDansLimites(feature, bounds) {
+    const boite = boiteFeature(feature);
+    if (!boite) return false;
+    return boite[2] >= bounds.getWest()
+        && boite[0] <= bounds.getEast()
+        && boite[3] >= bounds.getSouth()
+        && boite[1] <= bounds.getNorth();
+}
+
+function preparerAffichage(shp, data) {
+    if (!isHeavyShapefile(shp) || !map.value) {
+        return { data, textes: data.features.length <= 800 };
+    }
+
+    const bounds = map.value.getBounds().pad(0.35);
+    const features = data.features.filter((feature, index) => {
+        if (!geometrieDansLimites(feature, bounds)) return false;
+        feature._indexAffichage = index;
+        return true;
+    });
+
+    return {
+        data: { type: 'FeatureCollection', features },
+        textes: features.length > 0 && features.length <= 250,
+    };
+}
+
+function signatureCouche(shp) {
+    if (!isHeavyShapefile(shp) || !map.value) return 'complet';
+    const bounds = map.value.getBounds();
+    return [
+        map.value.getZoom().toFixed(1),
+        bounds.getWest().toFixed(4),
+        bounds.getSouth().toFixed(4),
+        bounds.getEast().toFixed(4),
+        bounds.getNorth().toFixed(4),
+    ].join('|');
+}
+
+function ajouterCoucheShapefile(shp, data, textes) {
+    if (!map.value || !shapefilesLayerGroup.value || couchesShapefile.has(shp.id)) return;
+
+    const isPointLayer = data.features[0]?.geometry?.type === 'Point';
+    const enAvant = featuredShapefileId.value === shp.id;
+    let featureIndex = 0;
+    const layer = L.geoJSON(data, {
+        smoothFactor: 1.5,
+        pointToLayer: isPointLayer
+            ? (feature, latlng) => marqueurEntite(feature, latlng, shp, enAvant, textes)
+            : undefined,
+        style: styleShapefile(shp, enAvant),
+        onEachFeature: (feature, lyr) => {
+            const index = feature._indexAffichage ?? featureIndex++;
+            lyr.on('click', (e) => {
+                if (e.originalEvent) L.DomEvent.stopPropagation(e);
+                selectionnerShapefile(shp, feature, index, lyr);
+            });
+        },
+    });
+
+    layer._shpId = shp.id;
+    layer._signature = signatureCouche(shp);
+    layer.addTo(shapefilesLayerGroup.value);
+    couchesShapefile.set(shp.id, layer);
+    if (enAvant) layer.bringToFront();
+}
+
 async function chargerShapefiles() {
     if (!map.value) return;
 
-    if (shapefilesLayerGroup.value) {
-        try { map.value.removeLayer(shapefilesLayerGroup.value); } catch (e) {}
+    if (!shapefilesLayerGroup.value) {
+        shapefilesLayerGroup.value = L.layerGroup().addTo(map.value);
     }
-    shapefilesLayerGroup.value = L.layerGroup().addTo(map.value);
 
-    if (!shapefiles.value.length) return;
-
+    const token = ++chargementShapefileToken;
     const zoom = map.value.getZoom();
-    const ordre = [...shapefiles.value].sort((a, b) => {
-        if (a.id === featuredShapefileId.value) return 1;
-        if (b.id === featuredShapefileId.value) return -1;
-        return rangTypeEntite(a) - rangTypeEntite(b);
+
+    if (dernierPlanEnAvant !== featuredShapefileId.value) {
+        [dernierPlanEnAvant, featuredShapefileId.value].forEach((id) => {
+            const couche = id ? couchesShapefile.get(id) : null;
+            if (!couche) return;
+            try { shapefilesLayerGroup.value.removeLayer(couche); } catch (e) {}
+            couchesShapefile.delete(id);
+        });
+        dernierPlanEnAvant = featuredShapefileId.value;
+    }
+
+    const visibles = shapefiles.value.filter((shp) => shapefileVisibleAuZoom(shp, zoom));
+    const idsVoulus = new Set(visibles.map((shp) => shp.id));
+
+    const aRetirer = [];
+    couchesShapefile.forEach((layer, id) => {
+        const shp = shapefiles.value.find((item) => item.id === id);
+        if (!shp || !idsVoulus.has(id) || layer._signature !== signatureCouche(shp)) {
+            aRetirer.push(id);
+        }
+    });
+    aRetirer.forEach((id) => {
+        const layer = couchesShapefile.get(id);
+        try { shapefilesLayerGroup.value.removeLayer(layer); } catch (e) {}
+        couchesShapefile.delete(id);
     });
 
-    for (const shp of ordre) {
-        if (!shp.visible) continue;
+    visibles.forEach((shp) => {
+        const layer = couchesShapefile.get(shp.id);
+        if (!layer || typeof layer.setStyle !== 'function') return;
+        layer.setStyle(styleShapefile(shp, featuredShapefileId.value === shp.id));
+    });
 
-        if (isHeavyShapefile(shp) && zoom < ZOOM_THRESHOLD_POINTS) {
-            log(`⏭️ ${shp.nom} ignoré (zoom ${zoom} < ${ZOOM_THRESHOLD_POINTS})`);
-            continue;
-        }
-
-        let data = shapefileCache.get(shp.id);
-
-        if (!data) {
-            try {
-                const response = await axios.get(`/api/shapefiles/${shp.id}/geojson`);
-                data = response.data;
-                if (!data || !data.features) continue;
-                shapefileCache.set(shp.id, data);
-            } catch (e) {
-                console.error(`❌ #${shp.id}:`, e.message);
-                toast.error(`Impossible de charger "${shp.nom}"`);
-                continue;
+    const manquants = visibles.filter((shp) => !couchesShapefile.has(shp.id));
+    await Promise.all(manquants.map(async (shp) => {
+        try {
+            const brut = await lireGeojsonShapefile(shp);
+            if (token !== chargementShapefileToken || !map.value) return;
+            if (!brut) {
+                if (!shapefileEchecs.has(shp.id)) {
+                    shapefileEchecs.add(shp.id);
+                    toast.error(`Le plan « ${shp.nom} » est illisible`);
+                }
+                return;
             }
+            if (!shapefileVisibleAuZoom(shp, map.value.getZoom())) return;
+            const affichage = preparerAffichage(shp, brut);
+            if (!affichage.data.features.length) return;
+            ajouterCoucheShapefile(shp, affichage.data, affichage.textes);
+        } catch (e) {
+            console.error(`❌ #${shp.id}:`, e.message);
+            toast.error(`Impossible de charger "${shp.nom}"`);
         }
-
-        const isPointLayer = data.features[0]?.geometry?.type === 'Point';
-        const enAvant = featuredShapefileId.value === shp.id;
-
-        let featureIndex = 0;
-        const layer = L.geoJSON(data, {
-            pointToLayer: isPointLayer
-                ? (feature, latlng) => marqueurEntite(feature, latlng, shp, enAvant)
-                : undefined,
-            style: styleShapefile(shp, enAvant),
-            onEachFeature: (feature, lyr) => {
-                const index = featureIndex++;
-                lyr.on('click', (e) => {
-                    if (e.originalEvent) L.DomEvent.stopPropagation(e);
-                    selectionnerShapefile(shp, feature, index);
-                });
-            },
-        }).addTo(shapefilesLayerGroup.value);
-
-        layer._shpId = shp.id;
-        if (enAvant) layer.bringToFront();
-    }
+    }));
 }
 
-function marqueurEntite(feature, latlng, shp, enAvant) {
-    const texte = String(feature?.properties?.TEXT ?? '').trim();
+function marqueurEntite(feature, latlng, shp, enAvant, textes) {
+    const texte = textes ? String(feature?.properties?.TEXT ?? '').trim() : '';
     if (texte) {
         return L.marker(latlng, {
             icon: L.divIcon({
@@ -783,11 +951,11 @@ function marqueurEntite(feature, latlng, shp, enAvant) {
         });
     }
     return L.circleMarker(latlng, {
-        radius: enAvant ? 7 : 5,
-        fillColor: shp.couleur || '#3388ff',
-        color: enAvant ? '#613104' : '#ffffff',
-        weight: enAvant ? 2 : 1,
-        fillOpacity: 0.9,
+        radius: enAvant ? 8 : 6,
+        fillColor: enAvant ? '#7f1d1d' : couleurForte(shp),
+        color: '#ffffff',
+        weight: 2,
+        fillOpacity: 1,
     });
 }
 
@@ -819,14 +987,22 @@ const shapefilesTries = computed(() => {
     });
 });
 
+function couleurForte(shp) {
+    return COULEURS_FORTES[shp?.type_entite] || shp?.couleur || '#052e16';
+}
+
 function styleShapefile(shp, enAvant) {
     const meta = metaTypeEntite(shp?.type_entite);
-    const couleur = shp.couleur || '#3388ff';
+    const couleur = couleurForte(shp);
+    const remplissage = shp?.type_entite === 'limite_parcelle' ? '#22c55e' : couleur;
     return {
-        color: enAvant ? '#613104' : couleur,
-        weight: enAvant ? 4 : (meta?.weight ?? 2),
-        fillColor: couleur,
-        fillOpacity: enAvant ? 0.55 : (meta?.fill ?? 0.25),
+        color: enAvant ? '#7f1d1d' : couleur,
+        weight: enAvant ? 2.6 : (meta?.weight ?? 1.5),
+        fillColor: enAvant ? '#dc2626' : remplissage,
+        fillOpacity: enAvant ? 0.4 : (meta?.fill ?? 0.22),
+        opacity: 1,
+        lineCap: 'butt',
+        lineJoin: 'miter',
     };
 }
 
@@ -910,7 +1086,30 @@ const resumeSelectionShapefile = computed(() => {
         .join(' · ');
 });
 
+function restaurerParcelleRouge() {
+    if (coucheParcelleRouge?.setStyle && coucheParcelleRouge._styleOrigine) {
+        coucheParcelleRouge.setStyle(coucheParcelleRouge._styleOrigine);
+    }
+    coucheParcelleRouge = null;
+}
+
+function peindreParcelleRouge(couche) {
+    restaurerParcelleRouge();
+    if (!couche?.setStyle) return;
+    couche._styleOrigine = {
+        color: couche.options.color,
+        weight: couche.options.weight,
+        fillColor: couche.options.fillColor,
+        fillOpacity: couche.options.fillOpacity,
+        opacity: couche.options.opacity ?? 1,
+    };
+    couche.setStyle(STYLE_PARCELLE_ROUGE);
+    if (couche.bringToFront) couche.bringToFront();
+    coucheParcelleRouge = couche;
+}
+
 function retirerSurlignageShapefile() {
+    restaurerParcelleRouge();
     if (surlignageShapefile.value && map.value) {
         try { map.value.removeLayer(surlignageShapefile.value); } catch (e) {}
     }
@@ -918,24 +1117,24 @@ function retirerSurlignageShapefile() {
 }
 
 function surlignerEntiteShapefile(feature) {
-    retirerSurlignageShapefile();
+    if (surlignageShapefile.value && map.value) {
+        try { map.value.removeLayer(surlignageShapefile.value); } catch (e) {}
+        surlignageShapefile.value = null;
+    }
     if (!map.value || !feature?.geometry) return;
     surlignageShapefile.value = L.geoJSON(feature, {
+        renderer: L.svg(),
         interactive: false,
         pointToLayer: (item, latlng) => L.circleMarker(latlng, {
             radius: 11,
-            color: '#613104',
+            color: '#ffffff',
             weight: 3,
-            fillColor: '#f6b26b',
-            fillOpacity: 0.85,
+            fillColor: '#ef4444',
+            fillOpacity: 1,
         }),
-        style: {
-            color: '#613104',
-            weight: 4,
-            fillColor: '#f6b26b',
-            fillOpacity: 0.35,
-        },
+        style: STYLE_PARCELLE_ROUGE,
     }).addTo(map.value);
+    surlignageShapefile.value.bringToFront();
 }
 
 function zoomSurEntite(feature) {
@@ -952,21 +1151,29 @@ function zoomSurEntite(feature) {
     safeFitBounds(bounds, { padding: [80, 80], maxZoom: 19 });
 }
 
-function selectionnerShapefile(shp, feature = null, index = null) {
+function selectionnerShapefile(shp, feature = null, index = null, couche = null) {
     resetParcelleSelection();
     selectedPointId.value = null;
 
+    const sauve = shp?.verification?.type === 'parcelle' ? shp.verification : null;
+    const estParcelle = (['limite_parcelle', 'numero_parcelle'].includes(shp?.type_entite) && !!feature) || !!sauve;
     selectedInfo.value = {
-        type: 'shapefile',
+        type: estParcelle ? 'parcelle' : 'shapefile',
         shapefile: shp,
         feature,
         featureIndex: index,
         geometrie: libelleGeometrie(feature?.geometry?.type),
         attributes: attributsShapefile(feature),
+        parcelle: sauve?.prochain || '',
+        section: sauve ? `${sauve.nomSection || ''}${sauve.section ? ' · ' + sauve.section : ''}`.replace(/^ · /, '') : '',
+        loading: estParcelle && !!feature,
+        data: ficheParcelleEnregistree(sauve),
     };
     showInfo.value = true;
+    if (couche) peindreParcelleRouge(couche);
     if (feature) surlignerEntiteShapefile(feature);
     else retirerSurlignageShapefile();
+    if (feature) identifierSelection(shp, feature, ++jetonSelection);
 }
 
 function effacerSelectionShapefile() {
@@ -1016,13 +1223,7 @@ const entitesFiltrees = computed(() => {
 });
 
 async function donneesShapefile(shp) {
-    let data = shapefileCache.get(shp.id);
-    if (!data) {
-        const response = await axios.get(`/api/shapefiles/${shp.id}/geojson`);
-        data = response.data;
-        if (data?.features) shapefileCache.set(shp.id, data);
-    }
-    return data;
+    return lireGeojsonShapefile(shp);
 }
 
 async function ouvrirListeEntites(shp) {
@@ -1066,15 +1267,10 @@ async function ouvrirTableAttributs(shp) {
     if (!shp || chargementTableAttributs.value) return;
     chargementTableAttributs.value = true;
     try {
-        let data = shapefileCache.get(shp.id);
-        if (!data) {
-            const response = await axios.get(`/api/shapefiles/${shp.id}/geojson`);
-            data = response.data;
-            if (!data?.features) {
-                toast.error('Aucune entité dans ce plan.');
-                return;
-            }
-            shapefileCache.set(shp.id, data);
+        const data = await donneesShapefile(shp);
+        if (!data?.features?.length) {
+            toast.error('Aucune entité dans ce plan.');
+            return;
         }
         tableAttributs.value = {
             shp,
@@ -1120,16 +1316,36 @@ function scheduleShapefileReload() {
 // ============================================================
 // 20. UPLOAD
 // ============================================================
-async function uploadShapefile() {
+function ficheParcelleEnregistree(verification) {
+    if (verification?.type !== 'parcelle') return null;
+    return {
+        txt_num_dossier: '',
+        txt_nicad: verification.nicad || '',
+        nbr_surface: '',
+        txt_num_lotissement: '',
+        txt_lotissement: verification.lotissement || '',
+        titulaire: '',
+        commune: '',
+        suffixe: verification.suffixe || '',
+        slt_service_rendu: '',
+        txt_etat_cession: '',
+    };
+}
+
+// ============================================================
+// 21. ENREGISTREMENT
+// ============================================================
+async function enregistrerShapefile(messageSucces, verification = null) {
     uploading.value = true;
     const fd = new FormData();
     Object.entries(form.value).forEach(([k, v]) => { if (v) fd.append(k, v); });
+    if (verification) fd.append('verification', JSON.stringify(verification));
 
     try {
         await axios.post('/shapefiles', fd, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
-        toast.success('✅ Shapefile importé');
+        toast.success(messageSucces);
 
         const { data } = await axios.get('/shapefiles');
         shapefiles.value = data;
@@ -1137,6 +1353,9 @@ async function uploadShapefile() {
         await chargerShapefiles();
 
         activeTab.value = 'list';
+        analyseParcelle.value = null;
+        analyseProjet.value = [];
+        projetAnalyse.value = false;
         form.value = { nom: '', type_entite: '', shp: null, shx: null, dbf: null, prj: null, srid: '4326' };
         document.querySelectorAll('input[type="file"]').forEach(i => i.value = '');
     } catch (e) {
@@ -1146,6 +1365,480 @@ async function uploadShapefile() {
         toast.error(msg);
     } finally {
         uploading.value = false;
+    }
+}
+
+// ============================================================
+// 21. UPLOAD
+// ============================================================
+function uploadShapefile() {
+    return enregistrerShapefile('Shapefile importé');
+}
+
+// ============================================================
+// 22. ENREGISTREMENT DE PROJET
+// ============================================================
+async function enregistrerProjet() {
+    if (!projetAnalyse.value) {
+        const ok = await analyserProjet();
+        if (!ok) return;
+    }
+    if (!form.value.type_entite) {
+        toast.error('Choisissez le type du projet.');
+        return;
+    }
+    await enregistrerShapefile('Projet importé', {
+        type: 'projet',
+        parcelles: analyseProjet.value.map((ligne) => ({
+            section: ligne.section,
+            nomSection: ligne.nomSection,
+            parcelle: ligne.parcelle,
+            lotissement: ligne.base?.txt_lotissement || 'ligne.lotissement' || '',
+            suffixe: ligne.suffixe,
+            surface: ligne.surface,
+            occupee: ligne.occupee,
+            part: ligne.part,
+            nicad: ligne.base?.terrain?.txt_nicad || ligne.base?.nicad_calcule || '',
+            dossier: ligne.base?.dossier?.txt_num_dossier || '',
+        })),
+    });
+}
+
+// ============================================================
+// 23. OUVERTURE D'ONGLET PLAN
+// ============================================================
+function ouvrirOngletPlan(onglet) {
+    activeTab.value = onglet;
+    if (onglet === 'ajouterParcelle') form.value.type_entite = 'limite_parcelle';
+}
+
+function chiffresCadastre(valeur, longueur) {
+    const chiffres = String(valeur ?? '').replace(/\D/g, '');
+    if (!chiffres) return '';
+    return chiffres.padStart(longueur, '0').slice(-longueur);
+}
+
+function texteAttribut(feature) {
+    const props = feature?.properties || {};
+    return String(props.TEXT ?? props.text ?? props.Text ?? '').trim();
+}
+
+function coucheAttribut(feature) {
+    const props = feature?.properties || {};
+    return String(props.LAYER ?? props.layer ?? props.Layer ?? '').trim();
+}
+
+function estPolygone(feature) {
+    return ['Polygon', 'MultiPolygon'].includes(feature?.geometry?.type);
+}
+
+function pointsDe(feature) {
+    const geometry = feature?.geometry;
+    if (!geometry) return [];
+    if (geometry.type === 'Point') return [turf.point(geometry.coordinates, feature.properties)];
+    if (geometry.type === 'MultiPoint') {
+        return geometry.coordinates.map((coordonnee) => turf.point(coordonnee, feature.properties));
+    }
+    return [];
+}
+
+function coordonneesPoint(feature) {
+    return pointsDe(feature)[0]?.geometry?.coordinates || null;
+}
+
+function pointDansBoite(lon, lat, boite) {
+    return !!boite && lon >= boite[0] && lon <= boite[2] && lat >= boite[1] && lat <= boite[3];
+}
+
+function pointDansPolygoneCoord(lon, lat, polygonFeature) {
+    if (!pointDansBoite(lon, lat, boiteFeature(polygonFeature))) return false;
+    try {
+        return turf.booleanPointInPolygon(turf.point([lon, lat]), polygonFeature);
+    } catch (e) {
+        return false;
+    }
+}
+
+function pointDansPolygone(pointFeature, polygonFeature) {
+    const coords = coordonneesPoint(pointFeature);
+    return !!coords && pointDansPolygoneCoord(coords[0], coords[1], polygonFeature);
+}
+
+function centreGeometrie(feature) {
+    const coords = coordonneesPoint(feature);
+    if (coords) return coords;
+    try {
+        return turf.centroid(feature).geometry.coordinates;
+    } catch (e) {
+        return null;
+    }
+}
+
+function surfaceM2(feature) {
+    try {
+        return turf.area(feature);
+    } catch (e) {
+        return 0;
+    }
+}
+
+function boitesSeChevauchent(a, b) {
+    const boiteA = boiteFeature(a);
+    const boiteB = boiteFeature(b);
+    if (!boiteA || !boiteB) return false;
+    return boiteA[2] >= boiteB[0] && boiteA[0] <= boiteB[2] && boiteA[3] >= boiteB[1] && boiteA[1] <= boiteB[3];
+}
+
+function surfaceCommune(a, b) {
+    if (!boitesSeChevauchent(a, b)) return 0;
+    try {
+        const intersection = turf.intersect(turf.featureCollection([a, b]));
+        return intersection ? turf.area(intersection) : 0;
+    } catch (e) {
+        return 0;
+    }
+}
+
+async function lireCouches(type) {
+    const features = [];
+    for (const shp of shapefiles.value.filter((item) => item.type_entite === type)) {
+        const data = await lireGeojsonShapefile(shp);
+        features.push(...(data?.features || []));
+    }
+    return features;
+}
+
+function numeroDans(polygone, points, longueur) {
+    const boite = boiteFeature(polygone);
+    const centre = centreGeometrie(polygone);
+    let choisi = null;
+    let distance = Infinity;
+    points.forEach((point) => {
+        const coords = coordonneesPoint(point);
+        if (!coords || !pointDansBoite(coords[0], coords[1], boite)) return;
+        if (!pointDansPolygoneCoord(coords[0], coords[1], polygone)) return;
+        const ecart = centre
+            ? Math.hypot(coords[0] - centre[0], coords[1] - centre[1])
+            : 0;
+        if (ecart < distance) {
+            distance = ecart;
+            choisi = point;
+        }
+    });
+    return chiffresCadastre(texteAttribut(choisi), longueur);
+}
+
+function sectionContenant(cible, sections) {
+    const centre = centreGeometrie(cible);
+    if (!centre) return null;
+    return sections.find((section) => pointDansPolygoneCoord(centre[0], centre[1], section)) || null;
+}
+
+function polygoneContenantPoint(pointFeature, polygones) {
+    const coords = coordonneesPoint(pointFeature);
+    if (!coords) return null;
+    return polygones.find((polygone) => pointDansPolygoneCoord(coords[0], coords[1], polygone)) || null;
+}
+
+async function consulterBase(parcelles) {
+    const { data } = await axios.post('/api/plan/parcelles', { parcelles });
+    return data.resultats || [];
+}
+
+async function identifierGeometrie(feature, type) {
+    const [sections, numerosSection, parcelles, numerosParcelle] = await Promise.all([
+        lireCouches('limite_section'),
+        lireCouches('numero_section'),
+        lireCouches('limite_parcelle'),
+        lireCouches('numero_parcelle'),
+    ]);
+
+    let polygone = estPolygone(feature) && type !== 'limite_section' ? feature : null;
+    let pointNumero = type === 'numero_parcelle' ? feature : null;
+    if (!polygone && pointNumero) {
+        polygone = polygoneContenantPoint(pointNumero, parcelles);
+    }
+    if (polygone && !pointNumero) {
+        pointNumero = numerosParcelle.find((point) => pointDansPolygone(point, polygone)) || null;
+    }
+
+    const ancre = polygone || pointNumero || feature;
+    const section = sectionContenant(ancre, sections);
+    const numeroSection = section
+        ? numeroDans(section, numerosSection, 3)
+        : (type === 'numero_section' ? chiffresCadastre(texteAttribut(feature), 3) : '');
+    const numeroParcelle = chiffresCadastre(texteAttribut(pointNumero), 5);
+
+    return {
+        section: numeroSection,
+        parcelle: numeroParcelle,
+        lotissement: polygone ? coucheAttribut(polygone) : '',
+        nomSection: section ? coucheAttribut(section) : '',
+        suffixe: numeroSection && numeroParcelle ? `${numeroSection}${numeroParcelle}` : '',
+        sectionFeature: section,
+        numerosParcelle,
+    };
+}
+
+async function identifierSelection(shp, feature, jeton) {
+    const types = ['limite_section', 'numero_section', 'limite_parcelle', 'numero_parcelle'];
+    if (!types.includes(shp?.type_entite)) return;
+    try {
+        const lecture = await identifierGeometrie(feature, shp.type_entite);
+        let base = null;
+        if (lecture.section && lecture.parcelle) {
+            const resultats = await consulterBase([{
+                section: lecture.section,
+                parcelle: lecture.parcelle,
+                lotissement: lecture.lotissement,
+            }]);
+            base = resultats[0] || null;
+        }
+        if (jeton !== jetonSelection) return;
+        const terrain = base?.terrain;
+        const dossier = base?.dossier;
+        const sauve = shp?.verification?.type === 'parcelle' ? shp.verification : null;
+        const estParcelle = ['limite_parcelle', 'numero_parcelle'].includes(shp?.type_entite) || !!sauve;
+        selectedInfo.value = {
+            ...selectedInfo.value,
+            parcelle: lecture.parcelle || sauve?.prochain || selectedInfo.value.parcelle,
+            section: lecture.nomSection
+                ? `${lecture.nomSection}${lecture.section ? ' · ' + lecture.section : ''}`
+                : (lecture.section || sauve?.section || selectedInfo.value.section),
+            loading: false,
+            data: estParcelle ? {
+                txt_num_dossier: dossier?.txt_num_dossier || '',
+                txt_nicad: terrain?.txt_nicad || base?.nicad_calcule || sauve?.nicad || '',
+                nbr_surface: terrain?.nbr_surface || '',
+                txt_num_lotissement: terrain?.txt_num_lotissement || '',
+                txt_lotissement: terrain?.txt_lotissement || lecture.lotissement || sauve?.lotissement || '',
+                titulaire: terrain?.titulaire || '',
+                commune: terrain?.commune || '',
+                suffixe: lecture.suffixe || base?.suffixe || sauve?.suffixe || '',
+                slt_service_rendu: dossier?.slt_service_rendu || '',
+                txt_etat_cession: dossier?.txt_etat_cession || '',
+            } : selectedInfo.value.data,
+            identification: {
+                chargement: false,
+                section: lecture.section,
+                parcelle: lecture.parcelle,
+                lotissement: lecture.lotissement,
+                nomSection: lecture.nomSection,
+                suffixe: lecture.suffixe,
+                base,
+            },
+        };
+    } catch (e) {
+        if (jeton !== jetonSelection) return;
+        selectedInfo.value = {
+            ...selectedInfo.value,
+            loading: false,
+            identification: { chargement: false, erreur: 'Impossible de rattacher le dossier.' },
+        };
+    }
+}
+
+async function geojsonDuFormulaire() {
+    const fd = new FormData();
+    ['shp', 'shx', 'dbf', 'prj'].forEach((ext) => {
+        if (form.value[ext]) fd.append(ext, form.value[ext]);
+    });
+    fd.append('srid', form.value.srid || '4326');
+    const { data } = await axios.post('/api/plan/previsualiser', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return normaliserGeojson(data);
+}
+
+function valeurNumeroPlan(feature) {
+    const valeur = parseInt(chiffresCadastre(texteAttribut(feature), 5), 10);
+    return Number.isNaN(valeur) ? 0 : valeur;
+}
+
+function dernierNumeroShapefile(section, points) {
+    const depuisLesPoints = points.reduce((max, point) => Math.max(max, valeurNumeroPlan(point)), 0);
+    const depuisLesParcellesAjoutees = shapefiles.value.reduce((max, shp) => {
+        const info = shp.verification;
+        if (info?.type !== 'parcelle' || chiffresCadastre(info.section, 3) !== section) return max;
+        const valeur = parseInt(chiffresCadastre(info.prochain || info.nicad, 5), 10);
+        return Number.isNaN(valeur) ? max : Math.max(max, valeur);
+    }, 0);
+    return Math.max(depuisLesPoints, depuisLesParcellesAjoutees);
+}
+
+function codeCommuneShapefile(section) {
+    const info = shapefiles.value
+        .map((shp) => shp.verification)
+        .find((verification) => verification?.type === 'parcelle'
+            && chiffresCadastre(verification.section, 3) === section
+            && verification.codeCommune);
+    return String(info?.codeCommune || '').replace(/\D/g, '').slice(0, 8);
+}
+
+async function verifierParcelle() {
+    if (!form.value.shp || !form.value.shx || !form.value.dbf) {
+        toast.error('Ajoutez les fichiers .shp, .shx et .dbf.');
+        return;
+    }
+    analyseEnCours.value = true;
+    analyseParcelle.value = null;
+    try {
+        const data = await geojsonDuFormulaire();
+        const polygones = (data?.features || []).filter(estPolygone);
+        if (polygones.length !== 1) {
+            analyseParcelle.value = {
+                valide: false,
+                message: 'Le fichier doit contenir une seule parcelle.',
+            };
+            return;
+        }
+
+        const nouvelle = polygones[0];
+        const existantes = await lireCouches('limite_parcelle');
+        const superpositions = existantes
+            .map((parcelle) => ({ parcelle, surface: surfaceCommune(nouvelle, parcelle) }))
+            .filter((item) => item.surface >= 1);
+        const lecture = await identifierGeometrie(nouvelle, 'limite_parcelle');
+        const section = lecture.sectionFeature;
+        if (!section || !lecture.section) {
+            analyseParcelle.value = {
+                valide: false,
+                message: 'La parcelle ne se trouve dans aucune section du plan.',
+                superpositions,
+            };
+            return;
+        }
+
+        const numeros = lecture.numerosParcelle.filter((point) => pointDansPolygone(point, section));
+        const dernierNumero = dernierNumeroShapefile(lecture.section, numeros);
+        const prochain = String(dernierNumero + 1).padStart(5, '0');
+        const suffixe = `${lecture.section}${prochain}`;
+        const codeCommune = codeCommuneShapefile(lecture.section);
+        const dernierNicad = dernierNumero
+            ? `${codeCommune}${lecture.section}${String(dernierNumero).padStart(5, '0')}`
+            : '';
+        analyseParcelle.value = {
+            valide: superpositions.length === 0,
+            message: superpositions.length
+                ? 'Cette parcelle se superpose à une parcelle déjà présente.'
+                : 'La parcelle peut être ajoutée.',
+            section: lecture.section,
+            nomSection: lecture.nomSection,
+            lotissement: coucheAttribut(nouvelle),
+            prochain,
+            suffixe,
+            codeCommune,
+            dernierNicad,
+            nicad: `${codeCommune}${suffixe}`,
+            superpositions: superpositions.map((item) => ({
+                nom: coucheAttribut(item.parcelle) || 'Parcelle existante',
+                surface: Math.round(item.surface),
+            })),
+        };
+    } catch (e) {
+        const errors = e.response?.data?.errors;
+        const first = errors ? Object.values(errors).flat()[0] : null;
+        toast.error(first || 'Impossible de lire la parcelle.');
+    } finally {
+        analyseEnCours.value = false;
+    }
+}
+
+async function enregistrerParcelle() {
+    if (!analyseParcelle.value?.valide) {
+        toast.error('Vérifiez la parcelle avant de l’enregistrer.');
+        return;
+    }
+    const info = analyseParcelle.value;
+    form.value.type_entite = 'limite_parcelle';
+    await enregistrerShapefile('Parcelle enregistrée', {
+        type: 'parcelle',
+        section: info.section,
+        nomSection: info.nomSection,
+        lotissement: info.lotissement,
+        prochain: info.prochain,
+        suffixe: info.suffixe,
+        codeCommune: info.codeCommune,
+        nicad: info.nicad,
+    });
+}
+
+async function analyserProjet() {
+    if (!form.value.shp || !form.value.shx || !form.value.dbf) {
+        toast.error('Ajoutez les fichiers .shp, .shx et .dbf.');
+        return false;
+    }
+    analyseEnCours.value = true;
+    analyseProjet.value = [];
+    projetAnalyse.value = false;
+    try {
+        const data = await geojsonDuFormulaire();
+        const projets = (data?.features || []).filter(estPolygone);
+        if (!projets.length) {
+            toast.error('Le projet ne contient aucun polygone.');
+            return false;
+        }
+        const [sections, numerosSection, parcelles, numerosParcelle] = await Promise.all([
+            lireCouches('limite_section'),
+            lireCouches('numero_section'),
+            lireCouches('limite_parcelle'),
+            lireCouches('numero_parcelle'),
+        ]);
+        const lignes = [];
+        for (const projet of projets) {
+            for (const parcelle of parcelles) {
+                const occupee = surfaceCommune(projet, parcelle);
+                if (occupee < 1) continue;
+                const section = sectionContenant(parcelle, sections);
+                const lecture = {
+                    section: section ? numeroDans(section, numerosSection, 3) : '',
+                    parcelle: numeroDans(parcelle, numerosParcelle, 5),
+                    lotissement: coucheAttribut(parcelle),
+                    nomSection: section ? coucheAttribut(section) : '',
+                };
+                lecture.suffixe = lecture.section && lecture.parcelle ? `${lecture.section}${lecture.parcelle}` : '';
+                const surface = surfaceM2(parcelle);
+                const cle = `${lecture.section}-${lecture.parcelle}-${lignes.length}`;
+                const existante = lignes.find((ligne) => ligne.section === lecture.section && ligne.parcelle === lecture.parcelle && lecture.parcelle);
+                if (existante && lecture.parcelle) {
+                    existante.occupee += occupee;
+                    continue;
+                }
+                lignes.push({
+                    cle,
+                    section: lecture.section,
+                    parcelle: lecture.parcelle,
+                    lotissement: lecture.lotissement || coucheAttribut(parcelle),
+                    nomSection: lecture.nomSection,
+                    suffixe: lecture.suffixe,
+                    surface: Math.round(surface),
+                    occupee,
+                    part: surface > 0 ? Math.round((occupee / surface) * 1000) / 10 : 0,
+                });
+            }
+        }
+        lignes.forEach((ligne) => {
+            ligne.occupee = Math.round(ligne.occupee);
+            ligne.part = ligne.surface > 0 ? Math.round((ligne.occupee / ligne.surface) * 1000) / 10 : 0;
+        });
+        const consultations = lignes
+            .filter((ligne) => ligne.section && ligne.parcelle)
+            .map((ligne) => ({ section: ligne.section, parcelle: ligne.parcelle, lotissement: ligne.lotissement }));
+        const bases = consultations.length ? await consulterBase(consultations) : [];
+        analyseProjet.value = lignes.map((ligne) => ({
+            ...ligne,
+            base: bases.find((item) => item.section === ligne.section && item.parcelle === ligne.parcelle && (item.lotissement || '') === (ligne.lotissement || '')) || null,
+        }));
+        if (!lignes.length) toast.info('Aucune parcelle n’est touchée par ce projet.');
+        projetAnalyse.value = true;
+        return true;
+    } catch (e) {
+        const errors = e.response?.data?.errors;
+        const first = errors ? Object.values(errors).flat()[0] : null;
+        toast.error(first || 'Impossible d’analyser le projet.');
+        return false;
+    } finally {
+        analyseEnCours.value = false;
     }
 }
 
@@ -1259,10 +1952,24 @@ async function zoomToShapefile(shp) {
     }
 
     try {
-        const { data } = await axios.get(`/api/shapefiles/${shp.id}/geojson`);
-        const layer = L.geoJSON(data);
-        if (layer.getBounds().isValid()) {
-            safeFitBounds(layer.getBounds(), { padding: [20, 20], maxZoom: 18 });
+        const data = normaliserGeojson((await axios.get(`/api/shapefiles/${shp.id}/geojson`)).data);
+        if (data) shapefileCache.set(shp.id, shapefileCache.get(shp.id) || data);
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+        let trouve = false;
+        data?.features?.forEach((feature) => {
+            const boite = boiteFeature(feature);
+            if (!boite) return;
+            trouve = true;
+            minX = Math.min(minX, boite[0]);
+            minY = Math.min(minY, boite[1]);
+            maxX = Math.max(maxX, boite[2]);
+            maxY = Math.max(maxY, boite[3]);
+        });
+        if (trouve) {
+            safeFitBounds(L.latLngBounds([minY, minX], [maxY, maxX]), { padding: [20, 20], maxZoom: 18 });
             closeShapefileModal();
             return;
         }
@@ -1281,13 +1988,10 @@ onMounted(() => {
     const kedougou = [12.5599, -12.1742];
 
     map.value = L.map('map', {
-        preferCanvas: false,
+        preferCanvas: true,
         zoomAnimation: false,
         fadeAnimation: false,
         markerZoomAnimation: false,
-        updateWhenIdle: false,
-        updateWhenZooming: true,
-        keepBuffer: 2,
         zoomSnap: 0.5,
         zoomDelta: 0.5,
         wheelPxPerZoomLevel: 100,
@@ -1318,48 +2022,69 @@ onMounted(() => {
     updateScale();
     map.value.on('zoomend moveend', updateScale);
 
-    map.value.on('zoomend', () => {
+    map.value.on('zoomend moveend', () => {
         updateHistoricVisibility();
         scheduleShapefileReload();
+    });
+    map.value.on('zoomend', () => {
+        chargerParcellesSiZoom();
     });
 
     map.value.getContainer().style.cursor = 'grab';
 
-    map.value.whenReady(async () => {
-        try {
+    map.value.whenReady(() => {
+        pointsDensifies.value = props.point_densifiers;
+        shapefiles.value = props.shapefiles || [];
+        requestAnimationFrame(() => {
+            try { addPointsToMap(); } catch (error) { console.error(error); }
+            try { addHistoricalSites(); } catch (error) { console.error(error); }
+            chargerShapefiles();
+        });
+    });
+});
+
+async function chargerParcellesSiZoom() {
+    if (!map.value) return;
+
+    if (map.value.getZoom() < ZOOM_THRESHOLD_POINTS) {
+        if (parcelsLayer.value && map.value.hasLayer(parcelsLayer.value)) {
+            map.value.removeLayer(parcelsLayer.value);
+        }
+        return;
+    }
+
+    if (parcelsLayer.value) {
+        if (!map.value.hasLayer(parcelsLayer.value)) parcelsLayer.value.addTo(map.value);
+        return;
+    }
+
+    if (chargementParcelles) return;
+    chargementParcelles = true;
+
+    try {
+        if (!geojsonData.value) {
             const response = await fetch('/storage/dinguessou_plateau_complet.geojson');
             geojsonData.value = await response.json();
-
             sections.value = [];
             parcellePoints.value = [];
             sectionPoints.value = [];
-
-            geojsonData.value.features.forEach(f => {
-                if (f.properties?.Level === 6) sections.value.push(f);
-                if (f.properties?.Layer === "Numero_Parcelle") parcellePoints.value.push(f);
-                if (f.geometry?.type === "MultiPoint" && !f.properties?.Layer && f.properties?.RefName) {
-                    sectionPoints.value.push(f);
+            geojsonData.value.features.forEach((feature) => {
+                if (feature.properties?.Level === 6) sections.value.push(feature);
+                if (feature.properties?.Layer === 'Numero_Parcelle') parcellePoints.value.push(feature);
+                if (feature.geometry?.type === 'MultiPoint' && !feature.properties?.Layer && feature.properties?.RefName) {
+                    sectionPoints.value.push(feature);
                 }
             });
-
-            log(`📊 Sections: ${sections.value.length}, Parcelles: ${parcellePoints.value.length}, Points: ${sectionPoints.value.length}`);
-
-            loadGeoJSON();
-
-            pointsDensifies.value = props.point_densifiers;
-            addPointsToMap();
-
-            addHistoricalSites();
-
-            shapefiles.value = props.shapefiles || [];
-            await chargerShapefiles();
-
-        } catch (error) {
-            console.error('❌ Erreur chargement :', error);
-            toast.error('Erreur chargement des données');
         }
-    });
-});
+
+        if (map.value.getZoom() >= ZOOM_THRESHOLD_POINTS) loadGeoJSON();
+    } catch (error) {
+        console.error('❌ Erreur chargement :', error);
+        toast.error('Erreur chargement des parcelles');
+    } finally {
+        chargementParcelles = false;
+    }
+}
 
 // ============================================================
 // 23. NETTOYAGE
@@ -1441,6 +2166,7 @@ onBeforeUnmount(() => {
                     ℹ️ Zoomez à {{ ZOOM_THRESHOLD_POINTS }}+ pour voir les parcelles détaillées
                 </div>
 
+                <!-- Recherche de localité -->
                 <div class="absolute top-4 left-1/2 z-[1000] w-11/12 max-w-md -translate-x-1/2">
                     <div class="relative">
                         <BaseInput
@@ -1471,6 +2197,7 @@ onBeforeUnmount(() => {
                     </div>
                 </div>
 
+                <!-- Projection -->
                 <div class="absolute top-24 left-4 z-[1000]">
                     <div class="flex flex-col items-center gap-1 p-2 bg-white/90 rounded-2xl shadow-lg border border-primary-only backdrop-blur-sm">
                         <span class="text-[10px] font-medium tracking-wider text-primary-txt uppercase">Projection</span>
@@ -1491,6 +2218,7 @@ onBeforeUnmount(() => {
                     <span class="font-mono font-bold text-primary-txt">1 / {{ scaleDenominator.toLocaleString() }}</span>
                 </div>
 
+                <!-- Info Parcelle -->
                 <Transition
                     enter-active-class="transition ease-out duration-300"
                     enter-from-class="opacity-0 translate-y-2"
@@ -1532,6 +2260,7 @@ onBeforeUnmount(() => {
                     </div>
                 </Transition>
 
+                <!-- Liste des entités -->
                 <Transition
                     enter-active-class="transition ease-out duration-300"
                     enter-from-class="opacity-0 -translate-x-4"
@@ -1580,6 +2309,7 @@ onBeforeUnmount(() => {
                     </div>
                 </Transition>
 
+                <!-- Points densifiés -->
                 <Transition
                     enter-active-class="transition ease-out duration-300"
                     enter-from-class="opacity-0 -translate-x-4"
@@ -1632,6 +2362,7 @@ onBeforeUnmount(() => {
                     </div>
                 </Transition>
 
+                <!-- Info -->
                 <Transition
                     enter-active-class="transition ease-out duration-300"
                     enter-from-class="opacity-0 translate-x-4"
@@ -1642,7 +2373,7 @@ onBeforeUnmount(() => {
                     <div v-if="showInfo && selectedInfo"
                         class="plan-info app-sidepanel absolute right-6 z-[1200] max-h-[70%] overflow-y-auto p-5"
                         :class="[
-                            selectedInfo.type === 'shapefile' ? 'w-[26rem]' : 'w-80',
+                            selectedInfo.type === 'shapefile' || selectedInfo.type === 'parcelle' ? 'w-[26rem]' : 'w-80',
                             tableAttributs ? 'bottom-[48%]' : 'bottom-6',
                         ]">
                         <div class="flex items-start justify-between mb-3">
@@ -1698,6 +2429,7 @@ onBeforeUnmount(() => {
                             </div>
                         </template>
 
+                        <!-- Shapefile -->
                         <template v-else-if="selectedInfo.type === 'shapefile'">
                             <div class="p-3 mb-3 rounded-xl bg-gradient-to-br from-primary-form to-primary-only/70 border border-primary-only">
                                 <div class="grid grid-cols-[7.5rem_1fr] gap-x-3 gap-y-2 text-sm">
@@ -1724,6 +2456,34 @@ onBeforeUnmount(() => {
                                 </div>
                             </div>
                             <p v-else class="text-sm text-primary-txt/70">Cliquez une entité du plan, ou ouvrez la table d’attributs.</p>
+                            <div v-if="selectedInfo.shapefile?.verification?.type === 'projet'" class="mt-4 space-y-2 text-sm">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-primary">Parcelles enregistrées</p>
+                                <p v-if="!selectedInfo.shapefile.verification.parcelles?.length" class="text-primary-txt/70">Aucune parcelle touchée n’a été enregistrée.</p>
+                                <div v-for="(ligne, index) in selectedInfo.shapefile.verification.parcelles" :key="index" class="rounded-xl border border-primary-only bg-white p-3">
+                                    <p class="font-semibold text-primary-txt">{{ ligne.lotissement || 'Parcelle' }} · {{ ligne.parcelle || '—' }}</p>
+                                    <p>Section {{ ligne.nomSection || ligne.section || '—' }}</p>
+                                    <p>8 chiffres {{ ligne.suffixe || '—' }} · NICAD {{ ligne.nicad || '—' }}</p>
+                                    <p>Occupé {{ ligne.occupee }} m² · {{ ligne.part }} %</p>
+                                    <p>Dossier {{ ligne.dossier || '—' }}</p>
+                                </div>
+                            </div>
+                            <!-- Parcelles enregistrées -->
+                            <div v-if="selectedInfo.identification" class="mt-4 rounded-xl border border-primary-only bg-white p-3 text-sm">
+                                <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">Parcelle et dossier</p>
+                                <p v-if="selectedInfo.identification.chargement" class="text-primary-txt">Recherche du dossier…</p>
+                                <p v-else-if="selectedInfo.identification.erreur" class="text-red-700">{{ selectedInfo.identification.erreur }}</p>
+                                <div v-else class="space-y-1.5">
+                                    <p><span class="font-medium text-primary">Section :</span> {{ selectedInfo.identification.nomSection || '—' }} · {{ selectedInfo.identification.section || '—' }}</p>
+                                    <p><span class="font-medium text-primary">Lotissement :</span> {{ selectedInfo.identification.lotissement || '—' }}</p>
+                                    <p><span class="font-medium text-primary">8 derniers chiffres du NICAD :</span> {{ selectedInfo.identification.suffixe || '—' }}</p>
+                                    <p><span class="font-medium text-primary">NICAD :</span> {{ selectedInfo.identification.base?.terrain?.txt_nicad || selectedInfo.identification.base?.nicad_calcule || '—' }}</p>
+                                    <p><span class="font-medium text-primary">N° dossier :</span> {{ selectedInfo.identification.base?.dossier?.txt_num_dossier || 'Aucun dossier' }}</p>
+                                    <p v-if="selectedInfo.identification.base?.dossier"><span class="font-medium text-primary">Service rendu :</span> {{ selectedInfo.identification.base.dossier.slt_service_rendu || '—' }}</p>
+                                    <p v-if="selectedInfo.identification.base?.dossier"><span class="font-medium text-primary">Etat de Cession :</span> {{ selectedInfo.identification.base.dossier.txt_etat_cession || '—' }}</p>
+                                    <p v-if="selectedInfo.identification.base?.terrain"><span class="font-medium text-primary">Titulaire :</span> {{ selectedInfo.identification.base.terrain.titulaire || '—' }}</p>
+                                    <p v-if="selectedInfo.identification.base?.terrain"><span class="font-medium text-primary">Surface :</span> {{ selectedInfo.identification.base.terrain.nbr_surface || '—' }} m²</p>
+                                </div>
+                            </div>
                             <div class="mt-4 space-y-2">
                                 <button v-if="selectedInfo.feature" type="button" @click="zoomSurEntite(selectedInfo.feature)"
                                     class="flex items-center justify-center w-full gap-2 py-2.5 text-sm font-medium text-white transition bg-primary rounded-xl shadow-sm hover:bg-primary-dark">
@@ -1740,6 +2500,7 @@ onBeforeUnmount(() => {
                             </div>
                         </template>
 
+                        <!-- Parcelle -->
                         <template v-else>
                             <div class="p-3 mb-3 rounded-xl bg-gradient-to-br from-primary-form to-primary-only/70 border border-primary-only">
                                 <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
@@ -1759,31 +2520,57 @@ onBeforeUnmount(() => {
                             </div>
 
                             <div v-else-if="selectedInfo.data" class="space-y-2 text-sm">
-                                <div class="flex items-center justify-between py-1.5 border-b border-primary-only/70">
+                                <div class="flex items-center justify-between gap-3 py-1.5 border-b border-primary-only/70">
+                                    <span class="font-medium text-primary-txt">8 derniers chiffres</span>
+                                    <span class="font-semibold text-primary-txt text-right">{{ selectedInfo.data.suffixe || '—' }}</span>
+                                </div>
+                                <div class="flex items-center justify-between gap-3 py-1.5 border-b border-primary-only/70">
                                     <span class="font-medium text-primary-txt">N° Dossier</span>
-                                    <span class="font-semibold text-primary-txt">{{ selectedInfo.data.txt_num_dossier || '-' }}</span>
+                                    <span class="font-semibold text-primary-txt text-right">{{ selectedInfo.data.txt_num_dossier || '—' }}</span>
                                 </div>
-                                <div class="flex items-center justify-between py-1.5 border-b border-primary-only/70">
+                                <div class="flex items-center justify-between gap-3 py-1.5 border-b border-primary-only/70">
                                     <span class="font-medium text-primary-txt">NICAD</span>
-                                    <span class="font-semibold text-primary-txt">{{ selectedInfo.data.txt_nicad || '-' }}</span>
+                                    <span class="font-semibold text-primary-txt text-right break-all">{{ selectedInfo.data.txt_nicad || '—' }}</span>
                                 </div>
-                                <div class="flex items-center justify-between py-1.5 border-b border-primary-only/70">
+                                <div class="flex items-center justify-between gap-3 py-1.5 border-b border-primary-only/70">
                                     <span class="font-medium text-primary-txt">Surface</span>
-                                    <span class="font-semibold text-primary-txt">{{ selectedInfo.data.nbr_surface || '-' }} m²</span>
+                                    <span class="font-semibold text-primary-txt text-right">{{ selectedInfo.data.nbr_surface || '—' }} m²</span>
                                 </div>
-                                <div class="flex items-center justify-between py-1.5 border-b border-primary-only/70">
+                                <div class="flex items-center justify-between gap-3 py-1.5 border-b border-primary-only/70">
                                     <span class="font-medium text-primary-txt">N° Lot</span>
-                                    <span class="font-semibold text-primary-txt">{{ selectedInfo.data.txt_num_lotissement || '-' }}</span>
+                                    <span class="font-semibold text-primary-txt text-right">{{ selectedInfo.data.txt_num_lotissement || '—' }}</span>
                                 </div>
-                                <div class="flex items-center justify-between py-1.5">
+                                <div class="flex items-center justify-between gap-3 py-1.5 border-b border-primary-only/70">
                                     <span class="font-medium text-primary-txt">Lotissement</span>
-                                    <span class="font-semibold text-primary-txt text-right truncate ml-2">{{ selectedInfo.data.txt_lotissement || '-' }}</span>
+                                    <span class="font-semibold text-primary-txt text-right">{{ selectedInfo.data.txt_lotissement || '—' }}</span>
+                                </div>
+                                <div class="flex items-center justify-between gap-3 py-1.5 border-b border-primary-only/70">
+                                    <span class="font-medium text-primary-txt">Titulaire</span>
+                                    <span class="font-semibold text-primary-txt text-right">{{ selectedInfo.data.titulaire || '—' }}</span>
+                                </div>
+                                <div class="flex items-center justify-between gap-3 py-1.5 border-b border-primary-only/70">
+                                    <span class="font-medium text-primary-txt">Commune</span>
+                                    <span class="font-semibold text-primary-txt text-right">{{ selectedInfo.data.commune || '—' }}</span>
+                                </div>
+                                <div class="flex items-center justify-between gap-3 py-1.5 border-b border-primary-only/70">
+                                    <span class="font-medium text-primary-txt">Service rendu</span>
+                                    <span class="font-semibold text-primary-txt text-right">{{ selectedInfo.data.slt_service_rendu || '—' }}</span>
+                                </div>
+                                <div class="flex items-center justify-between gap-3 py-1.5">
+                                    <span class="font-medium text-primary-txt">Etat de Cession</span>
+                                    <span class="font-semibold text-primary-txt text-right">{{ selectedInfo.data.txt_etat_cession || '—' }}</span>
                                 </div>
                             </div>
+                            <p v-else class="text-sm text-primary-txt/70">Aucune information enregistrée pour cette parcelle.</p>
+                            <button v-if="selectedInfo.feature" type="button" @click="zoomSurEntite(selectedInfo.feature)"
+                                class="mt-4 flex items-center justify-center w-full gap-2 py-2.5 text-sm font-medium text-white transition bg-primary rounded-xl shadow-sm hover:bg-primary-dark">
+                                Zoomer sur la parcelle
+                            </button>
                         </template>
                     </div>
                 </Transition>
 
+                <!-- Table d'attributs -->
                 <div v-if="tableAttributs"
                     class="shp-table absolute inset-x-0 bottom-0 z-[1100] flex h-[46%] flex-col border-t border-primary-only bg-[#fff9f4] shadow-[0_-12px_30px_rgba(97,49,4,0.16)]">
                     <div class="flex items-center gap-3 border-b border-primary-only px-4 py-2">
@@ -1877,24 +2664,52 @@ onBeforeUnmount(() => {
                                 </button>
                             </div>
 
-                            <div class="flex border-b border-primary-only bg-primary-form">
-                                <button @click="activeTab = 'list'"
-                                    class="flex-1 px-4 py-3 text-sm font-medium transition relative"
-                                    :class="activeTab === 'list' ? 'text-primary bg-white' : 'text-primary-txt hover:text-primary'">
-                                    <span class="inline-flex items-center gap-2">
-                                        📋 Plans importés
-                                        <span class="px-2 py-0.5 text-xs rounded-full"
-                                            :class="activeTab === 'list' ? 'bg-primary-form text-primary' : 'bg-primary-only text-primary-txt'">
-                                            {{ shapefiles.length }}
-                                        </span>
+                            <div class="grid grid-cols-1 gap-2 border-b border-primary-only bg-gradient-to-b from-primary-form to-[#fff9f4] p-3 sm:grid-cols-2">
+                                <button
+                                    type="button"
+                                    @click="ouvrirOngletPlan('list')"
+                                    class="flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold leading-tight transition duration-200"
+                                    :class="activeTab === 'list'
+                                        ? 'bg-primary text-white shadow-md'
+                                        : 'border border-primary-only/80 bg-white/80 text-primary-txt hover:border-primary-menu hover:bg-white'"
+                                >
+                                    <span>Plans importés</span>
+                                    <span
+                                        class="inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-xs font-bold"
+                                        :class="activeTab === 'list' ? 'bg-white/20 text-white' : 'bg-primary-form text-primary'"
+                                    >
+                                        {{ shapefiles.length }}
                                     </span>
-                                    <span v-if="activeTab === 'list'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></span>
                                 </button>
-                                <button @click="activeTab = 'upload'"
-                                    class="flex-1 px-4 py-3 text-sm font-medium transition relative"
-                                    :class="activeTab === 'upload' ? 'text-primary bg-white' : 'text-primary-txt hover:text-primary'">
-                                    <span class="inline-flex items-center gap-2">⬆️ Importer un shapefile</span>
-                                    <span v-if="activeTab === 'upload'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></span>
+                                <button
+                                    type="button"
+                                    @click="ouvrirOngletPlan('upload')"
+                                    class="min-h-11 rounded-xl px-3 py-2.5 text-sm font-semibold leading-tight transition duration-200"
+                                    :class="activeTab === 'upload'
+                                        ? 'bg-primary text-white shadow-md'
+                                        : 'border border-primary-only/80 bg-white/80 text-primary-txt hover:border-primary-menu hover:bg-white'"
+                                >
+                                    Importer un shapefile
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="ouvrirOngletPlan('ajouterParcelle')"
+                                    class="min-h-11 rounded-xl px-3 py-2.5 text-sm font-semibold leading-tight transition duration-200"
+                                    :class="activeTab === 'ajouterParcelle'
+                                        ? 'bg-primary text-white shadow-md'
+                                        : 'border border-primary-only/80 bg-white/80 text-primary-txt hover:border-primary-menu hover:bg-white'"
+                                >
+                                    Ajouter une parcelle
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="ouvrirOngletPlan('uploadProjet')"
+                                    class="min-h-11 rounded-xl px-3 py-2.5 text-sm font-semibold leading-tight transition duration-200"
+                                    :class="activeTab === 'uploadProjet'
+                                        ? 'bg-primary text-white shadow-md'
+                                        : 'border border-primary-only/80 bg-white/80 text-primary-txt hover:border-primary-menu hover:bg-white'"
+                                >
+                                    Ajouter un projet
                                 </button>
                             </div>
 
@@ -1947,6 +2762,8 @@ onBeforeUnmount(() => {
                                             </div>
                                             <p class="text-xs text-primary-txt mt-0.5">
                                                 <span v-if="libelleTypeEntite(shp.type_entite)">{{ libelleTypeEntite(shp.type_entite) }} · </span>{{ shp.nb_entites }} entité(s) · SRID {{ shp.srid }}
+                                                <span v-if="shp.verification?.type === 'parcelle'"> · NICAD {{ shp.verification.nicad || shp.verification.suffixe }}</span>
+                                                <span v-else-if="shp.verification?.type === 'projet'"> · {{ shp.verification.parcelles?.length || 0 }} parcelle(s) du projet</span>
                                             </p>
                                         </div>
                                         <div class="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
@@ -1965,7 +2782,7 @@ onBeforeUnmount(() => {
                                     </div>
                                 </div>
 
-                                <form v-else @submit.prevent="uploadShapefile" class="space-y-5">
+                                <form v-else-if="activeTab === 'upload'" @submit.prevent="uploadShapefile" class="space-y-5">
                                     <BaseSelect
                                         v-model="form.type_entite"
                                         label="Type d'entité"
@@ -2020,6 +2837,153 @@ onBeforeUnmount(() => {
                                         </button>
                                     </div>
                                 </form>
+
+                                <form v-else-if="activeTab === 'ajouterParcelle'" @submit.prevent="verifierParcelle" class="space-y-5">
+                                    <p class="text-sm text-primary-txt">Le fichier contient une seule parcelle. La vérification contrôle la section, la superposition et propose le numéro suivant.</p>
+                                    <BaseInput
+                                        v-model="form.nom"
+                                        label="Nom de la parcelle"
+                                        name="nom_parcelle"
+                                        required
+                                        type="text"
+                                        placeholder="Ex : Parcelle nouvelle"
+                                        wrapper-class="w-full"
+                                    />
+                                    <BaseSelect
+                                        v-model="form.srid"
+                                        label="Projection"
+                                        name="srid_parcelle"
+                                        :options="[
+                                            { label: 'WGS84 — EPSG:4326', value: '4326' },
+                                            { label: 'UTM 28N — EPSG:32628', value: '32628' },
+                                            { label: 'Lambert 93 — EPSG:2154', value: '2154' },
+                                        ]"
+                                        wrapper-class="w-full"
+                                    />
+                                    <div class="p-4 border border-primary-only rounded-xl bg-white space-y-3">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <BaseInput
+                                                v-for="ext in ['shp', 'shx', 'dbf', 'prj']"
+                                                :key="'parcelle-' + ext"
+                                                :label="'.' + ext"
+                                                type="file"
+                                                :name="'parcelle_' + ext"
+                                                :accept="'.' + ext"
+                                                :required="ext !== 'prj'"
+                                                wrapper-class="w-full"
+                                                @change="e => form[ext] = e.target.files?.[0] || null"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div v-if="analyseParcelle" class="rounded-xl border p-4 text-sm" :class="analyseParcelle.valide ? 'border-green-300 bg-green-50 text-green-900' : 'border-red-300 bg-red-50 text-red-900'">
+                                        <p class="font-semibold">{{ analyseParcelle.message }}</p>
+                                        <div v-if="analyseParcelle.section" class="mt-2 space-y-1">
+                                            <p>Section {{ analyseParcelle.nomSection || analyseParcelle.section }} · n° {{ analyseParcelle.section }}</p>
+                                            <p>Lotissement : {{ analyseParcelle.lotissement || '—' }}</p>
+                                            <p>Dernier NICAD : {{ analyseParcelle.dernierNicad || '—' }}</p>
+                                            <p>Prochain numéro : {{ analyseParcelle.prochain }}</p>
+                                            <p>8 derniers chiffres : {{ analyseParcelle.suffixe }}</p>
+                                            <p>Nouveau NICAD : {{ analyseParcelle.nicad || 'Code commune introuvable pour cette section' }}</p>
+                                        </div>
+                                        <ul v-if="analyseParcelle.superpositions?.length" class="mt-2 list-disc pl-5">
+                                            <li v-for="(item, index) in analyseParcelle.superpositions" :key="index">{{ item.nom }} · {{ item.surface }} m²</li>
+                                        </ul>
+                                    </div>
+                                    <div class="flex items-center justify-end gap-3 pt-2 border-t border-primary-only">
+                                        <button type="button" @click="closeShapefileModal" class="px-4 py-2 text-sm font-medium text-primary-txt bg-white border border-primary-only rounded-lg hover:bg-primary-form">Annuler</button>
+                                        <button type="submit" :disabled="analyseEnCours" class="px-4 py-2 text-sm font-medium text-primary bg-white border border-primary-only rounded-lg hover:bg-primary-form disabled:opacity-60">
+                                            {{ analyseEnCours ? 'Vérification…' : 'Vérifier' }}
+                                        </button>
+                                        <button type="button" @click="enregistrerParcelle" :disabled="!analyseParcelle?.valide || uploading" class="px-5 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-60">
+                                            {{ uploading ? 'Import…' : 'Enregistrer' }}
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <form v-else-if="activeTab === 'uploadProjet'" @submit.prevent="enregistrerProjet" class="space-y-5">
+                                    <BaseSelect
+                                        v-model="form.type_entite"
+                                        label="Type de projet"
+                                        name="type_entite_projet"
+                                        :options="optionsTypeEntite"
+                                        required
+                                        wrapper-class="w-full"
+                                    />
+
+                                    <BaseInput
+                                        v-model="form.nom"
+                                        label="Nom Entité Projet"
+                                        name="nom_projet"
+                                        required
+                                        type="text"
+                                        placeholder="Ex : Projet"
+                                        wrapper-class="w-full"
+                                    />
+
+                                    <BaseSelect
+                                        v-model="form.srid"
+                                        label="Projection"
+                                        name="srid_projet"
+                                        :options="[
+                                            { label: 'WGS84 — EPSG:4326', value: '4326' },
+                                            { label: 'UTM 28N — EPSG:32628', value: '32628' },
+                                            { label: 'Lambert 93 — EPSG:2154', value: '2154' },
+                                        ]"
+                                        wrapper-class="w-full"
+                                    />
+                                    <div class="p-4 border border-primary-only rounded-xl bg-white space-y-3">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <BaseInput
+                                                v-for="ext in ['shp', 'shx', 'dbf', 'prj']"
+                                                :key="'projet-' + ext"
+                                                :label="'.' + ext"
+                                                type="file"
+                                                :name="'projet_' + ext"
+                                                :accept="'.' + ext"
+                                                :required="ext !== 'prj'"
+                                                wrapper-class="w-full"
+                                                @change="e => form[ext] = e.target.files?.[0] || null"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-end gap-3">
+                                        <button type="button" @click="analyserProjet" :disabled="analyseEnCours" class="px-4 py-2 text-sm font-medium text-primary bg-white border border-primary-only rounded-lg hover:bg-primary-form disabled:opacity-60">
+                                            {{ analyseEnCours ? 'Analyse…' : 'Analyser les parcelles' }}
+                                        </button>
+                                    </div>
+                                    <div v-if="analyseProjet.length" class="overflow-x-auto rounded-xl border border-primary-only">
+                                        <table class="w-full text-left text-sm">
+                                            <thead class="bg-primary-form text-primary">
+                                                <tr>
+                                                    <th class="px-3 py-2 font-semibold">Section</th>
+                                                    <th class="px-3 py-2 font-semibold">Parcelle</th>
+                                                    <th class="px-3 py-2 font-semibold">8 chiffres</th>
+                                                    <th class="px-3 py-2 font-semibold">Occupé</th>
+                                                    <th class="px-3 py-2 font-semibold">Part</th>
+                                                    <th class="px-3 py-2 font-semibold">Dossier</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="ligne in analyseProjet" :key="ligne.cle" class="border-t border-primary-only/70">
+                                                    <td class="px-3 py-2">{{ ligne.nomSection || ligne.section || '—' }}</td>
+                                                    <td class="px-3 py-2">{{ ligne.parcelle || '—' }}</td>
+                                                    <td class="px-3 py-2">{{ ligne.suffixe || '—' }}</td>
+                                                    <td class="px-3 py-2">{{ ligne.occupee }} m²</td>
+                                                    <td class="px-3 py-2">{{ ligne.part }} %</td>
+                                                    <td class="px-3 py-2">{{ ligne.base?.dossier?.txt_num_dossier || '—' }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="flex items-center justify-end gap-3 pt-2 border-t border-primary-only">
+                                        <button type="button" @click="closeShapefileModal"
+                                            class="px-4 py-2 text-sm font-medium text-primary-txt bg-white border border-primary-only rounded-lg hover:bg-primary-form">Annuler</button>
+                                        <button type="submit" :disabled="uploading"
+                                            class="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-60">
+                                            {{ uploading ? 'Import…' : 'Enregistrer le projet' }}
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </Transition>
@@ -2041,18 +3005,19 @@ onBeforeUnmount(() => {
     min-width: 36px;
     height: 22px;
     padding: 0 4px;
-    background: #fff9f4;
-    border: 2px solid #613104;
+    background: #ffffff;
+    border: 2px solid #1c0a00;
     border-radius: 6px;
-    color: #613104;
-    font-weight: 700;
-    font-size: 12px;
+    color: #1c0a00;
+    font-weight: 800;
+    font-size: 13px;
     line-height: 1;
-    box-shadow: 0 2px 8px rgba(97, 49, 4, 0.28);
+    box-shadow: 0 0 0 2px #ffffff, 0 2px 6px rgba(0, 0, 0, 0.55);
 }
 .shp-numero span.is-active {
-    background: #613104;
-    color: #fff9f4;
+    background: #7f1d1d;
+    color: #ffffff;
+    border-color: #1c0a00;
 }
 
 .shp-etiquette {

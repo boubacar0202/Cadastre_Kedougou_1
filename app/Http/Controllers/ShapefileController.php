@@ -12,6 +12,27 @@ use Shapefile\ShapefileReader;
 
 class ShapefileController extends Controller
 {
+    private const TYPES_ENTITE = [
+        'limite_region',
+        'limite_departement',
+        'limite_arrondissement',
+        'limite_commune',
+        'limite_section',
+        'limite_parcelle',
+        'numero_section',
+        'numero_parcelle',
+    ];
+
+    private const COULEURS_ENTITE = [
+        'limite_region'         => '#1e3a8a',
+        'limite_departement'    => '#0f766e',
+        'limite_arrondissement' => '#6d28d9',
+        'limite_commune'        => '#c2410c',
+        'limite_section'        => '#9a3412',
+        'limite_parcelle'       => '#052e16',
+        'numero_section'        => '#7c2d12',
+        'numero_parcelle'       => '#052e16',
+    ];
     /**
      * ============================================================
      * PAGE PRINCIPALE
@@ -56,7 +77,7 @@ class ShapefileController extends Controller
         // 1. Validation
         $request->validate([
             'nom'         => 'required|string|max:255',
-            'type_entite' => 'required|string|in:limite_region,limite_departement,limite_arrondissement,limite_commune,limite_section,limite_parcelle',
+            'type_entite' => 'required|string|in:' . implode(',', self::TYPES_ENTITE),
             'shp'         => 'required|file',
             'shx'         => 'required|file',
             'dbf'         => 'required|file',
@@ -71,7 +92,78 @@ class ShapefileController extends Controller
             'dbf.required' => 'Le fichier .dbf est requis.',
         ]);
 
-        // 2. Vérification manuelle des extensions
+        try {
+            $geojson = $this->construireGeojsonDepuisUpload($request);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            return back()->withErrors(['shp' => 'Erreur lecture : ' . $e->getMessage()]);
+        }
+
+        $features = $geojson['features'];
+
+        $nbEntites = count($features);
+        $bbox      = $this->computeBbox($features);
+
+        // 8. Stocker définitivement
+        $nomTable  = 'shp_' . Str::lower(Str::random(10));
+        $finalPath = "shapefiles/{$nomTable}.geojson";
+        Storage::disk('public')->put($finalPath, json_encode($geojson));
+
+        // 10. Enregistrer en base
+        $typeEntite = $request->input('type_entite');
+
+        $shapefile = Shapefile::create([
+            'nom'         => $request->nom,
+            'type_entite' => $typeEntite,
+            'nom_table'   => $nomTable,
+            'srid'        => '4326',
+            'nb_entites'  => $nbEntites,
+            'bbox'        => $bbox,
+            'couleur'     => self::COULEURS_ENTITE[$typeEntite] ?? '#3388ff',
+            'visible'      => true,
+            'verification' => $this->verificationUploadee($request),
+            // 'user_id'    => auth()->id(),
+        ]);
+
+        return back()->with('success', "✅ Shapefile #{$shapefile->id} importé ({$nbEntites} entités)");
+    }
+
+    private function verificationUploadee(Request $request): ?array
+    {
+        if (!$request->filled('verification')) {
+            return null;
+        }
+
+        $verification = json_decode($request->input('verification'), true);
+        if (!is_array($verification) || !in_array($verification['type'] ?? '', ['parcelle', 'projet'], true)) {
+            return null;
+        }
+
+        return $verification;
+    }
+
+    public function previsualiser(Request $request)
+    {
+        $request->validate([
+            'shp'  => 'required|file',
+            'shx'  => 'required|file',
+            'dbf'  => 'required|file',
+            'prj'  => 'nullable|file',
+            'srid' => 'nullable|string|max:10',
+        ]);
+
+        try {
+            return response()->json($this->construireGeojsonDepuisUpload($request));
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Erreur lecture : ' . $e->getMessage()], 422);
+        }
+    }
+
+    private function construireGeojsonDepuisUpload(Request $request): array
+    {
         $expected = ['shp' => 'shp', 'shx' => 'shx', 'dbf' => 'dbf', 'prj' => 'prj'];
         $errors = [];
         foreach ($expected as $field => $ext) {
@@ -82,115 +174,63 @@ class ShapefileController extends Controller
                 }
             }
         }
-        if (!empty($errors)) {
-            return back()->withErrors($errors)->withInput();
+        if ($errors) {
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
         }
 
-        // 3. Dossier temporaire
-        $folder  = 'tmp_shp_' . Str::uuid();
+        $folder = 'tmp_shp_' . Str::uuid();
         $tmpPath = storage_path("app/{$folder}");
         if (!is_dir($tmpPath)) {
             mkdir($tmpPath, 0775, true);
         }
 
-        // 4. Sauvegarder les fichiers
-        foreach (['shp', 'shx', 'dbf', 'prj'] as $ext) {
-            if ($request->hasFile($ext)) {
-                $request->file($ext)->move($tmpPath, "shape.{$ext}");
-            }
-        }
-
-        $shpFile = "{$tmpPath}/shape.shp";
-        $srid    = $request->input('srid', '4326');
-
-        // 5. Lecture avec php-shapefile
         try {
-            $reader = new ShapefileReader($shpFile);
+            foreach (['shp', 'shx', 'dbf', 'prj'] as $ext) {
+                if ($request->hasFile($ext)) {
+                    $request->file($ext)->move($tmpPath, "shape.{$ext}");
+                }
+            }
+
+            $reader = new ShapefileReader("{$tmpPath}/shape.shp");
             $features = [];
-
             while ($record = $reader->fetchRecord()) {
-                if ($record->isDeleted()) continue;
+                if ($record->isDeleted()) {
+                    continue;
+                }
 
-                $geomJson = $record->getGeoJSON();
-                $geom = json_decode($geomJson, true);
+                $geom = json_decode($record->getGeoJSON(), true);
+                if (!$geom || !isset($geom['type'])) {
+                    continue;
+                }
 
-                if (!$geom || !isset($geom['type'])) continue;
-
-                // ✅ CORRECTION 1 : Nettoyer le type (PolygonM → Polygon)
                 $geom['type'] = preg_replace('/(M|Z|ZM)$/i', '', $geom['type']);
-
-                // ✅ CORRECTION 2 : Supprimer la bbox ESRI (obsolète)
                 unset($geom['bbox']);
-
-                // ✅ CORRECTION 3 : Nettoyer les coordonnées (retire Z et M)
                 $geom['coordinates'] = $this->cleanCoordinates($geom['coordinates']);
-
                 $features[] = [
-                    'type'       => 'Feature',
-                    'geometry'   => $geom,
+                    'type' => 'Feature',
+                    'geometry' => $geom,
                     'properties' => $record->getDataArray(),
                 ];
             }
- 
 
-        } catch (\Exception $e) {
-            array_map('unlink', glob("{$tmpPath}/*"));
-            @rmdir($tmpPath); 
-            return back()->withErrors(['shp' => 'Erreur lecture : ' . $e->getMessage()]);
+            $geojson = [
+                'type' => 'FeatureCollection',
+                'features' => $features,
+            ];
+
+            $srid = $request->input('srid', '4326');
+            $firstCoord = $this->getFirstCoordinate($features);
+            $needsReprojection = in_array($srid, ['32628', '2154'])
+                || ($firstCoord && (abs($firstCoord[0]) > 180 || abs($firstCoord[1]) > 90));
+            if ($needsReprojection) {
+                $this->reprojectAllFeatures($geojson['features']);
+            }
+
+            return $geojson;
+        } finally {
+            array_map('unlink', glob("{$tmpPath}/*") ?: []);
+            @rmdir($tmpPath);
         }
-
-        // 6. Construire le GeoJSON
-        $geojson = [
-            'type'     => 'FeatureCollection',
-            'features' => $features,
-        ];
-
-        // 7. Reprojection UTM 28N → WGS84 si nécessaire
-        //    Détection auto : si les premières coords sont > 180 → UTM
-        $firstCoord = $this->getFirstCoordinate($features);
-        $needsReprojection = in_array($srid, ['32628', '2154'])
-            || ($firstCoord && (abs($firstCoord[0]) > 180 || abs($firstCoord[1]) > 90));
-
-        if ($needsReprojection) { 
-            $this->reprojectAllFeatures($geojson['features']);
-        }
-
-        $nbEntites = count($features);
-        $bbox      = $this->computeBbox($features);
-
-        // 8. Stocker définitivement
-        $nomTable  = 'shp_' . Str::lower(Str::random(10));
-        $finalPath = "shapefiles/{$nomTable}.geojson";
-        Storage::disk('public')->put($finalPath, json_encode($geojson));
-
-        // 9. Nettoyer
-        array_map('unlink', glob("{$tmpPath}/*"));
-        @rmdir($tmpPath);
-
-        // 10. Enregistrer en base
-        $typeEntite = $request->input('type_entite');
-        $couleurs = [
-            'limite_region'         => '#1e3a8a',
-            'limite_departement'    => '#0f766e',
-            'limite_arrondissement' => '#6d28d9',
-            'limite_commune'        => '#c2410c',
-            'limite_section'        => '#b45309',
-            'limite_parcelle'       => '#15803d',
-        ];
-
-        $shapefile = Shapefile::create([
-            'nom'         => $request->nom,
-            'type_entite' => $typeEntite,
-            'nom_table'   => $nomTable,
-            'srid'        => '4326',
-            'nb_entites'  => $nbEntites,
-            'bbox'        => $bbox,
-            'couleur'     => $couleurs[$typeEntite] ?? '#3388ff',
-            'visible'     => true,
-            // 'user_id'    => auth()->id(),
-        ]);
-
-        return back()->with('success', "✅ Shapefile #{$shapefile->id} importé ({$nbEntites} entités)");
     }
 
     /**
@@ -210,8 +250,10 @@ class ShapefileController extends Controller
             ], 404);
         }
 
-        return response(file_get_contents($path), 200)
-            ->header('Content-Type', 'application/json');
+        return response()->file($path, [
+            'Content-Type' => 'application/json',
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
     }
 
     /**
@@ -244,7 +286,7 @@ class ShapefileController extends Controller
     {
         $validated = $request->validate([
             'nom'         => 'sometimes|string|max:255',
-            'type_entite' => 'sometimes|nullable|string|in:limite_region,limite_departement,limite_arrondissement,limite_commune,limite_section,limite_parcelle',
+            'type_entite' => 'sometimes|nullable|string|in:' . implode(',', self::TYPES_ENTITE),
             'couleur'     => 'sometimes|string|max:20',
             'visible'     => 'sometimes|boolean',
         ]);

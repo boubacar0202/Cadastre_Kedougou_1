@@ -12,6 +12,11 @@ class ActiviteUtilisateur extends Model
     protected $fillable = [
         'user_id',
         'action',
+        'methode',
+        'module',
+        'chemin',
+        'libelle',
+        'reference',
     ];
 
     public function user(): BelongsTo

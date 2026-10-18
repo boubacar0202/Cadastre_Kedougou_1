@@ -19,6 +19,7 @@ return new class extends Migration
             $table->boolean('visible')->default(true);
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete(); // ✅ null si user supprimé
             $table->string('type_entite')->nullable();
+            $table->json('verification')->nullable();
 
             $table->index('visible');                  // ✅ index (optionnel)
 
