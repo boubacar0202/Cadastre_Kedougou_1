@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CodeAcces;
 use App\Models\PointDensifier;
 use App\Models\Shapefile;
 use Illuminate\Http\Request;
@@ -263,6 +264,21 @@ class ShapefileController extends Controller
      */
     public function destroy(Request $request, Shapefile $shapefile)
     {
+        $request->validate([
+            'code' => 'required|string',
+        ]);
+
+        $code = CodeAcces::where('id', 3)
+            ->where('code', $request->input('code'))
+            ->first();
+
+        if (!$code) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Code d’accès invalide. Contacter l’administrateur !',
+            ], 403);
+        }
+
         $path = "shapefiles/{$shapefile->nom_table}.geojson";
         Storage::disk('public')->delete($path);
         $shapefile->delete();

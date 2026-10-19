@@ -1355,6 +1355,38 @@ class ParametreController extends Controller
             ->with('success', 'Point densifié mis à jour avec succès.');
     }
 
+    public function destroyPoint(Request $request, $id)
+    {
+        $request->validate([
+            'code' => 'required|string',
+        ]);
+
+        $code = CodeAcces::where('id', 3)
+            ->where('code', $request->code)
+            ->first();
+
+        if (!$code) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Code d’accès invalide. Contacter l’administrateur !',
+            ], 403);
+        }
+
+        $point = PointDensifier::findOrFail($id);
+        $nom = $point->txt_nomPoint;
+
+        if ($point->fichierPDFPoint && Storage::disk('public')->exists($point->fichierPDFPoint)) {
+            Storage::disk('public')->delete($point->fichierPDFPoint);
+        }
+
+        $point->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Point densifié \"{$nom}\" supprimé avec succès.",
+        ]);
+    }
+
     /**
      * Détail des traitements d'un utilisateur sur le trimestre affiché.
      */
@@ -1411,6 +1443,7 @@ class ParametreController extends Controller
             'totaux' => [
                 'enregistrements' => (int) ($totauxBruts['enregistrement'] ?? 0),
                 'modifications' => (int) ($totauxBruts['modification'] ?? 0),
+                'suppressions' => (int) ($totauxBruts['suppression'] ?? 0),
                 'recherches' => (int) ($totauxBruts['recherche'] ?? 0),
             ],
             'total' => $total,

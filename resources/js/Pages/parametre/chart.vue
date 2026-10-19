@@ -108,6 +108,7 @@ const filtresDetail = [
     { value: 'tous', label: 'Tous' },
     { value: 'enregistrement', label: 'Enregistrements' },
     { value: 'modification', label: 'Modifications' },
+    { value: 'suppression', label: 'Suppressions' },
     { value: 'recherche', label: 'Recherches' },
 ];
 
@@ -187,13 +188,21 @@ const traitementsFiltres = computed(() => {
 function libelleAction(action) {
     if (action === 'enregistrement') return 'Enregistrement';
     if (action === 'modification') return 'Modification';
+    if (action === 'suppression') return 'Suppression';
     if (action === 'recherche') return 'Recherche';
     return action || 'Traitement';
+}
+
+function referenceAffichee(reference) {
+    if (!reference) return '—';
+    const texte = String(reference).replace(/\s*\{[^{}]+\}/g, '').trim();
+    return texte || '—';
 }
 
 function actionClass(action) {
     if (action === 'enregistrement') return 'bg-emerald-100 text-emerald-800';
     if (action === 'modification') return 'bg-sky-100 text-sky-800';
+    if (action === 'suppression') return 'bg-rose-100 text-rose-800';
     if (action === 'recherche') return 'bg-amber-100 text-amber-800';
     return 'bg-gray-100 text-gray-600';
 }
@@ -497,22 +506,20 @@ watchEffect((onInvalidate) => {
 </script>
 
 <template>
+    <Head title="Évaluation - Dashboard" />
+
     <AuthenticatedLayout>
-        <Head title="Évaluation - Dashboard" />
-        
-        <div class="p-6">
-            <!-- En-tête principal -->
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-                <h1 class="text-2xl font-bold text-primary-txt flex items-center gap-2">
-                    <svg class="w-8 h-8 text-primary" viewBox="0 0 24 24" fill="none">
-                        <path d="M4 20V4" stroke="#ff7a18" stroke-width="2"/>
-                        <path d="M4 20h16" stroke="#ff7a18" stroke-width="2"/>
-                        <path d="M7 15l3-4 3 2 4-6" stroke="#00c6ff" stroke-width="2" fill="none"/>
-                    </svg>
-                    Évaluation Statistique
-                </h1>
-                <div class="flex gap-2 mt-2 md:mt-0">
-                    <MazBtn @click="updateChartData" color="primary" size="sm" :disabled="isRefreshing">
+        <template #header>
+            <h2 class="text-xl font-semibold leading-tight text-primary-txt">Évaluation Statistique</h2>
+        </template>
+
+        <div class="eval-page">
+            <header class="eval-header">
+                <div>
+                    <p class="eval-kicker">Cadastre de Kédougou</p>
+                    <h1>Évaluation statistique</h1>
+                </div>
+                <MazBtn @click="updateChartData" color="primary" size="sm" :disabled="isRefreshing">
                         <span v-if="isRefreshing" class="flex items-center gap-2">
                             <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -522,68 +529,57 @@ watchEffect((onInvalidate) => {
                         </span>
                         <span v-else>Rafraîchir</span>
                     </MazBtn>
-                </div>
-            </div>
+            </header>
 
-            <!-- Cartes statistiques -->
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white rounded-lg shadow-md p-4 border-l-4 border-orange-500">
-                    <p class="text-sm text-primary-txt">Délimitation</p>
-                    <p class="text-2xl font-bold text-orange-600">{{ stats.dossiers_delimitation || 0 }}</p>
-                </div>
-                <div class="bg-white rounded-lg shadow-md p-4 border-l-4 border-teal-500">
-                    <p class="text-sm text-primary-txt">Extrait de plan</p>
-                    <p class="text-2xl font-bold text-teal-600">{{ stats.dossiers_extrait_plan || 0 }}</p>
-                </div>
-                <div class="bg-white rounded-lg shadow-md p-4 border-l-4 border-indigo-500">
-                    <p class="text-sm text-primary-txt">Implantation</p>
-                    <p class="text-2xl font-bold text-primary">{{ stats.dossiers_implantation || 0 }}</p>
-                </div>
-                <div class="bg-white rounded-lg shadow-md p-4 border-l-4 border-pink-500">
-                    <div class="flex justify-between items-center mb-1">
-                        <p class="text-sm text-primary-txt">Terrains Enquêtés</p>
-                        <p class="text-xs font-bold text-red-500">Objectif : 1500</p> 
-                    </div> 
-                    <div class="flex justify-between items-center">
-                        <p class="text-2xl font-bold text-pink-600">{{ stats.dossiers_terrain_enqueter || 0 }}</p>  
-                        <p class="text-lg font-bold text-pink-600">{{ stats.dossiers_pourcentage_terrain_enqueter || 0 }}%</p>
+            <section class="stat-grid">
+                <article class="stat-card stat-card--orange">
+                    <p class="stat-label">Délimitation</p>
+                    <p class="stat-value text-orange-600">{{ stats.dossiers_delimitation || 0 }}</p>
+                </article>
+                <article class="stat-card stat-card--teal">
+                    <p class="stat-label">Extrait de plan</p>
+                    <p class="stat-value text-teal-600">{{ stats.dossiers_extrait_plan || 0 }}</p>
+                </article>
+                <article class="stat-card stat-card--brown">
+                    <p class="stat-label">Implantation</p>
+                    <p class="stat-value text-primary-txt">{{ stats.dossiers_implantation || 0 }}</p>
+                </article>
+                <article class="stat-card stat-card--rose">
+                    <div class="stat-head">
+                        <p class="stat-label">Terrains enquêtés</p>
+                        <p class="stat-goal">Objectif 1 500</p>
                     </div>
-                </div>
-            </div>
-
-            <!-- Graphiques -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-bold text-primary-txt flex items-center gap-2">
-                            <span class="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-blue-700 rounded-full"></span>
-                            Répartition des Dossiers
-                        </h2>
-                        <span class="text-sm text-primary-txt">Pie Chart</span>
+                    <div class="stat-head">
+                        <p class="stat-value text-pink-600">{{ stats.dossiers_terrain_enqueter || 0 }}</p>
+                        <p class="stat-percent">{{ stats.dossiers_pourcentage_terrain_enqueter || 0 }}%</p>
                     </div>
-                    <div class="h-80"><canvas ref="pieChartRef"></canvas></div>
-                </div>
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-bold text-primary-txt flex items-center gap-2">
-                            <span class="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-blue-700 rounded-full"></span>
-                            Évolution Mensuelle
-                        </h2>
-                        <span class="text-sm text-primary-txt">Bar Chart</span>
+                    <div class="stat-meter" aria-hidden="true">
+                        <span :style="{ width: Math.min(Number(stats.dossiers_pourcentage_terrain_enqueter) || 0, 100) + '%' }"></span>
                     </div>
-                    <div class="h-80"><canvas ref="barChartRef"></canvas></div>
-                </div>
-            </div>
+                </article>
+            </section>
 
-            <!-- Section États de Cession avec deux tableaux indépendants -->
-            <h2 class="text-2xl font-bold text-primary-txt flex items-center gap-2 mb-4">
-                <span class="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-blue-700 rounded-full"></span>
-                États de Cession
-            </h2>
+            <section class="chart-grid">
+                <article class="panel">
+                    <div class="panel-head">
+                        <h2>Répartition des dossiers</h2>
+                        <span class="panel-kicker">Répartition</span>
+                    </div>
+                    <div class="chart-frame"><canvas ref="pieChartRef"></canvas></div>
+                </article>
+                <article class="panel">
+                    <div class="panel-head">
+                        <h2>Évolution mensuelle</h2>
+                        <span class="panel-kicker">Comparaison</span>
+                    </div>
+                    <div class="chart-frame"><canvas ref="barChartRef"></canvas></div>
+                </article>
+            </section>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Tableau Délimitation -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+            <h2 class="section-title">États de cession</h2>
+
+            <section class="cession-grid">
+                <article class="panel">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
                         <h3 class="text-lg font-bold text-primary-txt flex items-center gap-2">
                             <span class="w-1 h-6 bg-orange-500 rounded-full justify-start"></span>
@@ -610,8 +606,8 @@ watchEffect((onInvalidate) => {
                             </span>
                         </div>
                     </div>
-                    <div class="overflow-x-auto rounded-lg border border-gray-200">
-                        <table class="min-w-full divide-y divide-gray-200">
+                    <div class="table-scroll">
+                        <table class="data-table">
                             <thead>
                                 <tr class="bg-gray-50">
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-primary-txt">Mois</th>
@@ -649,10 +645,9 @@ watchEffect((onInvalidate) => {
                             </tbody>
                         </table>
                     </div>
-                </div>
+                </article>
 
-                <!-- Tableau Extrait de plan -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+                <article class="panel">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
                         <h3 class="text-lg font-bold text-primary-txt flex items-center gap-2 justify-start">
                             <span class="w-1 h-6 bg-teal-500 rounded-full"></span>
@@ -679,8 +674,8 @@ watchEffect((onInvalidate) => {
                             </span>
                         </div>
                     </div>
-                    <div class="overflow-x-auto rounded-lg border border-gray-200">
-                        <table class="min-w-full divide-y divide-gray-200">
+                    <div class="table-scroll">
+                        <table class="data-table">
                             <thead>
                                 <tr class="bg-gray-50">
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-primary-txt">Mois</th>
@@ -718,11 +713,10 @@ watchEffect((onInvalidate) => {
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Évaluation des utilisateurs -->
-            <div class="bg-white rounded-lg shadow-lg p-6 mt-8">
+                </article>
+            </section>
+
+            <section class="panel eval-card">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
                     <div>
                         <h2 class="text-lg font-semibold text-primary-txt">Évaluation des utilisateurs</h2>
@@ -737,8 +731,8 @@ watchEffect((onInvalidate) => {
                         <MazBtn @click="exportEvaluation" color="success" size="sm">Exporter CSV</MazBtn>
                     </div>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+                <div class="table-scroll">
+                    <table class="data-table eval-table">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th v-for="col in colonnesEvaluation" :key="col.key"
@@ -781,7 +775,7 @@ watchEffect((onInvalidate) => {
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-4 flex flex-col gap-2 text-sm text-primary-txt">
+                <div class="eval-foot">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
                         <span>{{ filteredEvaluation.length }} utilisateur(s)</span>
                         <div class="flex flex-wrap gap-4">
@@ -791,16 +785,16 @@ watchEffect((onInvalidate) => {
                             <span>Score cumulé : {{ evaluationTotals.score }}</span>
                         </div>
                     </div>
-                    <p class="text-xs text-primary-txt/70">
-                        Appréciation : Aucune activité (0), Faible (1 à 9), Moyenne (10 à 24), Bonne (25 à 49), Excellente (50 et plus).
+                    <p class="eval-scale">
+                        Appréciation : aucune activité (0), faible (1 à 9), moyenne (10 à 24), bonne (25 à 49), excellente (50 et plus).
                     </p>
                 </div>
-            </div>
+            </section>
         </div>
 
         <div v-if="detailOuvert" class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-black/40" @click="fermerDetail"></div>
-            <div class="relative flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div class="relative flex max-h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
                 <div class="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-4">
                     <div>
                         <h3 class="text-lg font-semibold text-primary-txt">{{ detail?.utilisateur }}</h3>
@@ -816,6 +810,7 @@ watchEffect((onInvalidate) => {
                 <div class="flex flex-wrap gap-3 border-b border-gray-100 px-6 py-3 text-sm text-primary-txt">
                     <span>Enregistrements : {{ detail?.totaux?.enregistrements || 0 }}</span>
                     <span>Modifications : {{ detail?.totaux?.modifications || 0 }}</span>
+                    <span>Suppressions : {{ detail?.totaux?.suppressions || 0 }}</span>
                     <span>Recherches : {{ detail?.totaux?.recherches || 0 }}</span>
                 </div>
 
@@ -832,37 +827,41 @@ watchEffect((onInvalidate) => {
                     </button>
                 </div>
 
-                <div class="overflow-y-auto px-6 pb-6">
-                    <p v-if="detailChargement" class="py-8 text-center text-sm text-primary-txt">Chargement des traitements...</p>
-                    <p v-else-if="traitementsFiltres.length === 0" class="py-8 text-center text-sm text-primary-txt">
+                <div class="journal-panel">
+                    <p v-if="detailChargement" class="journal-state">Chargement des traitements...</p>
+                    <p v-else-if="traitementsFiltres.length === 0" class="journal-state">
                         Aucun traitement pour ce filtre sur le trimestre.
                     </p>
-                    <table v-else class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium uppercase text-primary-txt">Date</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium uppercase text-primary-txt">Action</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium uppercase text-primary-txt">Module</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium uppercase text-primary-txt">Référence</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 bg-white">
-                            <tr v-for="(item, index) in traitementsFiltres" :key="`${item.date}-${item.action}-${index}`">
-                                <td class="whitespace-nowrap px-3 py-2 text-sm text-primary-txt">{{ item.date }}</td>
-                                <td class="px-3 py-2 text-sm">
-                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="actionClass(item.action)">
-                                        {{ libelleAction(item.action) }}
-                                    </span>
-                                </td>
-                                <td class="px-3 py-2 text-sm text-primary-txt">
-                                    <div>{{ item.module || '—' }}</div>
-                                    <div class="text-xs text-primary-txt/60">{{ item.libelle }}</div>
-                                </td>
-                                <td class="px-3 py-2 text-sm text-primary-txt">{{ item.reference || '—' }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <p v-if="detail?.tronque" class="mt-3 text-xs text-primary-txt/70">
+                    <div v-else class="journal-scroll">
+                        <table class="journal-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                    <th>Module</th>
+                                    <th>Référence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(item, index) in traitementsFiltres" :key="`${item.date}-${item.action}-${index}`">
+                                    <td class="journal-date">{{ item.date }}</td>
+                                    <td>
+                                        <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="actionClass(item.action)">
+                                            {{ libelleAction(item.action) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="journal-module">{{ item.module || '—' }}</div>
+                                        <div class="journal-libelle">{{ item.libelle }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="journal-ref">{{ referenceAffichee(item.reference) }}</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p v-if="detail?.tronque" class="journal-note">
                         Affichage des 300 traitements les plus récents sur {{ detail.total }}.
                     </p>
                 </div>
@@ -875,8 +874,331 @@ watchEffect((onInvalidate) => {
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .animate-spin { animation: spin 1s linear infinite; }
     canvas { max-height: 100%; max-width: 100%; }
-    tr { transition: background-color 0.2s ease; }
-    th { user-select: none; cursor: pointer; }
-    th:hover { background-color: #f3f4f6; }
-    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } .h-80 { height: 250px; } }
+
+    .eval-page {
+        display: flex;
+        flex-direction: column;
+        gap: 1.35rem;
+        padding: 1.35rem 1.5rem 2.25rem;
+    }
+    .eval-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+    .eval-kicker {
+        margin: 0 0 0.2rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(100, 52, 7, 0.55);
+    }
+    .eval-header h1 {
+        margin: 0;
+        font-size: 1.7rem;
+        line-height: 1.15;
+        letter-spacing: -0.03em;
+        color: #613104;
+    }
+    .stat-grid,
+    .chart-grid,
+    .cession-grid {
+        display: grid;
+        gap: 1rem;
+    }
+    .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .chart-grid,
+    .cession-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stat-card,
+    .panel {
+        background: #fff;
+        border: 1px solid #f0e4d4;
+        border-radius: 1.05rem;
+        box-shadow: 0 10px 28px rgba(97, 49, 4, 0.05);
+    }
+    .stat-card {
+        position: relative;
+        overflow: hidden;
+        padding: 1rem 1.05rem 0.95rem 1.15rem;
+    }
+    .stat-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0.85rem;
+        bottom: 0.85rem;
+        width: 3px;
+        border-radius: 999px;
+    }
+    .stat-card--orange::before { background: #e07a2f; }
+    .stat-card--teal::before { background: #0f8f86; }
+    .stat-card--brown::before { background: #613104; }
+    .stat-card--rose::before { background: #c45c78; }
+    .stat-label {
+        margin: 0;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(100, 52, 7, 0.58);
+    }
+    .stat-value {
+        margin: 0.35rem 0 0;
+        font-size: 1.85rem;
+        font-weight: 700;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+    }
+    .stat-card--orange .stat-value { color: #ea580c; }
+    .stat-card--teal .stat-value { color: #0d9488; }
+    .stat-card--brown .stat-value { color: #643407; }
+    .stat-card--rose .stat-value { color: #db2777; }
+    .stat-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+    .stat-goal,
+    .stat-percent {
+        margin: 0;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .stat-goal { color: #ef4444; }
+    .stat-percent {
+        font-size: 1.05rem;
+        font-variant-numeric: tabular-nums;
+        color: #db2777;
+    }
+    .stat-meter {
+        margin-top: 0.75rem;
+        height: 0.38rem;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #f6efe7;
+    }
+    .stat-meter span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #c45c78, #e7a0b2);
+    }
+    .panel { padding: 1.15rem 1.2rem 1.2rem; }
+    .panel-head,
+    .section-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+    .panel-head h2,
+    .section-title,
+    .eval-card h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #613104;
+    }
+    .section-title { margin: 0.35rem 0 0; }
+    .panel-kicker {
+        padding: 0.2rem 0.55rem;
+        border: 1px solid #f0e4d4;
+        border-radius: 999px;
+        background: #faf6f1;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgba(100, 52, 7, 0.55);
+    }
+    .chart-frame {
+        height: 20rem;
+        margin-top: 0.9rem;
+        padding: 0.65rem;
+        border: 1px solid #f6efe7;
+        border-radius: 0.85rem;
+        background: linear-gradient(180deg, #fffdfb 0%, #fbf7f2 100%);
+    }
+    .table-scroll {
+        margin-top: 0.85rem;
+        overflow: auto;
+        border: 1px solid #f0e4d4;
+        border-radius: 0.85rem;
+    }
+    .data-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        min-width: 520px;
+    }
+    .data-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: 0.72rem 0.9rem;
+        background: #faf6f1;
+        color: #613104;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        text-align: left;
+        border-bottom: 1px solid #eadccb;
+        user-select: none;
+        cursor: default;
+    }
+    .data-table th.text-center,
+    .data-table td.text-center { text-align: center; }
+    .data-table th.text-right,
+    .data-table td.text-right { text-align: right; }
+    .data-table td {
+        padding: 0.7rem 0.9rem;
+        color: #643407;
+        font-size: 0.84rem;
+        border-bottom: 1px solid #f6efe7;
+        vertical-align: middle;
+    }
+    .data-table tbody tr:last-child td { border-bottom: 0; }
+    .data-table tbody tr { transition: background-color 0.18s ease; }
+    .eval-table { min-width: 860px; }
+    .eval-table th { cursor: pointer; }
+    .eval-table th:hover { background: #f3ece4; }
+    .eval-table tbody tr:hover td { background: #fffaf6; }
+    .eval-card h2 + p {
+        margin: 0.25rem 0 0;
+        font-size: 0.82rem;
+        color: rgba(100, 52, 7, 0.62);
+    }
+    .eval-foot {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        margin-top: 0.9rem;
+        padding-top: 0.85rem;
+        border-top: 1px solid #f0e4d4;
+        color: #643407;
+        font-size: 0.84rem;
+    }
+    .eval-scale {
+        margin: 0;
+        font-size: 0.72rem;
+        color: rgba(100, 52, 7, 0.6);
+    }
+    @media (max-width: 1100px) {
+        .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 860px) {
+        .chart-grid,
+        .cession-grid,
+        .stat-grid { grid-template-columns: 1fr; }
+        .chart-frame { height: 16rem; }
+        .eval-page { padding: 1rem; }
+    }
+
+    .journal-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        min-height: 0;
+        flex: 1;
+        padding: 0 1.5rem 1.25rem;
+    }
+    .journal-scroll {
+        min-height: 0;
+        flex: 1;
+        overflow: auto;
+        border: 1px solid #f0e4d4;
+        border-radius: 0.9rem;
+        background: #fff;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+    .journal-table {
+        width: 100%;
+        min-width: 760px;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .journal-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: 0.8rem 0.95rem;
+        background: #faf6f1;
+        color: #613104;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        text-align: left;
+        border-bottom: 1px solid #eadccb;
+        box-shadow: 0 1px 0 #eadccb;
+        cursor: default;
+    }
+    .journal-table thead th:hover {
+        background: #faf6f1;
+    }
+    .journal-table tbody td {
+        padding: 0.85rem 0.95rem;
+        vertical-align: top;
+        border-bottom: 1px solid #f6efe7;
+        color: #643407;
+    }
+    .journal-table tbody tr:last-child td {
+        border-bottom: 0;
+    }
+    .journal-table tbody tr:hover td {
+        background: #fffaf6;
+    }
+    .journal-date {
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+        font-size: 0.8rem;
+        color: #8a5a2b;
+        width: 9.5rem;
+    }
+    .journal-module {
+        font-size: 0.875rem;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+    .journal-libelle {
+        margin-top: 0.15rem;
+        font-size: 0.72rem;
+        line-height: 1.35;
+        color: rgba(100, 52, 7, 0.55);
+    }
+    .journal-ref {
+        max-width: 34rem;
+        max-height: 8.5rem;
+        overflow: auto;
+        padding: 0.55rem 0.7rem;
+        border: 1px solid #f0e4d4;
+        border-radius: 0.7rem;
+        background: #fbf8f4;
+        color: #4a2c0a;
+        font-size: 0.78rem;
+        line-height: 1.45;
+        white-space: pre-line;
+        word-break: break-word;
+    }
+    .journal-state {
+        margin: 0.25rem 0 0.5rem;
+        padding: 2.25rem 1rem;
+        text-align: center;
+        font-size: 0.875rem;
+        color: #643407;
+        background: #fbf8f4;
+        border: 1px dashed #e6c5a2;
+        border-radius: 0.9rem;
+    }
+    .journal-note {
+        margin: 0;
+        font-size: 0.75rem;
+        color: rgba(100, 52, 7, 0.7);
+    }
 </style>

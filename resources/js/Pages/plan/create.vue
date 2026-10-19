@@ -5,6 +5,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BaseInput from '@/Components/BaseInput.vue';
 import BaseSelect from '@/Components/BaseSelect.vue';
+import DeleteModal from '@/Components/DeleteModal.vue';
 import { Head } from '@inertiajs/vue3';
 import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import L from 'leaflet';
@@ -124,6 +125,9 @@ const STYLE_PARCELLE_ROUGE = {
     opacity: 1,
 };
 let shapefileReloadTimer = null;
+const showDeleteModal = ref(false);
+const loadingDelete = ref(false);
+const elementASupprimer = ref(null);
 
 const ORDRE_CHAMPS_QGIS = ['TEXT', 'LAYER', 'ENTITYHAND', 'SUBCLASSES', 'LINETYPE', 'PAPERSPACE'];
 const COULEURS_FORTES = {
@@ -309,7 +313,7 @@ function selectLocation(result) {
 // ============================================================
 // 7. POINTS DENSIFIÉS
 // ============================================================
-function addPointsToMap() {
+function addPointsToMap({ ajusterVue = true } = {}) {
     if (!map.value) return;
 
     if (markersLayer.value) {
@@ -359,7 +363,7 @@ function addPointsToMap() {
         });
     });
 
-    if (latLngs.length > 0) {
+    if (ajusterVue && latLngs.length > 0) {
         const bounds = L.latLngBounds(latLngs);
         safeFitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
         toast.success(`✅ ${pointsAdded} points densifiés chargés`);
@@ -1902,20 +1906,74 @@ async function saveShapefileEdit() {
     }
 }
 
-async function deleteShapefile(shp) {
-    if (!confirm(`Supprimer "${shp.nom}" ?`)) return;
-    try {
-        await axios.delete(`/shapefiles/${shp.id}`);
-        if (editingShapefile.value?.id === shp.id) {
-            editingShapefile.value = null;
+const nomElementASupprimer = computed(() => {
+    const cible = elementASupprimer.value;
+    if (!cible?.item) return '';
+    if (cible.type === 'point') return cible.item.txt_nomPoint || 'ce point densifié';
+    return cible.item.nom || 'ce plan';
+});
+
+function demanderSuppression(type, item) {
+    if (!item?.id) return;
+    elementASupprimer.value = { type, item };
+    showDeleteModal.value = true;
+}
+
+function retirerElementSupprime(cible) {
+    if (cible.type === 'point') {
+        pointsDensifies.value = pointsDensifies.value.filter((point) => point.id !== cible.item.id);
+        if (selectedPointId.value === cible.item.id) selectedPointId.value = null;
+        if (selectedInfo.value?.type === 'point' && selectedInfo.value.point?.id === cible.item.id) {
+            selectedInfo.value = null;
+            showInfo.value = false;
         }
-        const { data } = await axios.get('/shapefiles');
-        shapefiles.value = data;
-        shapefileCache.delete(shp.id);
-        await chargerShapefiles();
-        toast.success('Shapefile supprimé');
-    } catch (e) {
-        toast.error(e.response?.data?.message || 'Erreur suppression');
+        addPointsToMap({ ajusterVue: false });
+        return;
+    }
+
+    if (editingShapefile.value?.id === cible.item.id) editingShapefile.value = null;
+    if (featuredShapefileId.value === cible.item.id) featuredShapefileId.value = null;
+    if (listeEntites.value?.shp?.id === cible.item.id) listeEntites.value = null;
+    if (tableAttributs.value?.shp?.id === cible.item.id) tableAttributs.value = null;
+    if (selectedInfo.value?.shapefile?.id === cible.item.id) {
+        retirerSurlignageShapefile();
+        selectedInfo.value = null;
+        showInfo.value = false;
+    }
+}
+
+async function confirmerSuppression(codes) {
+    const cible = elementASupprimer.value;
+    if (!cible?.item?.id || loadingDelete.value) return;
+
+    loadingDelete.value = true;
+    try {
+        if (cible.type === 'point') {
+            const { data } = await axios.delete(`/pointDensifier/destroy/${cible.item.id}`, {
+                data: { code: codes.adminCode },
+            });
+            retirerElementSupprime(cible);
+            toast.success(data.message || 'Point densifié supprimé');
+        } else {
+            await axios.delete(`/shapefiles/${cible.item.id}`, {
+                data: { code: codes.adminCode },
+            });
+            retirerElementSupprime(cible);
+            const { data } = await axios.get('/shapefiles');
+            shapefiles.value = data;
+            shapefileCache.delete(cible.item.id);
+            await chargerShapefiles();
+            toast.success('Plan supprimé');
+        }
+
+        showDeleteModal.value = false;
+        elementASupprimer.value = null;
+    } catch (error) {
+        const erreur = error.response?.data?.errors;
+        const premiere = erreur ? Object.values(erreur).flat()[0] : null;
+        toast.error(premiere || error.response?.data?.message || 'Erreur lors de la suppression');
+    } finally {
+        loadingDelete.value = false;
     }
 }
 
@@ -2357,6 +2415,7 @@ onBeforeUnmount(() => {
                                     </div>
                                 </div>
                                 <span v-if="point.txt_documentsAfferants" class="text-xs text-green-500" title="PDF disponible">📄</span>
+                                <button type="button" @click.stop="demanderSuppression('point', point)" class="p-1 text-red-600 rounded-lg hover:bg-red-50" title="Supprimer">🗑</button>
                             </div>
                         </div>
                     </div>
@@ -2417,7 +2476,7 @@ onBeforeUnmount(() => {
                                     📄 Voir le PDF
                                 </a>
                             </div>
-                            <div class="mt-4">
+                            <div class="mt-4 space-y-2">
                                 <button @click="localiserPoint(selectedInfo.point)"
                                         class="flex items-center justify-center w-full gap-2 py-2.5 text-sm font-medium text-white transition bg-primary rounded-xl shadow-sm hover:bg-primary-dark">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2425,6 +2484,10 @@ onBeforeUnmount(() => {
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
                                     Localiser
+                                </button>
+                                <button type="button" @click="demanderSuppression('point', selectedInfo.point)"
+                                    class="flex items-center justify-center w-full gap-2 py-2.5 text-sm font-medium text-white transition bg-red-600 rounded-xl shadow-sm hover:bg-red-700">
+                                    Supprimer ce point
                                 </button>
                             </div>
                         </template>
@@ -2497,6 +2560,10 @@ onBeforeUnmount(() => {
                                     class="flex items-center justify-center w-full gap-2 py-2.5 text-sm font-medium text-primary transition bg-white border border-primary-only rounded-xl hover:bg-primary-form">
                                     Table d’attributs
                                 </button>
+                                <button type="button" @click="demanderSuppression('shapefile', selectedInfo.shapefile)"
+                                    class="flex items-center justify-center w-full gap-2 py-2.5 text-sm font-medium text-white transition bg-red-600 rounded-xl shadow-sm hover:bg-red-700">
+                                    Supprimer ce plan
+                                </button>
                             </div>
                         </template>
 
@@ -2562,10 +2629,16 @@ onBeforeUnmount(() => {
                                 </div>
                             </div>
                             <p v-else class="text-sm text-primary-txt/70">Aucune information enregistrée pour cette parcelle.</p>
-                            <button v-if="selectedInfo.feature" type="button" @click="zoomSurEntite(selectedInfo.feature)"
-                                class="mt-4 flex items-center justify-center w-full gap-2 py-2.5 text-sm font-medium text-white transition bg-primary rounded-xl shadow-sm hover:bg-primary-dark">
-                                Zoomer sur la parcelle
-                            </button>
+                            <div class="mt-4 space-y-2">
+                                <button v-if="selectedInfo.feature" type="button" @click="zoomSurEntite(selectedInfo.feature)"
+                                    class="flex items-center justify-center w-full gap-2 py-2.5 text-sm font-medium text-white transition bg-primary rounded-xl shadow-sm hover:bg-primary-dark">
+                                    Zoomer sur la parcelle
+                                </button>
+                                <button v-if="selectedInfo.shapefile" type="button" @click="demanderSuppression('shapefile', selectedInfo.shapefile)"
+                                    class="flex items-center justify-center w-full gap-2 py-2.5 text-sm font-medium text-white transition bg-red-600 rounded-xl shadow-sm hover:bg-red-700">
+                                    Supprimer ce plan
+                                </button>
+                            </div>
                         </template>
                     </div>
                 </Transition>
@@ -2776,7 +2849,7 @@ onBeforeUnmount(() => {
                                             <button type="button" @click="selectionnerShapefile(shp); closeShapefileModal()" class="p-2 text-primary rounded-lg hover:bg-primary-form transition" title="Informations">ℹ</button>
                                             <button type="button" @click="editShapefile(shp)" class="p-2 text-primary rounded-lg hover:bg-primary-form transition" title="Modifier">✏️</button>
                                             <button type="button" @click="zoomToShapefile(shp)" class="p-2 text-primary rounded-lg hover:bg-primary-form transition" title="Zoomer">🔍</button>
-                                            <button type="button" @click="deleteShapefile(shp)" class="p-2 text-red-600 rounded-lg hover:bg-red-50 transition" title="Supprimer">🗑</button>
+                                            <button type="button" @click="demanderSuppression('shapefile', shp)" class="p-2 text-red-600 rounded-lg hover:bg-red-50 transition" title="Supprimer">🗑</button>
                                             <button @click="downloadShapefile(shp)" class="p-2 text-primary rounded-lg hover:bg-primary-form transition">💾</button>
                                         </div>
                                     </div>
@@ -2990,6 +3063,14 @@ onBeforeUnmount(() => {
                 </div>
             </Transition>
         </div>
+
+        <DeleteModal
+            :show="showDeleteModal"
+            :itemName="nomElementASupprimer"
+            :loading="loadingDelete"
+            @update:show="showDeleteModal = $event"
+            @confirm="confirmerSuppression"
+        />
     </AuthenticatedLayout>
 </template>
 

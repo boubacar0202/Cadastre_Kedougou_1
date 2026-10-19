@@ -16,6 +16,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('action', 32);
+            $table->string('methode', 10)->nullable();
+            $table->string('module', 64)->nullable();
+            $table->string('chemin', 255)->nullable();
+            $table->string('libelle', 160)->nullable();
+            $table->text('reference')->nullable();
             $table->timestamps();
 
             $table->index(['user_id', 'created_at']);
