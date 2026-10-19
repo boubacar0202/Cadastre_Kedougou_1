@@ -840,6 +840,7 @@ watchEffect((onInvalidate) => {
                                     <th>Action</th>
                                     <th>Module</th>
                                     <th>Référence</th>
+                                    <th>Avis</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -856,6 +857,9 @@ watchEffect((onInvalidate) => {
                                     </td>
                                     <td>
                                         <div class="journal-ref">{{ referenceAffichee(item.reference) }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="journal-avis">{{ item.avis || '—' }}</div>
                                     </td>
                                 </tr>
                             </tbody>

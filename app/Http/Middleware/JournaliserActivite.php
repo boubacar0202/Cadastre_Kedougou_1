@@ -32,6 +32,10 @@ class JournaliserActivite
             return $response;
         }
 
+        if ($request->hasSession() && $request->session()->has('errors')) {
+            return $response;
+        }
+
         try {
             $payload = [
                 'user_id' => $userId,
@@ -66,7 +70,7 @@ class JournaliserActivite
                     );
                 } else {
                     $payload['reference'] = $this->journalAvecDossier(
-                        $this->numeroDepuisRequete($request),
+                        $this->numeroDepuisRequete($request) ?? $this->numeroDepuisReponse($response),
                         $this->referenceFor($request)
                     );
                 }
@@ -110,7 +114,7 @@ class JournaliserActivite
             return 'enregistrement';
         }
 
-        if ($method === 'GET' && $this->hasSearch($request)) {
+        if ($method === 'GET' && ($this->hasSearch($request) || $this->estConsultation($path))) {
             return 'recherche';
         }
 
@@ -132,6 +136,22 @@ class JournaliserActivite
             'api/evaluation-utilisateur',
             'messages/unread-total',
             'messages/unread-by-user',
+            'messages/unread-per-user',
+            'fetchReferencesLotissement',
+            'dossier/next',
+            'dossier/last',
+            'departements',
+            'arrondissements',
+            'communes',
+            'lotissements',
+            'arrivee/next',
+            'depart/next',
+            'secretariat/dernier-ordre',
+            'api/shapefiles',
+            'api/points-densifies',
+            'api/messages',
+            'api/plan/previsualiser',
+            'parametre/code/verify',
         ];
 
         foreach ($ignored as $prefix) {
@@ -148,12 +168,12 @@ class JournaliserActivite
 
     private function isSearchPath(string $path): bool
     {
-        return (bool) preg_match('/recherch|search|fetch-reference|verification|verify/i', $path);
+        return (bool) preg_match('/recherch|search|fetch-reference|verification|verify|parcelles|verifier-nicad/i', $path);
     }
 
     private function hasSearch(Request $request): bool
     {
-        foreach (['numero', 'prenomNom', 'refServiceRendu', 'q', 'search', 'reference', 'query', 'nicad', 'txt_reference', 'nom'] as $key) {
+        foreach (['numero', 'prenomNom', 'refServiceRendu', 'q', 'search', 'reference', 'query', 'nicad', 'txt_reference', 'nom', 'titulaire', 'commune', 'mois', 'annee', 'section', 'parcelle', 'lotissement'] as $key) {
             $value = $request->query($key);
             if (is_string($value) && trim($value) !== '') {
                 return true;
@@ -161,6 +181,11 @@ class JournaliserActivite
         }
 
         return false;
+    }
+
+    private function estConsultation(string $path): bool
+    {
+        return (bool) preg_match('#^(parcelles|verifier-nicad)/[^/]+$#', $path);
     }
 
     private function tableReady(): bool
@@ -232,31 +257,281 @@ class JournaliserActivite
 
     private function referenceFor(Request $request): ?string
     {
-        if ($this->estFormulaireSecretariat($request)) {
-            return $this->referenceSecretariat($request);
+        return $this->detailTraitement($request);
+    }
+
+    /**
+     * Décrit le traitement à partir de tous les champs envoyés, quelle que soit la page.
+     */
+    private function detailTraitement(Request $request): ?string
+    {
+        $lignes = [];
+        $vus = [];
+        $libelles = $this->libellesConnus();
+
+        foreach ($libelles as $cle => $label) {
+            if (! $request->exists($cle)) {
+                continue;
+            }
+
+            $vus[$cle] = true;
+            $valeur = $request->input($cle);
+            if (is_array($valeur)) {
+                $lignes = array_merge($lignes, $this->lignesTableau($cle, $valeur));
+                continue;
+            }
+
+            $texte = $this->texteDetail($cle, $valeur);
+            if ($texte !== null) {
+                $lignes[] = $label.' : '.$texte;
+            }
         }
 
         foreach ([
-            'txt_nicad',
-            'txt_num_parcelle',
-            'txt_num_dossier',
-            'txt_prenom',
-            'txt_nicad_mutation',
-            'numero',
-            'txt_reference',
-            'refServiceRendu',
-            'txt_nom',
-        ] as $key) {
-            $value = $request->input($key);
-            if (is_string($value) && trim($value) !== '') {
-                return mb_substr(trim($value), 0, 120);
+            'occupants' => ['Occupant', $this->champsOccupant()],
+            'occupantsBP' => ['Bâti', $this->champsBati()],
+            'occupantsCA' => ['Cours aménagée', $this->champsCours()],
+            'occupantsCL' => ['Clôture', $this->champsCloture()],
+            'occupantsAP' => ['Aménagement', $this->champsAmenagement()],
+        ] as $cle => [$groupe, $champs]) {
+            if (isset($vus[$cle]) || ! $request->exists($cle) || ! is_array($request->input($cle))) {
+                continue;
             }
-            if (is_numeric($value)) {
-                return mb_substr((string) $value, 0, 120);
+
+            $vus[$cle] = true;
+            $lignes = array_merge($lignes, $this->lignesListe($groupe, $request->input($cle), $champs));
+        }
+
+        foreach ($request->all() as $cle => $valeur) {
+            if (! is_string($cle) || isset($vus[$cle]) || $this->cleIgnoree($cle)) {
+                continue;
+            }
+
+            $vus[$cle] = true;
+            if (is_array($valeur)) {
+                $lignes = array_merge($lignes, $this->lignesTableau($cle, $valeur));
+                continue;
+            }
+
+            $texte = $this->texteDetail($cle, $valeur);
+            if ($texte !== null) {
+                $lignes[] = $this->libelleChamp($cle).' : '.$texte;
             }
         }
 
-        return null;
+        $path = trim($request->path(), '/');
+        if (preg_match('#^parcelles/([^/]+)$#', $path, $correspondance)) {
+            $lignes[] = 'Parcelle : '.urldecode($correspondance[1]);
+        }
+        if (preg_match('#^verifier-nicad/([^/]+)$#', $path, $correspondance)) {
+            $lignes[] = 'NICAD : '.urldecode($correspondance[1]);
+        }
+
+        if (count($lignes) > 120) {
+            $lignes = array_slice($lignes, 0, 120);
+            $lignes[] = '... détail tronqué';
+        }
+
+        return $lignes === [] ? null : implode("\n", $lignes);
+    }
+
+    private function cleIgnoree(string $cle): bool
+    {
+        return in_array($cle, [
+            '_token', '_method', 'password', 'password_confirmation', 'current_password',
+            'code', 'remember', 'page',
+        ], true);
+    }
+
+    private function texteDetail(string $cle, mixed $valeur): ?string
+    {
+        if (is_bool($valeur)) {
+            return $valeur ? 'Oui' : 'Non';
+        }
+
+        $texte = $this->valeurLisible($this->resoudreValeur($cle, $valeur));
+        if ($texte === null || strcasecmp($texte, 'null') === 0 || $texte === 'undefined') {
+            return null;
+        }
+
+        return $texte;
+    }
+
+    private function resoudreValeur(string $cle, mixed $valeur): mixed
+    {
+        if (! is_numeric($valeur) || (string) (int) $valeur !== (string) $valeur) {
+            return $valeur;
+        }
+
+        $id = (int) $valeur;
+        if ($id <= 0) {
+            return $valeur;
+        }
+
+        $nom = match ($cle) {
+            'slt_region' => \App\Models\Region::query()->whereKey($id)->value('slt_region'),
+            'slt_departement' => \App\Models\Departement::query()->whereKey($id)->value('slt_departement'),
+            'slt_arrondissement' => \App\Models\Arrondissement::query()->whereKey($id)->value('slt_arrondissement'),
+            'slt_commune' => \App\Models\Commune::query()->whereKey($id)->value('slt_commune'),
+            default => null,
+        };
+
+        return is_string($nom) && trim($nom) !== '' ? $nom : $valeur;
+    }
+
+    private function lignesTableau(string $cle, array $valeur): array
+    {
+        if ($cle === 'parcelles') {
+            return $this->lignesListe('Parcelle', $valeur, [
+                'section' => 'Section',
+                'parcelle' => 'Parcelle',
+                'lotissement' => 'Lotissement',
+            ]);
+        }
+
+        $estListe = array_is_list($valeur);
+        if ($estListe && ($valeur === [] || ! is_array($valeur[0]))) {
+            $textes = [];
+            foreach ($valeur as $element) {
+                $texte = $this->texteDetail($cle, $element);
+                if ($texte !== null) {
+                    $textes[] = $texte;
+                }
+            }
+
+            return $textes === [] ? [] : [$this->libelleChamp($cle).' : '.implode(', ', array_slice($textes, 0, 20))];
+        }
+
+        $champs = [];
+        foreach ($valeur as $element) {
+            if (! is_array($element)) {
+                continue;
+            }
+            foreach (array_keys($element) as $sousCle) {
+                if (is_string($sousCle) && ! $this->cleIgnoree($sousCle)) {
+                    $champs[$sousCle] = $this->libelleChamp($sousCle);
+                }
+            }
+        }
+
+        if ($champs === []) {
+            return [];
+        }
+
+        $lignes = $this->lignesListe($this->libelleChamp($cle), $valeur, $champs);
+        if (count($lignes) > 40) {
+            $reste = count($lignes) - 40;
+            $lignes = array_slice($lignes, 0, 40);
+            $lignes[] = '... et '.$reste.' autre(s)';
+        }
+
+        return $lignes;
+    }
+
+    private function libelleChamp(string $cle): string
+    {
+        $connus = $this->libellesConnus();
+        if (isset($connus[$cle])) {
+            return $connus[$cle];
+        }
+
+        $texte = preg_replace('/^(txt|slt|nbr|dt|eml|tel|rd|ussu)_/i', '', $cle) ?? $cle;
+        $texte = preg_replace('/(Mutation|Point|Note|cd|MT|PR|TG|PA|PM)$/', ' $1', (string) $texte);
+        $texte = trim(str_replace('_', ' ', (string) $texte));
+
+        return $texte !== '' ? mb_convert_case($texte, MB_CASE_TITLE, 'UTF-8') : $cle;
+    }
+
+    private function libellesConnus(): array
+    {
+        static $libelles = null;
+        if ($libelles !== null) {
+            return $libelles;
+        }
+
+        $libelles = $this->champsSecretariat() + [
+            'slt_region' => 'Région',
+            'slt_departement' => 'Département',
+            'slt_arrondissement' => 'Arrondissement',
+            'slt_commune' => 'Commune',
+            'txt_numdordre' => 'N° d\'ordre',
+            'txt_numbordereau' => 'N° bordereau',
+            'txt_numdossier' => 'N° dossier',
+            'txt_numdossiercd' => 'N° dossier',
+            'txt_caractere' => 'Caractère',
+            'dt_datearrivee' => 'Date d\'arrivée',
+            'txt_typecourrier' => 'Type de courrier',
+            'txt_numcourier' => 'N° courrier',
+            'dt_datecourier' => 'Date du courrier',
+            'txt_reference' => 'Référence',
+            'txt_categorie' => 'Catégorie',
+            'txt_designation' => 'Désignation',
+            'txt_prenomNom' => 'Prénom et nom',
+            'txt_numLot' => 'N° lot',
+            'txt_superficie' => 'Superficie',
+            'txt_numTF' => 'N° titre foncier',
+            'dt_date' => 'Date',
+            'txt_heure' => 'Heure',
+            'txt_lieu' => 'Lieu',
+            'txt_nombrepiece' => 'Nombre de pièces',
+            'txt_objet' => 'Objet',
+            'txt_expediteur' => 'Expéditeur',
+            'txt_agenttraiteur' => 'Agent traiteur',
+            'txt_observation' => 'Observation',
+            'fichierPDF' => 'Fichier PDF',
+            'txt_numdordrecd' => 'N° d\'ordre départ',
+            'txt_caracterecd' => 'Caractère départ',
+            'dt_datecouriercd' => 'Date du courrier départ',
+            'txt_avisReponsecd' => 'Avis de réponse',
+            'txt_typecourriercd' => 'Type de courrier départ',
+            'txt_categoriecd' => 'Catégorie départ',
+            'txt_referencecourierarriveecd' => 'Référence courrier arrivée',
+            'txt_referencecourierdepartcd' => 'Référence courrier départ',
+            'txt_nombrepiececd' => 'Nombre de pièces départ',
+            'txt_referencecd' => 'Référence départ',
+            'txt_denomination' => 'Dénomination',
+            'txt_nombreParcelle' => 'Nombre de parcelles',
+            'txt_surfaceLotissement' => 'Surface du lotissement',
+            'txt_documentsAfferants' => 'Documents',
+            'txt_nomPoint' => 'Nom du point',
+            'txt_dateCreationPoint' => 'Date de création',
+            'txt_descriptionPoint' => 'Description',
+            'txt_situationPoint' => 'Situation',
+            'txt_estPoint' => 'Est',
+            'txt_nordPoint' => 'Nord',
+            'txt_hauteurPoint' => 'Hauteur',
+            'fichierPDFPoint' => 'Fichier PDF',
+            'txt_numeroNote' => 'N° de note',
+            'txt_typeNote' => 'Type de note',
+            'txt_titreNote' => 'Titre',
+            'groupe' => 'Groupe',
+            'type' => 'Type',
+            'prix' => 'Prix',
+            'ordre' => 'Ordre',
+            'actif' => 'Actif',
+            'name' => 'Nom',
+            'email' => 'E-mail',
+            'role' => 'Rôle',
+            'numero' => 'Numéro',
+            'nicad' => 'NICAD',
+            'titulaire' => 'Titulaire',
+            'commune' => 'Commune',
+            'mois' => 'Mois',
+            'annee' => 'Année',
+            'section' => 'Section',
+            'parcelle' => 'Parcelle',
+            'lotissement' => 'Lotissement',
+            'prenomNom' => 'Prénom et nom',
+            'refServiceRendu' => 'Service rendu',
+            'txt_nicad_mutation' => 'NICAD mutation',
+            'txt_nicadMutation' => 'NICAD mutation',
+            'txt_numeroMutation' => 'N° mutation',
+            'q' => 'Recherche',
+            'search' => 'Recherche',
+            'query' => 'Recherche',
+        ];
+
+        return $libelles;
     }
 
     private function estFormulaireSecretariat(Request $request): bool
@@ -346,7 +621,7 @@ class JournaliserActivite
 
     private function numeroDepuisRequete(Request $request): ?string
     {
-        foreach (['txt_num_dossier', 'txt_numeroMutation', 'num_dossier'] as $cle) {
+        foreach (['txt_num_dossier', 'txt_numeroMutation', 'num_dossier', 'txt_numdossier', 'txt_numdossiercd', 'numero'] as $cle) {
             $texte = $this->texteNumero($request->input($cle));
             if ($texte !== null) {
                 return $texte;
@@ -354,6 +629,31 @@ class JournaliserActivite
         }
 
         return null;
+    }
+
+    private function numeroDepuisReponse(Response $response): ?string
+    {
+        $contenu = $response->getContent();
+        if (! is_string($contenu) || $contenu === '' || strlen($contenu) > 200000) {
+            return null;
+        }
+
+        $contenu = ltrim($contenu);
+        if ($contenu === '' || ($contenu[0] !== '{' && $contenu[0] !== '[')) {
+            return null;
+        }
+
+        $json = json_decode($contenu, true);
+        if (! is_array($json)) {
+            return null;
+        }
+
+        return $this->texteNumero(
+            $json['txt_num_dossier']
+            ?? $json['num_dossier']
+            ?? ($json['dossier']['txt_num_dossier'] ?? null)
+            ?? ($json['dossier_info']['num_dossier'] ?? null)
+        );
     }
 
     private function texteNumero(mixed $value): ?string
@@ -388,6 +688,7 @@ class JournaliserActivite
                 $ligne === $numero
                 || $ligne === 'Numéro dossier : '.$numero
                 || $ligne === 'N° dossier : '.$numero
+                || $ligne === 'Numéro : '.$numero
             )) {
                 continue;
             }

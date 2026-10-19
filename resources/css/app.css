@@ -39,10 +39,10 @@ select {
 
     body {
         font-family: Figtree, ui-sans-serif, system-ui, sans-serif;
-        font-size: 0.875rem;
+        font-size: 0.9375rem;
         font-weight: 500;
-        line-height: 1.5;
-        color: #643407;
+        line-height: 1.55;
+        color: #3f2410;
         background-color: #faefe6;
         text-rendering: optimizeLegibility;
     }
@@ -97,27 +97,32 @@ main table tbody tr:hover td {
 
 header h1,
 header h2 {
-    font-size: 1.25rem !important;
-    font-weight: 600 !important;
+    font-size: 1.35rem !important;
+    font-weight: 650 !important;
     font-style: normal !important;
-    line-height: 1.25 !important;
-    letter-spacing: -0.02em;
+    line-height: 1.2 !important;
+    letter-spacing: -0.03em;
     color: #613104;
 }
 
 header p {
+    margin-top: 0.15rem;
     font-size: 0.875rem;
     font-weight: 500;
     font-style: normal;
-    color: #643407;
+    line-height: 1.45;
+    color: rgba(63, 36, 16, 0.72);
 }
 
 label {
-    font-size: 0.875rem !important;
-    font-weight: 500 !important;
+    display: block;
+    margin-bottom: 0.3rem !important;
+    font-size: 0.8125rem !important;
+    font-weight: 650 !important;
     font-style: normal !important;
-    letter-spacing: 0 !important;
-    color: #643407;
+    letter-spacing: 0.01em !important;
+    line-height: 1.3 !important;
+    color: #613104 !important;
 }
 
 input,
@@ -128,42 +133,50 @@ option {
     font-size: 0.875rem !important;
 }
 
-main .bg-primary h1,
-main .bg-primary h2,
-main .bg-primary h3 {
-    font-size: 1.125rem !important;
-    font-weight: 600 !important;
-    font-style: normal !important;
-    line-height: 1.35 !important;
-    letter-spacing: 0 !important;
-    color: #fff !important;
+main .bg-primary-form h1:not(.text-white),
+main .bg-white h1:not(.text-white) {
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.02em !important;
+    color: #613104 !important;
 }
 
-main .bg-primary-form h1,
-main .bg-primary-form h2,
-main .bg-primary-form h3,
-main .bg-white h1,
-main .bg-white h2,
-main .bg-white h3 {
-    font-size: 1.125rem !important;
-    font-weight: 600 !important;
-    font-style: normal !important;
+main .bg-primary-form h2:not(.text-white),
+main .bg-white h2:not(.text-white) {
+    font-size: 1.05rem !important;
+    font-weight: 650 !important;
     line-height: 1.35 !important;
-    letter-spacing: 0 !important;
+    color: #613104 !important;
+}
+
+main .bg-primary-form h3:not(.text-white),
+main .bg-white h3:not(.text-white) {
+    font-size: 0.95rem !important;
+    font-weight: 650 !important;
+    line-height: 1.35 !important;
+    color: #613104 !important;
 }
 
 main table th,
 main table td {
+    padding: 0.55rem 0.7rem;
     font-family: Figtree, ui-sans-serif, system-ui, sans-serif !important;
-    font-size: 0.875rem !important;
+    font-size: 0.8125rem !important;
     font-weight: 500 !important;
     font-style: normal !important;
     letter-spacing: 0 !important;
+    line-height: 1.4 !important;
     text-transform: none !important;
+    vertical-align: middle;
 }
 
 main table thead th {
-    font-weight: 600 !important;
+    background: #fff6ee;
+    color: #613104;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.01em !important;
 }
 
 .font-mono {
@@ -247,5 +260,93 @@ body,
 
 *::-webkit-scrollbar-corner {
     background: transparent;
+}
+
+main form .grid {
+    gap: 0.85rem 1rem;
+}
+
+main h4:not(.text-white),
+main h5:not(.text-white) {
+    margin-top: 1.15rem;
+    margin-bottom: 0.8rem !important;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid #ead8c4;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    letter-spacing: -0.01em;
+    color: #613104 !important;
+}
+
+main h4:first-child,
+main h5:first-child {
+    margin-top: 0;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+select,
+textarea {
+    border-color: #e4d3c0;
+    background-color: #fff;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus,
+select:focus,
+textarea:focus {
+    border-color: #613104 !important;
+    box-shadow: 0 0 0 3px rgba(199, 129, 46, 0.22) !important;
+    outline: none;
+}
+
+main .bg-primary {
+    background-image: linear-gradient(90deg, #613104, #7a4010);
+}
+
+nav.app-sidebar a {
+    gap: 0.7rem;
+    border: 0 !important;
+    border-left: 3px solid transparent !important;
+    border-radius: 0.75rem !important;
+    background: transparent !important;
+    padding: 0.5rem 0.7rem !important;
+    color: #4a2c0a !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+nav.app-sidebar a svg {
+    width: 1.15rem !important;
+    height: 1.15rem !important;
+    margin-right: 0 !important;
+}
+
+nav.app-sidebar a:hover {
+    background: rgba(255, 255, 255, 0.78) !important;
+    color: #613104 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+nav.app-sidebar a.border-primary-menu {
+    border-left-color: #c7812e !important;
+    background: #fff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 2px rgba(97, 49, 4, 0.06) !important;
+}
+
+.m-btn,
+button.maz-btn {
+    border-radius: 0.75rem !important;
+    font-weight: 650 !important;
+    letter-spacing: 0 !important;
+}
+
+main .bg-primary :is(h1, h2, h3, h4, h5, h6, p, span),
+main .bg-primary-dark :is(h1, h2, h3, h4, h5, h6, p, span),
+main :is(h1, h2, h3, h4, h5, h6).text-white,
+main :is(th, td, p, span).text-white.bg-primary,
+main :is(th, td, p, span).text-white.bg-primary-dark {
+    color: #fff !important;
 }
 

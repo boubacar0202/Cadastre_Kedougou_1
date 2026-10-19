@@ -74,18 +74,18 @@
 </script>
 
 <template>
-  <div ref="racine" :class="wrapperClass">
+  <div ref="racine" :class="[wrapperClass, ouvert ? 'relative z-40' : '']">
     <label
       v-if="label"
       :for="selectId"
-      class="block text-sm font-medium text-primary-txt mb-2 transition-colors duration-200"
+      class="block text-sm font-semibold text-primary mb-1"
       :style="{ fontSize: fontSize }"
     >
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
     </label>
 
-    <div :class="['relative', label ? 'mt-2' : '']">
+    <div :class="['relative', ouvert ? 'z-30' : '']">
       <button
         :id="selectId"
         type="button"
@@ -113,7 +113,7 @@
 
       <ul
         v-if="ouvert"
-        class="mt-1 max-h-64 overflow-y-auto rounded-xl border border-primary-only bg-white py-1 shadow-lg"
+        class="absolute left-0 right-0 top-full z-40 mt-1 max-h-64 overflow-y-auto rounded-xl border border-primary-only bg-white py-1 shadow-lg"
         role="listbox"
       >
         <li v-for="option in normalizedOptions" :key="option.key">

@@ -494,7 +494,7 @@ const submitForm = function () {
                 <div class="w-full max-w-8xl px-2 py-2">
                     <div class="bg-white shadow-md rounded-xl"> 
                         <div class="p-4 border-b bg-primary flex items-center justify-between rounded-t-xl gap-2">
-                            <h2 class="text-2xl leading-tight text-white font-bold">Formulaire</h2>
+                            <h2 class="text-2xl leading-tight text-white font-bold">Formulaire de saisie des dossiers</h2>
 
                             <div class="flex justify-end p-2"> 
                                 <MazBtn 

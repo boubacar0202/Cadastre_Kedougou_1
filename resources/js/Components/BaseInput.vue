@@ -62,14 +62,14 @@
     <label
       v-if="label"
       :for="inputId"
-      class="block text-sm font-medium text-primary-txt mb-2 transition-colors duration-200"
+      class="block text-sm font-semibold text-primary mb-1"
       :style="{ fontSize: fontSize }"
     >
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
     </label>
 
-    <div :class="['relative', label ? 'mt-2' : '']">
+    <div class="relative">
       <input
         ref="inputEl"
         :type="type"
@@ -95,7 +95,7 @@
           'transition-all duration-200 ease-in-out',
           'placeholder:text-primary-txt/50 placeholder:font-normal',
           'hover:border-gray-400 hover:shadow',
-          'focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 focus:shadow-md',
+          'focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary focus:shadow-md',
           'read-only:bg-gray-50 read-only:cursor-default read-only:focus:ring-0 read-only:focus:border-gray-300',
           'disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70',
           inputClass,
