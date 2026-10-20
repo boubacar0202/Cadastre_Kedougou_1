@@ -7,8 +7,8 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\ArriveeController;
 use App\Http\Controllers\DepartController;
 use App\Http\Controllers\InstanceController;
-use App\Http\Controllers\InstanceArriveeController;
-use App\Http\Controllers\InstanceDepartController;
+use App\Http\Controllers\InstancearriveeController;
+use App\Http\Controllers\InstancedepartController;
 use App\Http\Controllers\BaremeEvaluationController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\TrimestreController;
@@ -77,16 +77,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/communes/{arrondissement}', [LocationController::class, 'getCommunesByArrondissement']); 
     Route::get('/lotissements/{id}', [LocationController::class, 'getLotissementsByCommune']);
  
-    // ✅ Resources
-    Route::resource('secretariat', SecretariatController::class);
-    Route::resource('geometre', GeometreController::class);
-    Route::resource('donnee', DonneeController::class);
-    Route::resource('matriceCadastrale', MatriceCadastraleController::class);
-    Route::resource('/message', MessageController::class);
-    Route::resource('mutation', MutationController::class); 
+    // ✅ Resources — seules les actions réellement implémentées
+    Route::resource('secretariat', SecretariatController::class)->except(['show', 'destroy']);
+    Route::resource('geometre', GeometreController::class)->only(['index', 'create', 'store']);
+    Route::resource('donnee', DonneeController::class)->only(['index', 'create']);
+    Route::resource('matriceCadastrale', MatriceCadastraleController::class)->only(['index', 'create', 'destroy']);
+    Route::resource('/message', MessageController::class)->except(['edit']);
+    Route::resource('mutation', MutationController::class)->except(['show', 'edit', 'destroy']);
     Route::get('/lotissement', [ParametreController::class, 'index'])->name('lotissement.index');
-    Route::resource('lotissement', ParametreController::class)->except(['index'])->middleware('role:admin'); 
-    Route::resource('plan', PlanController::class);
+    Route::resource('lotissement', ParametreController::class)->except(['index', 'show'])->middleware('role:admin');
+    Route::resource('plan', PlanController::class)->only(['index', 'create']);
 
     // ✅ Arrivee
     Route::get('/arrivee/next/{annee}', [ArriveeController::class, 'getNextOrdre'])->name('arrivee.next');
@@ -101,13 +101,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/depart/editdepart/{id}', [DepartController::class, 'edit'])->name('depart.edit');
     Route::resource('depart', DepartController::class)->only(['create', 'store', 'update']); 
     Route::delete('/instancearrivee/arrivee/{id}', [InstancearriveeController::class, 'destroy'])->name('instancearrivee.destroyArrivee');
-    Route::get('/instancearrivee/arrivee/{txt_numdordre}', [InstancearriveeController::class, 'show'])->name('instancearrivee.show');
-    Route::delete('/instancedepart/depart/{id}', [InstancedepartController::class, 'destroyDepart'])->name('instancedepart.destroyDepart'); 
+    Route::delete('/instancedepart/depart/{id}', [InstancedepartController::class, 'destroyDepart'])->name('instancedepart.destroyDepart');
 
     // ✅ Instance
-    Route::resource('instance', InstanceController::class);
-    Route::resource('instancearrivee', InstanceArriveeController::class);
-    Route::resource('instancedepart', InstanceDepartController::class);
+    Route::resource('instance', InstanceController::class)->only(['index', 'create']);
+    Route::resource('instancearrivee', InstancearriveeController::class)->only(['index', 'create', 'destroy']);
+    Route::resource('instancedepart', InstancedepartController::class)->only(['index', 'create']);
 
     // ✅ Données
     Route::get('/donnees', [DonneeController::class, 'create'])->name('donnees.create');  

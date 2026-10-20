@@ -33,11 +33,7 @@ class SecretariatController extends Controller
     //
     public function index()
     {
-        $terrains = Terrain::with(['region', 'departement', 'arrondissement', 'commune', 'dossier'])->get();
-        
-        return Inertia::render("secretariat/index",  [
-            "terrains" => $terrains,
-        ]);
+        return $this->create();
     }
 
     public function create()

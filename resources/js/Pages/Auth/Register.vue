@@ -2,7 +2,6 @@
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import BaseInput from '@/Components/BaseInput.vue';
-import BaseSelect from '@/Components/BaseSelect.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue'
 
@@ -17,17 +16,11 @@ const togglePasswordConfirmer = () => {
     showPasswordConfirmer.value = !showPasswordConfirmer.value
 }
  
-const roleOptions = [
-    { label: 'Administrateur', value: 'admin' },
-    { label: 'Utilisateur', value: 'user' },
-];
-
 const form = useForm({
     name: '',
     email: '',
     password: '',
     password_confirmation: '',
-    role: ''
 });
 
 const submit = () => {
@@ -112,18 +105,6 @@ const submit = () => {
                     </button>
                 </template>
             </BaseInput>
-
-            <BaseSelect
-                id="role"
-                name="role"
-                label="Rôle"
-                required
-                placeholder="Choisir un rôle"
-                :options="roleOptions"
-                v-model="form.role"
-                wrapper-class="mt-4 w-full"
-                :custom-error="form.errors.role"
-            />
 
             <div class="mt-4 flex items-center justify-end">
                 <Link

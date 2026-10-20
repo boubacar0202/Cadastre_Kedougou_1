@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Cache;
 
 class DonneeController extends Controller
 {
+    public function index(Request $request)
+    {
+        return $this->create($request);
+    }
+
     public function create(Request $request)
     {
         // Relations nécessaires pour l'affichage

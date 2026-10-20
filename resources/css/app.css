@@ -190,30 +190,21 @@ main table thead th {
     font-family: Figtree, ui-sans-serif, system-ui, sans-serif !important;
 }
 
+nav.app-sidebar {
+    background: linear-gradient(180deg, #fffdfb 0%, #f7efe6 100%);
+    border-right: 1px solid #ead9c6;
+    border-radius: 0 1.5rem 1.5rem 0;
+    box-shadow: 8px 0 28px rgba(97, 49, 4, 0.06);
+}
+
 nav.app-sidebar a,
 nav.app-sidebar a:hover,
 nav.app-sidebar button {
-    font-size: 0.875rem !important;
-    font-weight: 500 !important;
+    font-size: 0.8125rem !important;
+    font-weight: 600 !important;
     font-style: normal !important;
     letter-spacing: 0 !important;
-    line-height: 1.35 !important;
-}
-
-nav.app-sidebar {
-    background: linear-gradient(180deg, var(--side-bg) 0%, #faefe6 100%);
-    border-right: 1px solid var(--side-border);
-    border-radius: 0 var(--side-radius) var(--side-radius) 0;
-    box-shadow: 10px 0 28px rgba(97, 49, 4, 0.1);
-}
-
-nav.app-sidebar a {
-    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-    border-radius: 0.9rem;
-}
-
-nav.app-sidebar a:hover {
-    transform: none;
+    line-height: 1.3 !important;
 }
 
 aside.app-sidepanel {
@@ -303,36 +294,116 @@ main .bg-primary {
     background-image: linear-gradient(90deg, #613104, #7a4010);
 }
 
-nav.app-sidebar a {
-    gap: 0.7rem;
-    border: 0 !important;
-    border-left: 3px solid transparent !important;
-    border-radius: 0.75rem !important;
-    background: transparent !important;
-    padding: 0.5rem 0.7rem !important;
-    color: #4a2c0a !important;
+nav.app-sidebar img {
+    height: 4.1rem;
+    padding: 0.35rem;
+    background: #fff;
+    border: 1px solid #ead9c6;
+    border-radius: 1rem;
+    box-shadow: 0 8px 18px rgba(97, 49, 4, 0.08);
+}
+
+nav.app-sidebar > div > button {
+    width: 100%;
+    height: 2.25rem;
+    margin-bottom: 0.65rem !important;
+    border: 0;
+    border-radius: 0.7rem !important;
+    background: #613104 !important;
+    color: #fff !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     box-shadow: none !important;
     transform: none !important;
 }
 
+nav.app-sidebar > div > button:hover {
+    background: #7a4010 !important;
+    transform: none !important;
+}
+
+nav.app-sidebar a {
+    gap: 0.65rem;
+    min-height: 2.3rem;
+    align-items: center;
+    border: 0 !important;
+    border-radius: 0.7rem !important;
+    background: transparent !important;
+    padding: 0.35rem 0.5rem !important;
+    color: #5a3412 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: background-color 0.16s ease, color 0.16s ease;
+}
+
 nav.app-sidebar a svg {
-    width: 1.15rem !important;
-    height: 1.15rem !important;
+    width: 1.05rem !important;
+    height: 1.05rem !important;
     margin-right: 0 !important;
+    padding: 0.28rem;
+    box-sizing: content-box;
+    flex-shrink: 0;
+    border-radius: 0.45rem;
+    background: rgba(199, 129, 46, 0.14);
 }
 
 nav.app-sidebar a:hover {
-    background: rgba(255, 255, 255, 0.78) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
     color: #613104 !important;
     box-shadow: none !important;
     transform: none !important;
 }
 
+nav.app-sidebar a.is-active,
 nav.app-sidebar a.border-primary-menu {
-    border-left-color: #c7812e !important;
     background: #fff !important;
+    color: #613104 !important;
     font-weight: 700 !important;
-    box-shadow: 0 1px 2px rgba(97, 49, 4, 0.06) !important;
+    box-shadow: inset 3px 0 0 #c7812e, 0 1px 2px rgba(97, 49, 4, 0.05) !important;
+}
+
+nav.app-sidebar a.is-active svg,
+nav.app-sidebar a.border-primary-menu svg {
+    background: #613104;
+}
+
+nav.app-sidebar .ml-5 {
+    margin-left: 0.7rem !important;
+    padding-left: 0.45rem;
+    border-left: 1px solid #ead9c6;
+}
+
+nav.app-sidebar .relative.h-10 {
+    height: auto !important;
+    min-height: 2.3rem;
+    border: 0 !important;
+    border-radius: 0.7rem;
+    background: transparent;
+}
+
+nav.app-sidebar .relative.h-10.border-primary-menu {
+    background: #fff;
+    box-shadow: inset 3px 0 0 #c7812e;
+}
+
+nav.app-sidebar .globe {
+    animation: none !important;
+}
+
+nav.app-sidebar footer {
+    margin-top: auto;
+    padding: 0.85rem 0.4rem 0.2rem !important;
+    border: 0 !important;
+    border-top: 1px solid #ead9c6 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: rgba(97, 49, 4, 0.62);
+    font-size: 0.62rem !important;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.45;
 }
 
 .m-btn,

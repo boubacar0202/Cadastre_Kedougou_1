@@ -105,14 +105,12 @@ class MessageController extends Controller
         
     public function show($userId)
     {
-        $messages = Message::where('receiver_id', Auth::user()->id)
-                        ->where('sender_id', $userId)
-                        ->orWhere(function($q) use ($userId) {
-                            $q->where('receiver_id', $userId)
-                                ->where('sender_id', Auth::user()->id);
-                        })
-                        ->orderBy('created_at', 'asc')
-                        ->get();
+        $authId = Auth::id();
+        $messages = Message::where(function ($q) use ($authId, $userId) {
+            $q->where('receiver_id', $authId)->where('sender_id', $userId);
+        })->orWhere(function ($q) use ($authId, $userId) {
+            $q->where('receiver_id', $userId)->where('sender_id', $authId);
+        })->orderBy('created_at', 'asc')->get();
 
         return response()->json($messages);
     }
@@ -153,13 +151,16 @@ class MessageController extends Controller
         $user = Auth::user();
  
         $message = Message::findOrFail($id);
-        if (!$message || $message->sender_id !== $user->id) {
+        if ($message->sender_id !== $user->id) {
             return response()->json(['error' => 'Non autorisé'], 403);
         }
-        
+
+        $validated = $request->validate([
+            'content' => 'required|string|max:1000',
+        ]);
+
         $message->update([
-            'content' => $request->input('content'),
-            'is_read' => $request->input('is_read', $message->is_read),
+            'content' => $validated['content'],
         ]); 
 
         return response()->json(['success' => true, 'message' => $message]);

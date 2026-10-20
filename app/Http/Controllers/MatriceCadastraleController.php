@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\DB;
 
 class MatriceCadastraleController extends Controller
 {
+    public function index(Request $request)
+    {
+        return $this->create($request);
+    }
+
     public function create(Request $request)
     {
         // Relations nécessaires pour l'affichage

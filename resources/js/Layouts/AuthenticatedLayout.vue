@@ -6,11 +6,14 @@ import { toast } from "@/Components/AppToast";
 import axios from 'axios';
 import { route } from 'ziggy-js'
 
-// Récupérer l'utilisateur depuis les props Inertia
 const page = usePage();
 const user = computed(() => page.props.auth?.user);
 const isAdmin = computed(() => user.value?.role === 'admin');
-const isMenuOpen = ref(false);
+const isMenuOpen = ref((() => {
+    if (typeof window === 'undefined' || window.innerWidth < 768) return false;
+    const saved = localStorage.getItem('menuOpen');
+    return saved === null ? true : saved === 'true';
+})());
 const isDesktop = ref(typeof window !== 'undefined' && window.innerWidth >= 768);
 const isSmallScreen = computed(() => !isDesktop.value);
 const showingNavigationDropdown = ref(false);
@@ -109,12 +112,10 @@ const fetchUnreadTotal = async () => {
     }
 };
 
-// Ouvrir automatiquement si on est dans parametre.*
 if (isAdmin.value && route().current('parametre.*')) {
     isSettingsOpen.value = true;
 }
 
-// Toast pour les flash messages
 onMounted(() => {
     if (page.props.flash?.success) {
         toast.success(page.props.flash.success)
@@ -122,8 +123,7 @@ onMounted(() => {
     if (page.props.flash?.error) {
         toast.error(page.props.flash.error)
     }
-    
-    // Charger le total des messages non lus
+
     fetchUnreadTotal();
     
     // Mettre à jour toutes les 3 secondes (plus réactif)
@@ -183,12 +183,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Head>
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-    </Head>
-
- 
     <div class="app-shell flex min-h-screen w-full bg-primary-layout" :class="{ 'is-menu-open': isMenuOpen }">
+        <Head>
+            <meta name="csrf-token" :content="page.props.csrf_token">
+        </Head>
         <div v-if="isMenuOpen && isSmallScreen" class="app-overlay" @click="isMenuOpen = false"></div>
         <nav class="app-sidebar" :class="{ 'is-open': isMenuOpen }" @click="onNavClick">
             <!-- Logo -->
@@ -217,7 +215,7 @@ onUnmounted(() => {
                     </button> 
                 
                 <transition name="slide">
-                    <div v-if="isMenuOpen || !isDesktop" class="flex flex-col space-y-1">
+                    <div v-if="isMenuOpen || !isDesktop" class="flex flex-col space-y-1  rounded-xl shadow-md">
                         <!-- Navigation Links -->
                         <div class="flex flex-col space-y-1"> 
                             <NavLink :href="route('dashboard')" :active="route().current('dashboard')" 

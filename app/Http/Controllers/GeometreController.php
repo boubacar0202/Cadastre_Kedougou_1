@@ -19,8 +19,9 @@ class GeometreController extends Controller
 {
     //
    
-    public function index(){
-        return Inertia::render("geometre/index");
+    public function index()
+    {
+        return $this->create();
     }
   
 

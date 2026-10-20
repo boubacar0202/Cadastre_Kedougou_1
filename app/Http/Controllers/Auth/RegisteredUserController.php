@@ -38,7 +38,6 @@ class RegisteredUserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => 'required|string|in:admin,user',
         ], [
             'name.required' => 'Le nom complet est obligatoire.',
             'email.required' => "L'adresse e-mail est obligatoire.",
@@ -47,18 +46,17 @@ class RegisteredUserController extends Controller
             'password.required' => 'Le mot de passe est obligatoire.',
             'password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
             'password.min' => 'Le mot de passe doit contenir au moins :min caractères.',
-            'role.required' => 'Le rôle est obligatoire.',
-            'role.in' => 'Le rôle choisi est invalide.',
         ]);
 
-        // Le premier compte, s'il est administrateur, n'a personne pour le valider.
-        $autoValidate = $request->role === 'admin' && ! User::query()->exists();
+        // Le premier compte devient administrateur : personne d'autre ne peut s'attribuer ce rôle.
+        $role = User::query()->exists() ? 'user' : 'admin';
+        $autoValidate = $role === 'admin';
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
+            'role' => $role,
             'is_validated' => $autoValidate,
         ]);
 
