@@ -544,9 +544,11 @@ onUnmounted(() => {
                 </transition>
             </div>
 
+            <!-- Footer -->         
             <footer class="bg-primary-form/60 border-t border-primary-only/80 text-center text-xs tracking-wide text-primary-txt mt-auto py-4 rounded-xl">
                 <b>CENTRE DES SERVICES FISCAUX</b><br>CADASTRE KÉDOUGOU
             </footer>
+
         </nav>
 
         <!-- Page Content -->
