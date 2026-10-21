@@ -2,6 +2,7 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue"; 
 import BaseInput from "@/Components/BaseInput.vue"
 import BaseSelect from "@/Components/BaseSelect.vue"
+import DeleteModal from "@/Components/DeleteModal.vue"
 import { Head } from "@inertiajs/vue3";
 import MazBtn from "maz-ui/components/MazBtn";
 import { onMounted, onUnmounted, ref, watch, watchEffect, computed } from "vue";
@@ -104,11 +105,15 @@ const detailOuvert = ref(false);
 const detailChargement = ref(false);
 const detail = ref(null);
 const filtreDetail = ref('tous');
+const showDeleteModal = ref(false);
+const traitementASupprimer = ref(null);
+const loadingDelete = ref(false);
 const filtresDetail = [
     { value: 'tous', label: 'Tous' },
     { value: 'enregistrement', label: 'Enregistrements' },
     { value: 'modification', label: 'Modifications' },
     { value: 'suppression', label: 'Suppressions' },
+    { value: 'recuperation', label: 'Récupérations' },
     { value: 'recherche', label: 'Recherches' },
 ];
 
@@ -125,6 +130,7 @@ const colonnesEvaluation = [
     { key: 'trimestre', label: 'Trimestre' },
     { key: 'enregistrements', label: 'Enregistrements' },
     { key: 'modifications', label: 'Modifications' },
+    { key: 'suppressions', label: 'Suppressions' },
     { key: 'recherches', label: 'Recherches' },
     { key: 'score', label: 'Score' },
     { key: 'appreciation', label: 'Appréciation' },
@@ -173,19 +179,31 @@ const evaluationTotals = computed(() => {
     return filteredEvaluation.value.reduce((acc, row) => {
         acc.enregistrements += row.enregistrements || 0;
         acc.modifications += row.modifications || 0;
+        acc.suppressions += row.suppressions || 0;
         acc.recherches += row.recherches || 0;
         acc.score += row.score || 0;
         return acc;
-    }, { enregistrements: 0, modifications: 0, recherches: 0, score: 0 });
+    }, { enregistrements: 0, modifications: 0, suppressions: 0, recherches: 0, score: 0 });
 });
 
 const traitementsFiltres = computed(() => {
     const lignes = detail.value?.traitements || [];
     if (filtreDetail.value === 'tous') return lignes;
+    if (filtreDetail.value === 'recuperation') {
+        return lignes.filter(item => estRecuperation(item));
+    }
+    if (filtreDetail.value === 'recherche') {
+        return lignes.filter(item => item.action === 'recherche' && !estRecuperation(item));
+    }
     return lignes.filter(item => item.action === filtreDetail.value);
 });
 
-function libelleAction(action) {
+function estRecuperation(item) {
+    return String(item?.libelle || '').startsWith('Récupération');
+}
+
+function libelleAction(action, libelle = '') {
+    if (String(libelle || '').startsWith('Récupération')) return 'Récupération';
     if (action === 'enregistrement') return 'Enregistrement';
     if (action === 'modification') return 'Modification';
     if (action === 'suppression') return 'Suppression';
@@ -199,7 +217,8 @@ function referenceAffichee(reference) {
     return texte || '—';
 }
 
-function actionClass(action) {
+function actionClass(action, libelle = '') {
+    if (String(libelle || '').startsWith('Récupération')) return 'bg-violet-100 text-violet-800';
     if (action === 'enregistrement') return 'bg-emerald-100 text-emerald-800';
     if (action === 'modification') return 'bg-sky-100 text-sky-800';
     if (action === 'suppression') return 'bg-rose-100 text-rose-800';
@@ -220,6 +239,7 @@ async function afficherInformations(row) {
         totaux: {
             enregistrements: row.enregistrements || 0,
             modifications: row.modifications || 0,
+            suppressions: row.suppressions || 0,
             recherches: row.recherches || 0,
         },
         traitements: [],
@@ -248,6 +268,71 @@ async function afficherInformations(row) {
 
 function fermerDetail() {
     detailOuvert.value = false;
+    showDeleteModal.value = false;
+    traitementASupprimer.value = null;
+}
+
+function appreciationDepuisScore(score) {
+    if (score >= 50) return 'Excellente';
+    if (score >= 25) return 'Bonne';
+    if (score >= 10) return 'Moyenne';
+    if (score >= 1) return 'Faible';
+    return 'Aucune activité';
+}
+
+function supprimerTraitement(item) {
+    if (!item?.id || loadingDelete.value) return;
+    traitementASupprimer.value = item;
+    showDeleteModal.value = true;
+}
+
+function retirerTraitementLocal(item) {
+    if (!detail.value) return;
+    detail.value.traitements = (detail.value.traitements || []).filter((ligne) => ligne.id !== item.id);
+    const cle = {
+        enregistrement: 'enregistrements',
+        modification: 'modifications',
+        suppression: 'suppressions',
+        recherche: 'recherches',
+    }[item.action];
+    if (cle && detail.value.totaux) {
+        detail.value.totaux[cle] = Math.max(0, (detail.value.totaux[cle] || 0) - 1);
+    }
+    detail.value.total = Math.max(0, (detail.value.total || 1) - 1);
+
+    const ligne = evaluationLignes.value.find((row) => row.user_id === detail.value.user_id);
+    if (!ligne || !cle) return;
+    ligne[cle] = Math.max(0, (ligne[cle] || 0) - 1);
+    ligne.score = (ligne.enregistrements * 3) + (ligne.modifications * 2) + (ligne.recherches || 0);
+    ligne.appreciation = appreciationDepuisScore(ligne.score);
+}
+
+async function confirmerSuppressionTraitement({ adminCode } = {}) {
+    const item = traitementASupprimer.value;
+    if (!item?.id || loadingDelete.value) return;
+    if (!adminCode || String(adminCode).trim() === '') {
+        toast.error('Veuillez entrer le code administrateur.');
+        return;
+    }
+
+    loadingDelete.value = true;
+    try {
+        const { data } = await axios.delete(`/api/evaluation-utilisateur/${item.id}`, {
+            data: { code: String(adminCode).trim() },
+        });
+        if (!data?.success) {
+            toast.error(data?.message || 'Impossible de supprimer ce traitement.');
+            return;
+        }
+        retirerTraitementLocal(item);
+        showDeleteModal.value = false;
+        traitementASupprimer.value = null;
+        toast.success(data.message || 'Traitement supprimé.');
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Impossible de supprimer ce traitement.');
+    } finally {
+        loadingDelete.value = false;
+    }
 }
 
 function onEscapeDetail(event) {
@@ -721,7 +806,7 @@ watchEffect((onInvalidate) => {
                     <div>
                         <h2 class="text-lg font-semibold text-primary-txt">Évaluation des utilisateurs</h2>
                         <p class="text-sm text-primary-txt/70 mt-1">
-                            Selon les traitements du trimestre  
+                            Selon les traitements du trimestre : enregistrements, modifications, suppressions, récupérations et recherches.  
                         </p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
@@ -737,37 +822,40 @@ watchEffect((onInvalidate) => {
                             <tr>
                                 <th v-for="col in colonnesEvaluation" :key="col.key"
                                     @click="sortBy(col.key)"
-                                    class="px-4 py-3 text-left text-xs font-medium text-primary-txt uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
+                                    class="px-2 py-2 text-left text-xs font-medium text-primary-txt uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
                                     <div class="flex items-center gap-1">
                                         {{ col.label }}
                                         <span v-if="sortColumn === col.key" class="text-xs">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
                                     </div>
                                 </th>
-                                <th class="px-4 py-3 text-center text-xs font-medium text-primary-txt uppercase tracking-wider">Détail</th>
+                                <th class="px-2 py-2 text-center text-xs font-medium text-primary-txt uppercase tracking-wider">Détail</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <tr v-if="isLoadingEvaluation">
-                                <td :colspan="colonnesEvaluation.length + 1" class="px-6 py-4 text-center text-primary-txt">Chargement de l'évaluation...</td>
+                                <td :colspan="colonnesEvaluation.length + 1" class="px-2 py-2 text-center text-primary-txt">Chargement de l'évaluation...</td>
                             </tr>
                             <template v-else>
-                            <tr v-for="row in filteredEvaluation" :key="row.user_id" class="hover:bg-gray-50 transition-colors">
-                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary-txt">{{ row.utilisateur }}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-primary-txt">{{ row.role }}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-primary-txt">{{ row.trimestre }}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-primary-txt">{{ row.enregistrements }}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-primary-txt">{{ row.modifications }}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-primary-txt">{{ row.recherches }}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-semibold text-primary-txt">{{ row.score }}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="appreciationClass(row.appreciation)">
-                                        {{ row.appreciation }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center text-primary-txt">
-                                    <MazBtn @click="afficherInformations(row)" color="primary" size="sm">Voir</MazBtn>
-                                </td>
-                            </tr>
+                                <tr v-for="row in filteredEvaluation" :key="row.user_id" class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-2 py-2 whitespace-nowrap text-sm font-medium text-primary-txt">{{ row.utilisateur }}</td>
+                                    <td class="px-2 py-2 whitespace-nowrap text-sm text-primary-txt">{{ row.role }}</td>
+                                    <td class="px-2 py-2 whitespace-nowrap text-sm text-primary-txt">{{ row.trimestre }}</td>
+                                    <td class="px-2 py-2 whitespace-nowrap text-sm text-center text-primary-txt">{{ row.enregistrements }}</td>
+                                    <td class="px-2 py-2 whitespace-nowrap text-sm text-center text-primary-txt">{{ row.modifications }}</td>
+                                    <td class="px-2 py-2 whitespace-nowrap text-sm text-center text-primary-txt">{{ row.suppressions || 0 }}</td>
+                                    <td class="px-2 py-2 whitespace-nowrap text-sm text-center text-primary-txt">{{ row.recherches }}</td>
+                                    <td class="px-2 py-2 whitespace-nowrap text-sm text-center font-semibold text-primary-txt">{{ row.score }}</td>
+                                    <td class="px-2 py-2 whitespace-nowrap text-sm">
+                                        <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="appreciationClass(row.appreciation)">
+                                            {{ row.appreciation }}
+                                        </span>
+                                    </td>
+                                    <td class="px-2 py-2 whitespace-nowrap text-sm text-center text-primary-txt">
+                                        <MazBtn @click="afficherInformations(row)" color="primary" size="sm">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                        </MazBtn>
+                                    </td>
+                                </tr>
                             </template>
                             <tr v-if="!isLoadingEvaluation && filteredEvaluation.length === 0">
                                 <td :colspan="colonnesEvaluation.length + 1" class="px-6 py-4 text-center text-primary-txt">Aucun utilisateur pour ce trimestre</td>
@@ -781,11 +869,13 @@ watchEffect((onInvalidate) => {
                         <div class="flex flex-wrap gap-4">
                             <span>Enregistrements : {{ evaluationTotals.enregistrements }}</span>
                             <span>Modifications : {{ evaluationTotals.modifications }}</span>
+                            <span>Suppressions : {{ evaluationTotals.suppressions }}</span>
                             <span>Recherches : {{ evaluationTotals.recherches }}</span>
                             <span>Score cumulé : {{ evaluationTotals.score }}</span>
                         </div>
                     </div>
                     <p class="eval-scale">
+                        Score = enregistrements × 3 + modifications × 2 + recherches × 1. Les suppressions sont comptées à part.
                         Appréciation : aucune activité (0), faible (1 à 9), moyenne (10 à 24), bonne (25 à 49), excellente (50 et plus).
                     </p>
                 </div>
@@ -819,7 +909,7 @@ watchEffect((onInvalidate) => {
                         v-for="filtre in filtresDetail"
                         :key="filtre.value"
                         type="button"
-                        class="rounded-full px-3 py-1 text-xs font-semibold transition-colors"
+                        class="rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors"
                         :class="filtreDetail === filtre.value ? 'bg-primary text-white' : 'bg-gray-100 text-primary-txt'"
                         @click="filtreDetail = filtre.value"
                     >
@@ -844,11 +934,11 @@ watchEffect((onInvalidate) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="(item, index) in traitementsFiltres" :key="`${item.date}-${item.action}-${index}`">
+                                <tr v-for="item in traitementsFiltres" :key="item.id">
                                     <td class="journal-date">{{ item.date }}</td>
                                     <td>
-                                        <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="actionClass(item.action)">
-                                            {{ libelleAction(item.action) }}
+                                        <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="actionClass(item.action, item.libelle)">
+                                            {{ libelleAction(item.action, item.libelle) }}
                                         </span>
                                     </td>
                                     <td>
@@ -859,7 +949,15 @@ watchEffect((onInvalidate) => {
                                         <div class="journal-ref">{{ referenceAffichee(item.reference) }}</div>
                                     </td>
                                     <td>
-                                        <div class="journal-avis">{{ item.avis || '—' }}</div>
+                                        <MazBtn
+                                            size="sm"
+                                            color="danger"
+                                            @click="supprimerTraitement(item)"
+                                            :disabled="loadingDelete && traitementASupprimer?.id === item.id"
+                                            class="h-6 w-6 text-white bg-gradient-to-r from-danger-500 via-danger-600 to-danger-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-danger-300 font-medium rounded-lg text-sm px-5 py-2.5"
+                                            >
+                                            🗑
+                                        </MazBtn>
                                     </td>
                                 </tr>
                             </tbody>
@@ -871,6 +969,14 @@ watchEffect((onInvalidate) => {
                 </div>
             </div>
         </div>
+
+        <DeleteModal
+            :show="showDeleteModal"
+            :itemName="traitementASupprimer?.libelle || 'ce traitement'"
+            :loading="loadingDelete"
+            @update:show="showDeleteModal = $event"
+            @confirm="confirmerSuppressionTraitement"
+        />
     </AuthenticatedLayout>
 </template>
 

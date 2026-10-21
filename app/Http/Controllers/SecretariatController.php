@@ -216,10 +216,7 @@ class SecretariatController extends Controller
 
         // Si on est en édition, on exclut le terrain du dossier courant
         if ($dossierId) {
-            $query->where(function ($q) use ($dossierId) {
-                $q->whereNull('dossier_id')      // terrain sans dossier
-                ->orWhere('dossier_id', '!=', $dossierId); // ou terrain d'un autre dossier
-            });
+            $query->where('txt_num_dossier', '!=', $dossierId);
         }
 
         $terrainExistant = $query->first();

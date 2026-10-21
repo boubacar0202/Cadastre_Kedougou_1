@@ -200,7 +200,7 @@ class DepartController extends Controller
             'txt_referencecourierarriveecd' => $validateData['txt_referencecourierarriveecd'] ?? null,
             'txt_referencecourierdepartcd'  => $validateData['txt_referencecourierdepartcd'] ?? null,
             'txt_nombrepiececd'             => $validateData['txt_nombrepiececd'],
-            'txt_referencecd'               => $validateData['txt_referencecd'] ?? null,
+            'txt_referencecd'               => $validateData['txt_referencecd'] ?? '',
             'txt_prenomNomcd'               => $validateData['txt_prenomNomcd'] ?? null,
             'txt_numLotcd'                  => $validateData['txt_numLotcd'] ?? null,
             'txt_superficiecd'              => $validateData['txt_superficiecd'] ?? null,
@@ -308,6 +308,10 @@ class DepartController extends Controller
         } else {
             // Garder l'ancien fichier si aucun nouveau n'est uploadé
             $validateData['fichierPDFcd'] = $depart->fichierPDFcd;
+        }
+
+        if (array_key_exists('txt_referencecd', $validateData) && $validateData['txt_referencecd'] === null) {
+            $validateData['txt_referencecd'] = '';
         }
 
         // ✅ Mise à jour du arrivee (champs directs)

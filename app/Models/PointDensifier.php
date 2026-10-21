@@ -24,6 +24,13 @@ class PointDensifier extends Model
         'fichierPDFPoint'
     ];
 
+    protected $appends = ['fichierPDF'];
+
+    public function getFichierPDFAttribute()
+    {
+        return $this->attributes['fichierPDFPoint'] ?? null;
+    }
+
     public function departement()
     {
         return $this->belongsTo(Departement::class, 'slt_departement');

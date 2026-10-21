@@ -598,6 +598,9 @@ class ParametreController extends Controller
     private function getPieChartData()
     {
  
+        $totalValeurVenale = 0;
+        $pourcentage = 0;
+
         try {
             // Compter les dossiers par service rendu
             $data = Dossier::select('slt_service_rendu', DB::raw('count(*) as total'))
@@ -941,7 +944,9 @@ class ParametreController extends Controller
     public function getCessionData(Request $request)
     {
         // Récupérer les paramètres
-        $sltServiceRendu = $request->input('slt_service_rendu', 'Délimitation');
+        $sltServiceRendu = $this->normaliserServiceRendu(
+            $request->input('slt_service_rendu', 'Delimitation')
+        );
         $offset = (int) $request->input('offset', 0);
 
         // Empêcher d'aller dans le futur (optionnel)
@@ -1021,6 +1026,16 @@ class ParametreController extends Controller
         }
 
         return response()->json($response);
+    }
+
+    private function normaliserServiceRendu(?string $service): string
+    {
+        $cle = mb_strtolower(trim((string) $service));
+
+        return match ($cle) {
+            'délimitation', 'delimitation' => 'Delimitation',
+            default => $service ?: 'Delimitation',
+        };
     }
 
     /**
@@ -1217,8 +1232,8 @@ class ParametreController extends Controller
         $point_densifier = PointDensifier::with(['departement', 'arrondissement', 'commune'])->findOrFail($id);
 
         $departements = Departement::all();
-        $arrondissements = Arrondissement::where('id', $point_densifier->slt_departement)->get();
-        $communes = Commune::where('id', $point_densifier->slt_arrondissement)->get();
+        $arrondissements = Arrondissement::where('departement_id', $point_densifier->slt_departement)->get();
+        $communes = Commune::where('arrondissement_id', $point_densifier->slt_arrondissement)->get();
 
         return Inertia::render("parametre/pointDensifier/editPoint", [
             "point_densifiers" => $point_densifier,
@@ -1307,7 +1322,7 @@ class ParametreController extends Controller
             'txt_estPoint' => 'required|string|max:255',
             'txt_nordPoint' => 'required|string|max:255',
             'txt_hauteurPoint' => 'required|string|max:255',
-            'fichierPDFPoint' => 'nullable|string|max:255',
+            'fichierPDFPoint' => 'nullable|file|mimes:pdf|max:102400',
         ],[
             'txt_nomPoint.required' => 'Le nom du point est requis.',
             'txt_dateCreationPoint.required' => 'La date de création est requise.',
@@ -1318,21 +1333,18 @@ class ParametreController extends Controller
             'txt_situationPoint.required' => 'La situation est requise.',
             'txt_estPoint.required' => 'La coordonnée Est est requise.',
             'txt_nordPoint.required' => 'La coordonnée Nord est requise.',
-            'txt_hauteurPoint.required' => 'La hauteur est requise.'
+            'txt_hauteurPoint.required' => 'La hauteur est requise.',
+            'fichierPDFPoint.mimes' => 'Le document doit être un fichier PDF.',
+            'fichierPDFPoint.max' => 'Le fichier PDF ne doit pas dépasser 100 Mo.',
         ] );
-        
-        // ✅ GESTION DU FICHIER COMME DANS STORE()
+
+        $fichierPDFPoint = $point_densifier->fichierPDFPoint;
         if ($request->hasFile('fichierPDFPoint')) {
-            // Supprimer l'ancien fichier si existe
             if ($point_densifier->fichierPDFPoint && Storage::disk('public')->exists($point_densifier->fichierPDFPoint)) {
                 Storage::disk('public')->delete($point_densifier->fichierPDFPoint);
             }
-            
-            // Stocker le nouveau fichier DANS LE MÊME DOSSIER
-            $validateData['fichierPDFPoint'] = $request->file('fichierPDFPoint')->store('pointDensifier', 'public');
-        } else {
-            // Garder l'ancien fichier si aucun nouveau n'est uploadé
-            $validateData['fichierPDFPoint'] = $point_densifier->fichierPDF;
+
+            $fichierPDFPoint = $request->file('fichierPDFPoint')->store('pointDensifier', 'public');
         }
 
         // ✅ MISE À JOUR COMME DANS STORE()
@@ -1347,7 +1359,7 @@ class ParametreController extends Controller
             'txt_estPoint' => $validated['txt_estPoint'],
             'txt_nordPoint' => $validated['txt_nordPoint'],
             'txt_hauteurPoint' => $validated['txt_hauteurPoint'],
-            'fichierPDFPoint' => $validated['fichierPDFPoint'],
+            'fichierPDFPoint' => $fichierPDFPoint,
         ]);
 
 
@@ -1426,6 +1438,7 @@ class ParametreController extends Controller
             $libelle = $hasDetail ? $activite->libelle : null;
 
             return [
+                'id' => $activite->id,
                 'date' => optional($activite->created_at)->format('d/m/Y H:i'),
                 'action' => $activite->action,
                 'module' => $hasDetail ? ($activite->module ?: null) : null,
@@ -1449,6 +1462,31 @@ class ParametreController extends Controller
             'total' => $total,
             'tronque' => $total > $traitements->count(),
             'traitements' => $traitements,
+        ]);
+    }
+
+    public function destroyEvaluationTraitement(Request $request, ActiviteUtilisateur $activite)
+    {
+        $request->validate([
+            'code' => 'required|string',
+        ]);
+
+        $code = CodeAcces::where('id', 3)
+            ->where('code', $request->code)
+            ->first();
+
+        if (! $code) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Code d’accès invalide. Contacter l’administrateur !',
+            ], 403);
+        }
+
+        $activite->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Traitement supprimé.',
         ]);
     }
 
@@ -1488,8 +1526,9 @@ class ParametreController extends Controller
             $byAction = collect($counts->get($user->id, []))->keyBy('action');
             $enregistrements = (int) ($byAction->get('enregistrement')->total ?? 0);
             $modifications = (int) ($byAction->get('modification')->total ?? 0);
+            $suppressions = (int) ($byAction->get('suppression')->total ?? 0);
             $recherches = (int) ($byAction->get('recherche')->total ?? 0);
-            $score = ($enregistrements * 3) + ($modifications * 2); //+ $recherches;
+            $score = ($enregistrements * 3) + ($modifications * 2) + $recherches;
 
             return [
                 'user_id' => $user->id,
@@ -1498,6 +1537,7 @@ class ParametreController extends Controller
                 'trimestre' => $label,
                 'enregistrements' => $enregistrements,
                 'modifications' => $modifications,
+                'suppressions' => $suppressions,
                 'recherches' => $recherches,
                 'score' => $score,
                 'appreciation' => $this->appreciationUtilisateur($score),

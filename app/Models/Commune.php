@@ -23,6 +23,6 @@ class Commune extends Model
 
     public function terrains()
     {
-        return $this->hasMany(Terrain::class);
+        return $this->hasMany(Terrain::class, 'slt_commune', 'id');
     }
 }

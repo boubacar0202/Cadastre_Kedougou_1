@@ -29,7 +29,7 @@ class EvaluationTerrain extends Model
     }
     
     public function dossier() {
-        return $this->belongsTo(Dossier::class, 'txt_num_dossier', 'id');
+        return $this->belongsTo(Dossier::class, 'txt_num_dossier', 'txt_num_dossier');
     }
     
 }

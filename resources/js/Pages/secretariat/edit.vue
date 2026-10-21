@@ -551,6 +551,43 @@ const form = useForm({
   txt_superficie_non_bati: "",
 });
 
+const lotissementsListe = ref(lotissements || []);
+
+const fetchlotissements = async () => {
+  if (!form.slt_commune) {
+    lotissementsListe.value = [];
+    return;
+  }
+
+  try {
+    const response = await axios.get(`/lotissements/${form.slt_commune}`);
+    lotissementsListe.value = response.data.lotissements || [];
+  } catch (error) {
+    console.error("Erreur lors du chargement des lotissements :", error);
+    toast.error("❌ Erreur lors du chargement des lotissements");
+  }
+};
+
+const optionsLotissement = computed(() => {
+  const liste = lotissementsListe.value || [];
+  const actuel = form.txt_lotissement;
+  if (actuel && !liste.some((item) => item.txt_denomination == actuel)) {
+    return [{ txt_denomination: actuel }, ...liste];
+  }
+  return liste;
+});
+
+watch(
+  () => form.slt_commune,
+  (nouvelleCommune, ancienneCommune) => {
+    if (ancienneCommune && nouvelleCommune !== ancienneCommune) {
+      form.txt_lotissement = "";
+    }
+    fetchlotissements();
+  },
+  { immediate: true }
+);
+
 // ================= WATCHERS DE NETTOYAGE ================= 
 
 // 1. Nettoyage des champs selon le titulaire
@@ -1280,7 +1317,15 @@ async function submit() {
                           <BaseSelect v-model="form.slt_departement" id="slt_departement" label="Département" :error="form.errors.slt_departement" :options="departements.map(d => ({ value: d.id, label: d.slt_departement }))" />
                           <BaseSelect v-model="form.slt_arrondissement" id="slt_arrondissement" label="Arrondissement" :error="form.errors.slt_arrondissement" :options="arrondissements.map(a => ({ value: a.id, label: a.slt_arrondissement }))" />
                           <BaseSelect v-model="form.slt_commune" id="slt_commune" label="Commune" :error="form.errors.slt_commune" :options="communes.map(c => ({ value: c.id, label: c.slt_commune }))" /> 
-                          <BaseInput v-model="form.txt_lotissement" id="txt_lotissement" label="Lotissement" :error="form.errors.txt_lotissement" /> 
+                          <BaseSelect
+                            v-model="form.txt_lotissement"
+                            id="txt_lotissement"
+                            label="Lotissement"
+                            :options="optionsLotissement"
+                            optionLabel="txt_denomination"
+                            optionValue="txt_denomination"
+                            :customError="form.errors.txt_lotissement"
+                          /> 
                           <BaseInput v-model="form.txt_HorsLotissement" id="txt_HorsLotissement" label="Hors Lotissement" :error="form.errors.txt_HorsLotissement" />
                           <BaseInput v-model="form.txt_num_lotissement" id="txt_num_lotissement" label="N° Lot" :error="form.errors.txt_num_lotissement" />
                           <BaseInput v-model="form.nbr_surface" id="nbr_surface" label="Surface" :error="form.errors.nbr_surface" />

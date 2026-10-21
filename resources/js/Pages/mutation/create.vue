@@ -528,10 +528,10 @@ const submitForm = function () {
 
                     <!-- Personne Physique -->
                     <template v-if="showSectionPP_Acq">
-                      <BaseInput label="Prénom" v-model="form.txt_prenomMutation" name="txt_prenomMutation" type="text" />
-                      <BaseInput label="Nom" v-model="form.txt_nomMutation" name="txt_nomMutation" type="text" />
                       <BaseInput label="Nationalité" v-model="form.txt_nationaliteMutation" name="txt_nationaliteMutation" type="text" />
                       <BaseSelect label="Civilité" v-model="form.slt_civiliteMutation" name="slt_civiliteMutation" :options="CIVILITE_OPTIONS" />
+                      <BaseInput label="Prénom" v-model="form.txt_prenomMutation" name="txt_prenomMutation" type="text" />
+                      <BaseInput label="Nom" v-model="form.txt_nomMutation" name="txt_nomMutation" type="text" />
                       <BaseSelect label="Type Pièce" v-model="form.slt_pieceMutation" name="slt_pieceMutation" :options="PIECE_OPTIONS" />
                       <BaseInput label="Numéro Pièce" v-model="form.txt_numPieceMutation" name="txt_numPieceMutation" type="text" />
                       <BaseInput

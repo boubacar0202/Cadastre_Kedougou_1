@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Models\ActiviteUtilisateur;
+use App\Models\Arrivee;
+use App\Models\Depart;
 use App\Models\Mutation;
 use App\Models\Terrain;
 use Closure;
@@ -23,16 +25,18 @@ class JournaliserActivite
         $response = $next($request);
 
         $userId = $request->user()?->id;
-        if (! $userId || $response->getStatusCode() >= 400) {
-            return $response;
-        }
-
         $action = $this->actionFor($request);
-        if (! $action || ! $this->tableReady()) {
+        if (! $userId || ! $action || ! $this->tableReady()) {
             return $response;
         }
 
-        if ($request->hasSession() && $request->session()->has('errors')) {
+        $status = $response->getStatusCode();
+        $recuperationManquee = $status === 404 && $action === 'recherche';
+        if ($status >= 400 && ! $recuperationManquee) {
+            return $response;
+        }
+
+        if (! $recuperationManquee && $request->hasSession() && $request->session()->has('errors')) {
             return $response;
         }
 
@@ -48,30 +52,29 @@ class JournaliserActivite
                 $payload['methode'] = $request->method();
                 $payload['chemin'] = mb_substr($path, 0, 255);
                 $payload['module'] = $module;
-                $payload['libelle'] = $this->libelleFor($action, $module);
+                $payload['libelle'] = $this->libelleFor($action, $module, $path);
                 if ($action === 'suppression') {
                     $payload['reference'] = $this->journalAvecDossier(
-                        $this->numeroConserve($etatAvant, $request),
-                        $this->referencesDepuisEtat($etatAvant)
+                        $this->numeroConserve($etatAvant, $request) ?? $this->numeroDepuisChemin($path),
+                        $this->referencesDepuisEtat($etatAvant) ?? $this->referenceFor($request)
                     );
                 } elseif ($action === 'modification' && $etatAvant !== null) {
-                    if ($request->hasSession() && $request->session()->has('errors')) {
-                        return $response;
-                    }
-
-                    $changements = $this->changementsSecretariat($request, $etatAvant);
-                    if ($changements === null) {
-                        return $response;
-                    }
-
+                    $changements = array_key_exists('listes', $etatAvant)
+                        ? $this->changementsSecretariat($request, $etatAvant)
+                        : $this->changementsChamps($request, $etatAvant);
                     $payload['reference'] = $this->journalAvecDossier(
-                        $this->numeroConserve($etatAvant, $request),
-                        $changements
+                        $this->numeroConserve($etatAvant, $request) ?? $this->numeroDepuisChemin($path),
+                        $changements ?? 'Modification enregistrée'
                     );
                 } else {
+                    $detail = $this->estRecuperation($path)
+                        ? ($this->ficheRecuperation($path) ?? $this->referenceFor($request))
+                        : $this->referenceFor($request);
                     $payload['reference'] = $this->journalAvecDossier(
-                        $this->numeroDepuisRequete($request) ?? $this->numeroDepuisReponse($response),
-                        $this->referenceFor($request)
+                        $this->numeroDepuisRequete($request)
+                            ?? $this->numeroDepuisReponse($response)
+                            ?? $this->numeroDepuisChemin($path),
+                        $detail
                     );
                 }
 
@@ -98,7 +101,7 @@ class JournaliserActivite
 
         $method = $request->method();
 
-        if ($this->estSuppressionDossier($request)) {
+        if ($method === 'DELETE' || $this->estSuppression($request)) {
             return 'suppression';
         }
 
@@ -114,7 +117,7 @@ class JournaliserActivite
             return 'enregistrement';
         }
 
-        if ($method === 'GET' && ($this->hasSearch($request) || $this->estConsultation($path))) {
+        if ($method === 'GET' && ($this->hasSearch($request) || $this->estConsultation($path) || $this->estConsultationFiche($path))) {
             return 'recherche';
         }
 
@@ -161,7 +164,6 @@ class JournaliserActivite
         }
 
         return str_starts_with($path, 'livewire')
-            || str_starts_with($path, 'message')
             || str_starts_with($path, 'verifier-code')
             || str_starts_with($path, 'code/verify');
     }
@@ -208,10 +210,26 @@ class JournaliserActivite
 
     private function moduleFor(string $path): string
     {
+        if ($path === 'dossier/verifyDossier') {
+            return 'Secrétariat';
+        }
+
+        if ($path === 'dossier/verifyLotissement') {
+            return 'Mutation';
+        }
+
+        if ($path === 'fetch-references-arrivee' || preg_match('#^(depart|instancedepart/depart)(/|$)#', $path)) {
+            return 'Départ';
+        }
+
+        if (preg_match('#^(arrivee|instancearrivee/arrivee)(/|$)#', $path)) {
+            return 'Arrivée';
+        }
+
         $rules = [
             'secretariat' => 'Secrétariat',
             'geometre' => 'Géomètre',
-            'matriceCadastrale' => 'Matrice cadastrale',
+            'matrice' => 'Matrice cadastrale',
             'mutation' => 'Mutation',
             'shapefile' => 'Shapefile',
             'generer-polygone' => 'Plan',
@@ -229,7 +247,10 @@ class JournaliserActivite
             'donnee' => 'Données',
             'bareme' => 'Barème',
             'service' => 'Service',
+            'admin' => 'Utilisateurs',
             'profile' => 'Profil',
+            'parametre' => 'Paramètre',
+            'message' => 'Message',
         ];
 
         foreach ($rules as $needle => $label) {
@@ -243,8 +264,12 @@ class JournaliserActivite
         return $segment !== '' ? ucfirst($segment) : 'Application';
     }
 
-    private function libelleFor(string $action, string $module): string
+    private function libelleFor(string $action, string $module, string $path = ''): string
     {
+        if ($this->estRecuperation($path)) {
+            return 'Récupération — '.$module;
+        }
+
         $labels = [
             'enregistrement' => 'Enregistrement',
             'modification' => 'Modification',
@@ -253,6 +278,27 @@ class JournaliserActivite
         ];
 
         return ($labels[$action] ?? 'Traitement').' — '.$module;
+    }
+
+    private function estConsultationFiche(string $path): bool
+    {
+        return (bool) preg_match(
+            '#^(secretariat/edit/\d+|secretariat/\d+/edit|arrivee/editarrivee/\d+|depart/editdepart/\d+|parametre/mutationEdit/\d+)$#',
+            $path
+        );
+    }
+
+    /**
+     * Ouverture ou recherche d'un dossier / courrier déjà existant.
+     */
+    private function estRecuperation(string $path): bool
+    {
+        return $this->estConsultationFiche($path)
+            || in_array($path, [
+                'dossier/verifyDossier',
+                'dossier/verifyLotissement',
+                'fetch-references-arrivee',
+            ], true);
     }
 
     private function referenceFor(Request $request): ?string
@@ -339,7 +385,7 @@ class JournaliserActivite
     {
         return in_array($cle, [
             '_token', '_method', 'password', 'password_confirmation', 'current_password',
-            'code', 'remember', 'page',
+            'code', 'deleteCode', 'adminCode', 'remember', 'page',
         ], true);
     }
 
@@ -449,7 +495,11 @@ class JournaliserActivite
             return $libelles;
         }
 
-        $libelles = $this->champsSecretariat() + [
+        $libelles = $this->champsSecretariat()
+            + $this->champsArrivee()
+            + $this->champsDepart()
+            + $this->champsMutation()
+            + [
             'slt_region' => 'Région',
             'slt_departement' => 'Département',
             'slt_arrondissement' => 'Arrondissement',
@@ -526,6 +576,7 @@ class JournaliserActivite
             'txt_nicad_mutation' => 'NICAD mutation',
             'txt_nicadMutation' => 'NICAD mutation',
             'txt_numeroMutation' => 'N° mutation',
+            'categorie' => 'Catégorie',
             'q' => 'Recherche',
             'search' => 'Recherche',
             'query' => 'Recherche',
@@ -548,6 +599,14 @@ class JournaliserActivite
             && (bool) preg_match('#^secretariat/\d+$#', trim($request->path(), '/'));
     }
 
+    private function estSuppression(Request $request): bool
+    {
+        $path = trim($request->path(), '/');
+
+        return (bool) preg_match('#/(delete|destroy)(/|$)#', $path)
+            || $this->estSuppressionDossier($request);
+    }
+
     private function estSuppressionDossier(Request $request): bool
     {
         $path = trim($request->path(), '/');
@@ -568,42 +627,82 @@ class JournaliserActivite
             return $this->etatTerrain((int) basename($path));
         }
 
-        if (preg_match('#^parametre/mutation/destroy/\d+$#', $path)) {
-            return $this->etatMutation((int) basename($path));
+        if (preg_match('#^parametre/mutation/(?:destroy|update)/(\d+)$#', $path, $correspondance)) {
+            return $this->etatPlat(Mutation::find((int) $correspondance[1]), $this->champsMutation());
+        }
+
+        if (preg_match('#^(?:arrivee/(\d+)(?:/pdf)?|instancearrivee/arrivee/(\d+))$#', $path, $correspondance)) {
+            return $this->etatPlat(Arrivee::find($this->identifiantChemin($correspondance)), $this->champsArrivee());
+        }
+
+        if (preg_match('#^(?:depart/(\d+)(?:/pdf)?|instancedepart/depart/(\d+)|depart/delete-pdf/(\d+))$#', $path, $correspondance)) {
+            return $this->etatPlat(Depart::find($this->identifiantChemin($correspondance)), $this->champsDepart());
         }
 
         return null;
     }
 
-    private function etatMutation(int $id): ?array
+    private function etatPlat(?\Illuminate\Database\Eloquent\Model $modele, array $libelles): ?array
     {
-        $mutation = Mutation::find($id);
-        if (! $mutation) {
+        if (! $modele) {
             return null;
         }
 
+        $champs = [];
         $lignes = [];
-        foreach ([
-            'txt_nicadMutation' => 'NICAD',
-            'txt_num_lotissementMutation' => 'N° lotissement',
-            'txt_lotissementMutation' => 'Lotissement',
-            'txt_prenomMutation' => 'Prénom',
-            'txt_nomMutation' => 'Nom',
-            'txt_denominationPM_Mutation' => 'Dénomination',
-        ] as $cle => $label) {
-            $texte = $this->valeurLisible($mutation->getAttribute($cle));
+        foreach ($libelles as $cle => $label) {
+            $valeur = $modele->getAttribute($cle);
+            $champs[$cle] = $valeur instanceof \DateTimeInterface ? $valeur->format('Y-m-d') : $valeur;
+            if (in_array($cle, ['txt_num_dossier', 'txt_numdossier', 'txt_numdossiercd', 'txt_numeroMutation'], true)) {
+                continue;
+            }
+
+            $texte = $this->valeurLisible($champs[$cle]);
             if ($texte !== null) {
                 $lignes[] = $label.' : '.$texte;
             }
         }
 
         return [
-            'champs' => [
-                'txt_num_dossier' => $mutation->txt_numeroMutation ?: $mutation->txt_num_dossier,
-            ],
+            'champs' => $champs,
+            'libelles' => $libelles,
             'lignes' => $lignes,
-            'listes' => [],
         ];
+    }
+
+    private function changementsChamps(Request $request, array $etat): ?string
+    {
+        $libelles = $etat['libelles'] ?? [];
+        $lignes = [];
+
+        foreach ($libelles as $cle => $label) {
+            if (! $request->exists($cle)) {
+                continue;
+            }
+
+            $ancien = $etat['champs'][$cle] ?? null;
+            $nouveau = $request->input($cle);
+            if ($this->normaliserValeur($ancien) === $this->normaliserValeur($nouveau)) {
+                continue;
+            }
+
+            $lignes[] = $this->ligneChangement($label, $ancien, $nouveau);
+        }
+
+        return $lignes === [] ? null : implode("\n", $lignes);
+    }
+
+    private function identifiantChemin(array $correspondance): int
+    {
+        foreach ($correspondance as $index => $valeur) {
+            if ($index === 0 || $valeur === null || $valeur === '') {
+                continue;
+            }
+
+            return (int) $valeur;
+        }
+
+        return 0;
     }
 
     /**
@@ -611,9 +710,15 @@ class JournaliserActivite
      */
     private function numeroConserve(?array $etat, Request $request): ?string
     {
-        $ancien = $this->texteNumero($etat['champs']['txt_num_dossier'] ?? null);
-        if ($ancien !== null) {
-            return $ancien;
+        if ($etat === null) {
+            return $this->numeroDepuisRequete($request);
+        }
+
+        foreach (['txt_num_dossier', 'txt_numeroMutation', 'txt_numdossier', 'txt_numdossiercd'] as $cle) {
+            $ancien = $this->texteNumero($etat['champs'][$cle] ?? null);
+            if ($ancien !== null) {
+                return $ancien;
+            }
         }
 
         return $this->numeroDepuisRequete($request);
@@ -654,6 +759,130 @@ class JournaliserActivite
             ?? ($json['dossier']['txt_num_dossier'] ?? null)
             ?? ($json['dossier_info']['num_dossier'] ?? null)
         );
+    }
+
+    private function numeroDepuisChemin(string $path): ?string
+    {
+        if (preg_match('#^secretariat/edit/(\d+)$#', $path, $correspondance)
+            || preg_match('#^secretariat/(\d+)/(?:edit|upload-pdf(?:Mutation)?)$#', $path, $correspondance)) {
+            $terrain = Terrain::with('dossier')->find((int) $correspondance[1]);
+
+            return $this->texteNumero($terrain?->dossier?->txt_num_dossier);
+        }
+
+        if (preg_match('#^arrivee/editarrivee/(\d+)$#', $path, $correspondance)) {
+            return $this->texteNumero(Arrivee::find((int) $correspondance[1])?->txt_numdossier);
+        }
+
+        if (preg_match('#^depart/editdepart/(\d+)$#', $path, $correspondance)) {
+            return $this->texteNumero(Depart::find((int) $correspondance[1])?->txt_numdossiercd);
+        }
+
+        if (preg_match('#^parametre/mutationEdit/(\d+)$#', $path, $correspondance)) {
+            $mutation = Mutation::find((int) $correspondance[1]);
+
+            return $this->texteNumero($mutation?->txt_num_dossier ?: $mutation?->txt_numeroMutation);
+        }
+
+        return null;
+    }
+
+    /**
+     * Résumé affiché quand l'utilisateur ouvre un dossier ou un courrier existant.
+     */
+    private function ficheRecuperation(string $path): ?string
+    {
+        if (preg_match('#^secretariat/edit/(\d+)$#', $path, $correspondance)
+            || preg_match('#^secretariat/(\d+)/edit$#', $path, $correspondance)) {
+            return $this->lignesIdentite($this->etatTerrain((int) $correspondance[1]), [
+                'txt_nicad' => 'NICAD',
+                'txt_lotissement' => 'Lotissement',
+                'txt_num_lotissement' => 'N° lotissement',
+                'txt_num_section' => 'Section',
+                'txt_num_parcelle' => 'Parcelle',
+                'txt_prenom' => 'Prénom',
+                'txt_nom' => 'Nom',
+                'txt_denominationPM' => 'Dénomination',
+            ]);
+        }
+
+        if (preg_match('#^arrivee/editarrivee/(\d+)$#', $path, $correspondance)) {
+            return $this->resumeModele(Arrivee::find((int) $correspondance[1]), [
+                'txt_numdordre' => 'N° d\'ordre',
+                'txt_reference' => 'Référence',
+                'txt_objet' => 'Objet',
+                'txt_expediteur' => 'Expéditeur',
+                'txt_categorie' => 'Catégorie',
+                'txt_typecourrier' => 'Type de courrier',
+                'dt_datearrivee' => 'Date d\'arrivée',
+            ]);
+        }
+
+        if (preg_match('#^depart/editdepart/(\d+)$#', $path, $correspondance)) {
+            return $this->resumeModele(Depart::find((int) $correspondance[1]), [
+                'txt_numdordrecd' => 'N° d\'ordre',
+                'txt_referencecd' => 'Référence',
+                'txt_referencecourierarriveecd' => 'Référence courrier arrivée',
+                'txt_objetcd' => 'Objet',
+                'txt_destinatairecd' => 'Destinataire',
+                'txt_categoriecd' => 'Catégorie',
+                'dt_datecouriercd' => 'Date du courrier',
+            ]);
+        }
+
+        if (preg_match('#^parametre/mutationEdit/(\d+)$#', $path, $correspondance)) {
+            return $this->resumeModele(Mutation::find((int) $correspondance[1]), [
+                'txt_numeroMutation' => 'N° mutation',
+                'txt_nicadMutation' => 'NICAD',
+                'txt_num_lotissementMutation' => 'N° lotissement',
+                'txt_lotissementMutation' => 'Lotissement',
+                'txt_prenomMutation' => 'Prénom acquéreur',
+                'txt_nomMutation' => 'Nom acquéreur',
+                'txt_denominationPM_Mutation' => 'Dénomination acquéreur',
+                'dt_dateMutation' => 'Date de mutation',
+            ]);
+        }
+
+        return null;
+    }
+
+    private function lignesIdentite(?array $etat, array $libelles): ?string
+    {
+        if ($etat === null) {
+            return null;
+        }
+
+        $lignes = [];
+        foreach ($libelles as $cle => $label) {
+            $texte = $this->valeurLisible($etat['champs'][$cle] ?? null);
+            if ($texte !== null) {
+                $lignes[] = $label.' : '.$texte;
+            }
+        }
+
+        return $lignes === [] ? null : implode("\n", $lignes);
+    }
+
+    private function resumeModele(?\Illuminate\Database\Eloquent\Model $modele, array $libelles): ?string
+    {
+        if (! $modele) {
+            return null;
+        }
+
+        $lignes = [];
+        foreach ($libelles as $cle => $label) {
+            $valeur = $modele->getAttribute($cle);
+            if ($valeur instanceof \DateTimeInterface) {
+                $valeur = $valeur->format('Y-m-d');
+            }
+
+            $texte = $this->valeurLisible($valeur);
+            if ($texte !== null) {
+                $lignes[] = $label.' : '.$texte;
+            }
+        }
+
+        return $lignes === [] ? null : implode("\n", $lignes);
     }
 
     private function texteNumero(mixed $value): ?string
@@ -1072,6 +1301,142 @@ class JournaliserActivite
         }
 
         return $texte;
+    }
+
+    private function champsArrivee(): array
+    {
+        return [
+            'txt_numdordre' => 'N° d\'ordre',
+            'txt_numbordereau' => 'N° bordereau',
+            'txt_numdossier' => 'N° dossier',
+            'txt_caractere' => 'Caractère',
+            'dt_datearrivee' => 'Date d\'arrivée',
+            'txt_typecourrier' => 'Type de courrier',
+            'txt_numcourier' => 'N° courrier',
+            'dt_datecourier' => 'Date du courrier',
+            'txt_reference' => 'Référence',
+            'txt_categorie' => 'Catégorie',
+            'txt_designation' => 'Désignation',
+            'txt_prenomNom' => 'Prénom et nom',
+            'txt_numLot' => 'N° lot',
+            'txt_superficie' => 'Superficie',
+            'txt_numTF' => 'N° titre foncier',
+            'txt_lotissement' => 'Lotissement',
+            'dt_date' => 'Date',
+            'txt_heure' => 'Heure',
+            'txt_lieu' => 'Lieu',
+            'txt_nombrepiece' => 'Nombre de pièces',
+            'txt_objet' => 'Objet',
+            'txt_expediteur' => 'Expéditeur',
+            'txt_agenttraiteur' => 'Agent traiteur',
+            'txt_observation' => 'Observation',
+            'fichierPDF' => 'Fichier PDF',
+        ];
+    }
+
+    private function champsDepart(): array
+    {
+        return [
+            'txt_numdordrecd' => 'N° d\'ordre',
+            'txt_numdossiercd' => 'N° dossier',
+            'txt_caracterecd' => 'Caractère',
+            'dt_datecouriercd' => 'Date du courrier',
+            'txt_avisReponsecd' => 'Avis de réponse',
+            'txt_typecourriercd' => 'Type de courrier',
+            'txt_categoriecd' => 'Catégorie',
+            'txt_referencecourierarriveecd' => 'Référence courrier arrivée',
+            'txt_referencecourierdepartcd' => 'Référence courrier départ',
+            'txt_nombrepiececd' => 'Nombre de pièces',
+            'txt_referencecd' => 'Référence',
+            'txt_prenomNomcd' => 'Prénom et nom',
+            'txt_numLotcd' => 'N° lot',
+            'txt_superficiecd' => 'Superficie',
+            'txt_numTFcd' => 'N° titre foncier',
+            'txt_lotissementcd' => 'Lotissement',
+            'txt_objetcd' => 'Objet',
+            'txt_destinatairecd' => 'Destinataire',
+            'dt_dateenvoicd' => 'Date d\'envoi',
+            'txt_referencereceptioncd' => 'Référence de réception',
+            'txt_observationcd' => 'Observation',
+            'txt_dureetraitementcd' => 'Durée de traitement',
+            'fichierPDFcd' => 'Fichier PDF',
+        ];
+    }
+
+    private function champsMutation(): array
+    {
+        return [
+            'txt_numeroMutation' => 'N° mutation',
+            'txt_nicadMutation' => 'NICAD',
+            'txt_num_dossier' => 'N° dossier',
+            'txt_num_lotissementMutation' => 'N° lotissement',
+            'txt_lotissementMutation' => 'Lotissement',
+            'slt_titulaireMT' => 'Type de titulaire',
+            'txt_nationaliteMT' => 'Nationalité',
+            'slt_civiliteMT' => 'Civilité',
+            'txt_prenomMT' => 'Prénom titulaire',
+            'txt_nomMT' => 'Nom titulaire',
+            'slt_pieceMT' => 'Pièce',
+            'txt_numPieceMT' => 'N° pièce',
+            'dt_date_delivranceMT' => 'Date de délivrance',
+            'dt_date_naissanceMT' => 'Date de naissance',
+            'txt_lieu_naissanceMT' => 'Lieu de naissance',
+            'txt_adresseMT' => 'Adresse',
+            'tel_telephoneMT' => 'Téléphone',
+            'txt_representantMT' => 'Représentant',
+            'tel_telRepresentantMT' => 'Téléphone représentant',
+            'slt_categoriePM_MT' => 'Catégorie personne morale',
+            'txt_formJuridiquePM_MT' => 'Forme juridique',
+            'txt_denominationPM_MT' => 'Dénomination titulaire',
+            'txt_nineaPM_MT' => 'NINEA',
+            'txt_personneRepresentantPM_MT' => 'Représentant personne morale',
+            'txt_fonctionPM_MT' => 'Fonction',
+            'txt_telephonePM_MT' => 'Téléphone personne morale',
+            'txt_emailPM_MT' => 'E-mail personne morale',
+            'txt_adressePM_MT' => 'Adresse personne morale',
+            'slt_etablissementPA_MT' => 'Établissement',
+            'txt_personneResponsablePA_MT' => 'Responsable',
+            'txt_fonctionResponsablePA_MT' => 'Fonction du responsable',
+            'txt_telephonePA_MT' => 'Téléphone administration',
+            'txt_emailPA_MT' => 'E-mail administration',
+            'txt_ministereTutelePA_MT' => 'Ministère de tutelle',
+            'slt_titulaireMutation' => 'Type d\'acquéreur',
+            'txt_prenomMutation' => 'Prénom acquéreur',
+            'txt_nomMutation' => 'Nom acquéreur',
+            'txt_nationaliteMutation' => 'Nationalité acquéreur',
+            'slt_civiliteMutation' => 'Civilité acquéreur',
+            'slt_pieceMutation' => 'Pièce acquéreur',
+            'txt_numPieceMutation' => 'N° pièce acquéreur',
+            'dt_date_delivranceMutation' => 'Date de délivrance acquéreur',
+            'dt_date_naissanceMutation' => 'Date de naissance acquéreur',
+            'txt_lieu_naissanceMutation' => 'Lieu de naissance acquéreur',
+            'txt_adresseMutation' => 'Adresse acquéreur',
+            'tel_telephoneMutation' => 'Téléphone acquéreur',
+            'txt_representantMutation' => 'Représentant acquéreur',
+            'tel_telRepresentantMutation' => 'Téléphone représentant acquéreur',
+            'txt_typeActeMutation' => 'Type d\'acte',
+            'txt_nomNotaireMutation' => 'Notaire',
+            'dt_dateMutation' => 'Date de mutation',
+            'txt_natureMutation' => 'Nature de mutation',
+            'txt_jugementMutation' => 'Jugement',
+            'txt_observationMutation' => 'Observation',
+            'slt_categoriePM_Mutation' => 'Catégorie personne morale acquéreur',
+            'txt_formJuridiquePM_Mutation' => 'Forme juridique acquéreur',
+            'txt_denominationPM_Mutation' => 'Dénomination acquéreur',
+            'txt_nineaPM_Mutation' => 'NINEA acquéreur',
+            'txt_personneRepresentantPM_Mutation' => 'Représentant acquéreur',
+            'txt_fonctionPM_Mutation' => 'Fonction acquéreur',
+            'txt_telephonePM_Mutation' => 'Téléphone acquéreur',
+            'txt_emailPM_Mutation' => 'E-mail acquéreur',
+            'txt_adressePM_Mutation' => 'Adresse acquéreur',
+            'slt_etablissementPA_Mutation' => 'Établissement acquéreur',
+            'txt_personneResponsablePA_Mutation' => 'Responsable acquéreur',
+            'txt_fonctionResponsablePA_Mutation' => 'Fonction responsable acquéreur',
+            'txt_telephonePA_Mutation' => 'Téléphone administration acquéreur',
+            'txt_emailPA_Mutation' => 'E-mail administration acquéreur',
+            'txt_ministereTutelePA_Mutation' => 'Ministère de tutelle acquéreur',
+            'fichierPDFMutation' => 'Fichier PDF',
+        ];
     }
 
     private function champsSecretariat(): array

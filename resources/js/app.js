@@ -3,7 +3,9 @@ import "./bootstrap";
 import axios from 'axios'   
 import { createInertiaApp, Head, Link } from "@inertiajs/vue3"; // ✅ Ajout de Head et Link
 import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
-import { createApp, h } from "vue";
+import { createApp, Fragment, h } from "vue";
+import AppSavingOverlay from "./Components/AppSavingOverlay.vue";
+import { installSavingOverlay } from "./utils/savingOverlay";
 import { ZiggyVue } from "../../vendor/tightenco/ziggy";
 import * as MazUI from "maz-ui";
 import DefaultLayout from "./Layouts/DefaultLayout.vue";
@@ -39,6 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
+installSavingOverlay();
+
 import "maz-ui/styles";
 
 const toasterOptions = {
@@ -59,7 +63,9 @@ createInertiaApp({
         return page;
     },
     setup({ el, App, props, plugin }) {
-        const app = createApp({ render: () => h(App, props) });
+        const app = createApp({
+            render: () => h(Fragment, [h(App, props), h(AppSavingOverlay)]),
+        });
     
         // Gestion globale des erreurs
         app.config.errorHandler = (err, vm, info) => {

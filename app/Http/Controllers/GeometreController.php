@@ -12,7 +12,8 @@ use App\Models\EvaluationTerrain;
 use App\Models\ReferenceUsage;
 use App\Models\Region;
 use App\Models\Terrain; 
-use Illuminate\Http\Request; 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class GeometreController extends Controller
@@ -35,8 +36,8 @@ class GeometreController extends Controller
             return redirect()->back()->with('error', 'Aucun dossier trouvé.');
         }
 
-        // Récupère le terrain associé à ce dossier
-        $terrain = Terrain::where('txt_num_dossier', $dossier->txt_num_dossier)->first();
+        // terrains.txt_num_dossier stocke l'identifiant du dossier, pas son numéro
+        $terrain = Terrain::where('txt_num_dossier', $dossier->id)->first();
 
         return Inertia::render('geometre/create', [
             'txt_num_dossier' => $dossier->txt_num_dossier,
@@ -168,7 +169,7 @@ class GeometreController extends Controller
         'nbr_valeurLocative' => 'required|numeric',
         'dt_dateEvaluation' => 'required|date',  
         'txt_superficie_bati_sol'  => 'nullable|numeric',
-        'slt_secteur'   => 'nullable|numeric',
+        'slt_secteur'   => 'required|numeric',
         'nbr_prix_metre_carre' => 'nullable|numeric',
         'nbr_valeur_terrain' => 'nullable|numeric', 
 
@@ -188,6 +189,7 @@ class GeometreController extends Controller
             'nbr_surface' => 'Surface est Obligatoire', 
             'nbr_valeurVenaleLimeuble.required' => 'Valeur Vénale est Obligatoire',
             'nbr_valeurLocative.required' => 'Valeur Locative est Obligatoire',
+            'slt_secteur.required' => 'Secteur est Obligatoire',
             'dt_dateEvaluation.required' => 'Date d\'évaluation est Obligatoire',  
 
             'fichierPDF.file' => 'Le fichier sélectionné est invalide.',
@@ -196,10 +198,13 @@ class GeometreController extends Controller
 
         ]); 
 
-            $occupants = $request->input('occupants');
+            DB::beginTransaction();
+
+            try {
+            $occupants = $request->input('occupants', []);
             $montantLoyerTotal = 0;
-            foreach ($request->input('occupants') as $occupant) {
-                $montantLoyerTotal += (float) $occupant['nbr_montantLoyerTG'];
+            foreach ($occupants as $occupant) {
+                $montantLoyerTotal += (float) ($occupant['nbr_montantLoyerTG'] ?? 0);
             }
 
             // Calcul  TVA Total (18%)
@@ -212,15 +217,15 @@ class GeometreController extends Controller
                     'slt_residence'         => $validatedData['slt_residence'],
                     'slt_usage'             => $validatedData['slt_usage'],
 
-                    'txt_nomOccupantTG'     => $occupant['txt_nomOccupantTG'],
-                    'txt_numAppartementTG'  => $occupant['txt_numAppartementTG'],
-                    'txt_activiteTG'        => $occupant['txt_activiteTG'],
-                    'txt_nineaTG'           => $occupant['txt_nineaTG'],
-                    'tel_telephoneTG'       => $occupant['tel_telephoneTG'],
-                    'nbr_montantLoyerTG'    => $occupant['nbr_montantLoyerTG'],
-                    'txt_dateLieuNaissanceTG'    => $occupant['txt_dateLieuNaissanceTG'],
-                    'txt_cniPasseportTG'    => $occupant['txt_cniPasseportTG'],
-                    'dt_dateDelivranceTG'   => $occupant['dt_dateDelivranceTG'],
+                    'txt_nomOccupantTG'     => $occupant['txt_nomOccupantTG'] ?? null,
+                    'txt_numAppartementTG'  => $occupant['txt_numAppartementTG'] ?? null,
+                    'txt_activiteTG'        => $occupant['txt_activiteTG'] ?? null,
+                    'txt_nineaTG'           => $occupant['txt_nineaTG'] ?? null,
+                    'tel_telephoneTG'       => $occupant['tel_telephoneTG'] ?? null,
+                    'nbr_montantLoyerTG'    => $occupant['nbr_montantLoyerTG'] ?? null,
+                    'txt_dateLieuNaissanceTG'    => $occupant['txt_dateLieuNaissanceTG'] ?? null,
+                    'txt_cniPasseportTG'    => $occupant['txt_cniPasseportTG'] ?? null,
+                    'dt_dateDelivranceTG'   => $occupant['dt_dateDelivranceTG'] ?? null,
 
                     // Ajouter les calculs du total et de la TVA
                     'nbr_montantLoyerTotal' => $montantLoyerTotal,
@@ -234,10 +239,10 @@ class GeometreController extends Controller
                 'txt_num_dossier'           =>  $validatedData['txt_num_dossier'],  
                 'nbr_surface'               =>  $validatedData['nbr_surface'],
                 
-                'txt_superficie_bati_sol'   =>  $validatedData['txt_superficie_bati_sol'],
+                'txt_superficie_bati_sol'   =>  $validatedData['txt_superficie_bati_sol'] ?? 0,
                 'slt_secteur'               =>  $validatedData['slt_secteur'],
-                'nbr_prix_metre_carre'      =>  $validatedData['nbr_prix_metre_carre'],
-                'nbr_valeur_terrain'        =>  $validatedData['nbr_valeur_terrain'], 
+                'nbr_prix_metre_carre'      =>  $validatedData['nbr_prix_metre_carre'] ?? 0,
+                'nbr_valeur_terrain'        =>  $validatedData['nbr_valeur_terrain'] ?? 0, 
                 'dt_dateEvaluation'         =>  $validatedData['dt_dateEvaluation'], 
                 'txt_superficie_totale'     =>  $validatedData['nbr_surface'],
                 'nbr_valeurVenaleLimeuble'  =>  $validatedData['nbr_valeurVenaleLimeuble'],
@@ -265,7 +270,7 @@ class GeometreController extends Controller
 
                     'currentCat' => $request->currentCat, 
                     'slt_categorieTG'        => $occupant['slt_categorieTG'] ?? null,
-                    'txt_valeur_terrain_bati'=> $validatedData['txt_valeur_terrain_bati'] ?? null,
+                    'txt_valeur_terrain_bati'=> $validatedData['txt_valeur_terrain_bati'] ?? 0,
                     'slt_dependant_domaineTG'  => $occupant['slt_dependant_domaineTG'] ?? null,
                     'nbr_prix_metre_carreTG' => $occupant['nbr_prix_metre_carreTG'] ?? null,
                     'nbr_surface_bati_solTG' => $occupant['nbr_surface_bati_solTG'] ?? null,
@@ -286,12 +291,12 @@ class GeometreController extends Controller
                     'txt_nicad'                 => $validatedData['txt_nicad'],  
                     'nbr_valeur_total_ca'       => $validatedData['nbr_valeur_total_ca'] ?? null,
 
-                    'slt_cours_amenager_totale' => $occupant['slt_cours_amenager_totale'],
-                    'nbr_surface_ca_total'      => $occupant['nbr_surface_ca_total'],
-                    'slt_categorie_ca_total'    => $occupant['slt_categorie_ca_total'],
-                    'nbr_prix_metre_carre_ca_total' => $occupant['nbr_prix_metre_carre_ca_total'],
-                    'nbr_coefficient_ca_total'  => $occupant['nbr_coefficient_ca_total'],
-                    'nbr_valeur_ca_total'       => $occupant['nbr_valeur_ca_total'], 
+                    'slt_cours_amenager_totale' => $occupant['slt_cours_amenager_totale'] ?? null,
+                    'nbr_surface_ca_total'      => $occupant['nbr_surface_ca_total'] ?? null,
+                    'slt_categorie_ca_total'    => $occupant['slt_categorie_ca_total'] ?? null,
+                    'nbr_prix_metre_carre_ca_total' => $occupant['nbr_prix_metre_carre_ca_total'] ?? null,
+                    'nbr_coefficient_ca_total'  => $occupant['nbr_coefficient_ca_total'] ?? null,
+                    'nbr_valeur_ca_total'       => $occupant['nbr_valeur_ca_total'] ?? null, 
                 ]);
             }
 
@@ -320,7 +325,7 @@ class GeometreController extends Controller
                 EvaluationAmenagement::create([
                     'txt_num_dossier'       => $validatedData['txt_num_dossier'],
                     'txt_nicad'             => $validatedData['txt_nicad'], 
-                    'nbr_valeur_totale_ap'  => $validatedData['nbr_valeur_totale_ap' ?? null], 
+                    'nbr_valeur_totale_ap'  => $validatedData['nbr_valeur_totale_ap'] ?? null, 
 
                     'txt_designation_am'    => $occupant['txt_designation_am'] ?? null,
                     'nbr_valeur_unitaire_am' => $occupant['nbr_valeur_unitaire_am'] ?? null,
@@ -330,6 +335,12 @@ class GeometreController extends Controller
                 ]);
             }
             
+            DB::commit();
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
             return redirect()->back()->with('success', '✅ Donnée enregistrée !');
  
     }

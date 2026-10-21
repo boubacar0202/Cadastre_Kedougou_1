@@ -139,85 +139,89 @@ const formatDate = (dateString) => {
                                 </div>
                             </div>
 
-                            <div class="mt-4 max-h-[600px] overflow-auto rounded-xl border border-primary-only">
-                                <div class="container min-w-[1500px]"> 
-                                    <div class="card"> 
-                                        <div class="card-body"> 
-                                            <table class="table-auto w-full text-left text-xs font-medium text-primary-txt">
+                            <div class="mt-4 max-h-[600px] overflow-x-auto shadow-md rounded-xl">
+                                <table class="table table-auto w-full text-base text-left text-primary-txt">
+                                    <thead class="sticky top-0 z-10 text-center uppercase whitespace-nowrap text-primary-txt bg-primary-form">
+                                        <tr class="h-10">
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">N°</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">N° d'ordre d'arrivée</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Types de Courrier</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">N° BE</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">N° Dossier</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Catégorie</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Date Arrivée</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">N° Courrier</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Date Courrier</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Référence</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Caractère</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Désignation</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Prénom Nom</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">N° LOT</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Superficie</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">N° TF</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Lotissement</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Date</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Heure</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Lieu</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Nombre Pièces</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Objet</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Expéditeur</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Agent Traiteur</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Observation</th>
+                                            <th class="px-2 py-2 text-xs font-semibold text-center text-primary whitespace-nowrap">Fichier PDF</th>
+                                        </tr>
+                                    </thead>
 
-                                                <thead class="sticky top-0 z-10 whitespace-nowrap text-center text-xs uppercase">
-                                                    <tr class="h-10">  
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">N°</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">N° d'ordre d'arrivée</th>  
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Types de Courrier</th> 
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">N° BE</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">N° Dossier</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Catégorie</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Date Arrivée</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">N° Courrier</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Date Courrier</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Référence</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Caractère</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Désignation</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Prénom Nom</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">N° LOT</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Superficie</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">N° TF</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Lotissement</th> 
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Date</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Heure</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Lieu</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Nombre Pièces</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Objet</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Expéditeur</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Agent Traiteur</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Observation</th>
-                                                        <th scope="col" class="border border-primary bg-primary px-4 py-4 text-center text-xs font-semibold text-white">Fichier PDF</th> 
-                                                    </tr>
-                                                </thead>
-                                                        
-                                                <tbody sortedinstance>
-                                                    <tr v-for="(arrivee, index) in filteredInstance" :key="arrivee.id"  
-                                                        class="bg-white text-center text-xs font-medium text-primary-txt hover:bg-primary-form">
-                                                        <td scope="col" class="sticky left-0 z-0 bg-white px-2 py-1.5 text-center text-xs font-semibold text-primary-txt border border-primary-only whitespace-nowrap">{{ index + 1 }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-semibold whitespace-nowrap border border-primary-only" :class="arrivee.isOverdue ? 'text-red-600 font-bold' : ''">{{ arrivee.txt_numdordre }}</td> 
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_typecourrier || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_numbordereau || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_numdossier || '-' }}</td> 
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_categorie || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ formatDate(arrivee.dt_datearrivee) || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_numcourier || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ formatDate(arrivee.dt_datecourier) }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_reference || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_caractere || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_designation || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_prenomNom || '-' }}</td> 
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_numLot || '-' }}</td> 
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_superficie || '-' }}</td> 
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_numTF || '-' }}</td> 
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_lotissement || '-' }}</td>  
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ formatDate(arrivee.dt_date) || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_heure || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_lieu || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_nombrepiece || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_objet || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_expediteur || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_agenttraiteur || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt">{{ arrivee.txt_observation || '-' }}</td>
-                                                        <td scope="col" class="px-4 py-3 text-center text-xs font-medium whitespace-nowrap border border-primary-only text-primary-txt"> 
-                                                            <div v-if="arrivee.fichierPDF">
-                                                                <a :href="`/storage/${arrivee.fichierPDF}`" target="_blank" class="font-semibold text-primary underline flex justify-center items-center">
-                                                                    <img src="/iconePDF.png" alt="PDF" class="w-8 h-8 mx-auto">
-                                                                </a>
-                                                            </div>
-                                                            <div v-else class="text-primary-txt/60 italic">Aucun PDF</div>
-                                                        </td> 
-                                                    </tr>
-                                                </tbody>
-                                            </table> 
-                                        </div>
-                                    </div>
-                                </div>
+                                    <tbody>
+                                        <tr
+                                            v-for="(arrivee, index) in filteredInstance"
+                                            :key="arrivee.id"
+                                            class="h-8 bg-white text-xs font-semibold text-center text-primary-txt hover:bg-primary-form"
+                                        >
+                                            <td class="sticky left-0 z-8 px-2 py-1 text-xs border bg-white whitespace-nowrap">{{ index + 1 }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap" :class="arrivee.isOverdue ? 'text-red-600 font-bold' : ''">{{ arrivee.txt_numdordre }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_typecourrier || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_numbordereau || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap"><span class="font-mono">{{ arrivee.txt_numdossier || '-' }}</span></td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_categorie || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ formatDate(arrivee.dt_datearrivee) }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_numcourier || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ formatDate(arrivee.dt_datecourier) }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_reference || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_caractere || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_designation || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_prenomNom || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_numLot || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_superficie || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_numTF || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_lotissement || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ formatDate(arrivee.dt_date) }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_heure || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_lieu || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_nombrepiece || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_objet || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_expediteur || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_agenttraiteur || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ arrivee.txt_observation || '-' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">
+                                                <a
+                                                    v-if="arrivee.fichierPDF"
+                                                    :href="`/storage/${arrivee.fichierPDF}`"
+                                                    target="_blank"
+                                                    class="flex items-center justify-center text-primary underline"
+                                                >
+                                                    <img src="/iconePDF.png" alt="PDF" class="w-8 h-8 mx-auto">
+                                                </a>
+                                                <span v-else class="italic text-primary-txt/60">Aucun PDF</span>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="!filteredInstance.length">
+                                            <td colspan="26" class="px-6 py-12 text-center text-base text-primary-txt">
+                                                Aucun courrier en instance.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>

@@ -92,7 +92,7 @@ class MutationController extends Controller
                 ? '⚠️ Une mutation existe déjà pour ce terrain.'
                 : '✅ Terrain et titulaire chargés !'
                 */
-            'message'   => '✅ Mutation enregistrée avec succès !'
+            'message'   => '✅ Terrain et titulaire chargés !'
         ]);
     }
 
@@ -243,7 +243,10 @@ class MutationController extends Controller
         // ============================================================
         Mutation::create([
             'txt_numeroMutation' => $numeroMutation,
+            'txt_num_dossier'    => $numeroMutation,
             'txt_nicadMutation'  => $nicadMutation,
+            'terrain_id'         => $terrain->id,
+            'dossier_id'         => $terrain->txt_num_dossier,
 
             'txt_num_lotissementMutation' => $validatedData['txt_num_lotissementMutation'],
             'txt_lotissementMutation'     => $validatedData['txt_lotissementMutation'],

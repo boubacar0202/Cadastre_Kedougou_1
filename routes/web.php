@@ -210,7 +210,7 @@ Route::middleware('auth')->group(function () {
             return PointDensifier::all([
                 'id', 'txt_nomPoint', 'txt_descriptionPoint', 
                 'txt_situationPoint', 'txt_estPoint', 'txt_nordPoint', 
-                'txt_hauteurPoint', 'fichierPDF'
+                'txt_hauteurPoint', 'fichierPDFPoint'
             ]);
         });
   
@@ -244,6 +244,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/api/stats', [ParametreController::class, 'getStatsData'])->name('api.stats');
         Route::get('/api/cession-data', [ParametreController::class, 'getCessionData'])->name('api.cession.data');
         Route::get('/api/evaluation-utilisateur', [ParametreController::class, 'getEvaluationUtilisateur'])->name('api.evaluation.utilisateur');
+        Route::delete('/api/evaluation-utilisateur/{activite}', [ParametreController::class, 'destroyEvaluationTraitement'])->name('api.evaluation.utilisateur.destroy');
     });
 
     // ✅ Listes des lotissements

@@ -30,12 +30,12 @@ class Dossier extends Model
     
     public function terrains()
     {
-        return $this->hasMany(Terrain::class);
+        return $this->hasMany(Terrain::class, 'txt_num_dossier', 'id');
     }
  
     public function mutations()
     {
-        return $this->hasMany(Mutation::class);
+        return $this->hasMany(Mutation::class, 'dossier_id', 'id');
     }
 
 }

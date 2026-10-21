@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\EvaluationBati;
-use App\Models\ReferenceUsage;
 use App\Models\Terrain;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -23,19 +21,15 @@ class MatriceCadastraleController extends Controller
             'region',
             'departement',
             'commune',
-            'arrondissement',
             'dossier',
             'titulaire',
             'references_cadastrales',
-            'references_usages',
-            'evaluations_terrains',
-            'evaluations_clotures',
-            'evaluations_amenagements',
             'evaluations_batis',
-            'evaluations_cours_amenagees'
         ];
 
-        $query = Terrain::with($relations);
+        $query = Terrain::with($relations)
+            ->whereNotNull('txt_nicad')
+            ->where('txt_nicad', '!=', '');
 
         // Filtres
         if ($request->filled('numero')) {
@@ -61,32 +55,22 @@ class MatriceCadastraleController extends Controller
             });
         }
 
-        // TOUTES les lignes
-        $terrains = $query->orderBy('id', 'desc')->get();
-
-        // Récupération du terrain par NICAD (si présent en session)
-        $txtNicad = session('txt_nicad');
-        $terrain = null;
-        if ($txtNicad) {
-            $terrain = Terrain::with([
-                'references_usages',
-                'evaluations_terrains',
-                'evaluations_clotures',
-                'evaluations_amenagements',
-                'evaluations_batis',
-                'evaluations_cours_amenagees'
-            ])->where('txt_nicad', $txtNicad)->first();
+        if ($request->boolean('export')) {
+            return response()->json(
+                $query->orderBy('id', 'desc')->get()
+            );
         }
 
-        // Récupération des références d'usages et évaluations
-        $referencesUsages = ReferenceUsage::with('terrain')->get();
-        $evaluationsBatis = EvaluationBati::with('terrain')->get();
+        $totalGeneral = Terrain::query()
+            ->whereNotNull('txt_nicad')
+            ->where('txt_nicad', '!=', '')
+            ->count();
+
+        $terrains = $query->orderBy('id', 'desc')->paginate(15)->withQueryString();
 
         return Inertia::render("matriceCadastrale/create", [
-            'terrain' => $terrain,
             'terrains' => $terrains,
-            'references_usages' => $referencesUsages,
-            'evaluations_batis' => $evaluationsBatis,
+            'totalGeneral' => $totalGeneral,
             'filters' => $request->only(['numero', 'nicad', 'titulaire', 'commune'])
         ]);
     }

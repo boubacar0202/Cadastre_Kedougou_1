@@ -3,9 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\VotreModele;
 
-class DashboardController extends Controller
+class ChartController extends Controller
 {
     public function chart()
     {
