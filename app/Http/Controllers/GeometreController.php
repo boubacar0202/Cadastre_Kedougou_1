@@ -207,8 +207,7 @@ class GeometreController extends Controller
                 $montantLoyerTotal += (float) ($occupant['nbr_montantLoyerTG'] ?? 0);
             }
 
-            // Calcul  TVA Total (18%)
-            $TVATotal = $montantLoyerTotal * 0.18;
+            $TVATotal = $montantLoyerTotal * BaremeEvaluation::coefficient('tva', 0.18);
 
             foreach ($occupants as $occupant) {
                 ReferenceUsage::create([

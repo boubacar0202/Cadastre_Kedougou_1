@@ -10,7 +10,7 @@ import MazRadio from "maz-ui/components/MazRadio";
 import DefaultLayout from "@/Layouts/DefaultLayout.vue";
 import BaseInput from "@/Components/BaseInput.vue";
 import BaseSelect from "@/Components/BaseSelect.vue";
-import { baremeOptions, mapsFromBaremes } from "@/utils/baremes";
+import { baremeOptions, coefficientBareme, mapsFromBaremes, tauxLocatifBareme } from "@/utils/baremes";
 
 defineOptions({ layout: DefaultLayout });
 
@@ -30,6 +30,9 @@ const { terrain, regions, departements, arrondissements, communes, titulaire, lo
   });
 
 const { categories, prixParSecteur, coeffCAValues, coeffCLValues } = mapsFromBaremes(baremes);
+const tauxTva = coefficientBareme(baremes, "tva", 0.18);
+const coeffSurfaceUtile = coefficientBareme(baremes, "surface_utile", 0.78);
+const coeffTerrainBati = coefficientBareme(baremes, "terrain_bati", 0.5);
 
 // États réactifs
 const formVisible = ref(false);
@@ -972,7 +975,7 @@ watchEffect(() => {
   form.nbr_montantLoyerTotal = montantLoyerTotal.value;
 });
 const nbr_TVATotal = computed(() => {
-  return (Number(form.nbr_montantLoyerTotal) || 0) * 0.18;
+  return (Number(form.nbr_montantLoyerTotal) || 0) * tauxTva;
 });
 watchEffect(() => {
   form.nbr_TVATotal = nbr_TVATotal.value.toFixed(2);
@@ -1001,14 +1004,14 @@ watchEffect(() => {
 });
 
 watchEffect(() => {
-  const secteur = Number(form.slt_secteur);
+  const secteur = String(form.slt_secteur ?? "");
   form.nbr_prix_metre_carre = prixParSecteur[secteur] || 0;
 });
 const nbr_valeur_terrain = computed(() => {
   const prix = parseFloat(form.nbr_prix_metre_carre) || 0;
   const bati = parseFloat(form.txt_superficie_bati_sol) || 0;
   const total = parseFloat(form.nbr_surface) || 0;
-  return ((prix / 2) * bati + prix * (total - bati)).toFixed(2);
+  return ((prix * coeffTerrainBati) * bati + prix * (total - bati)).toFixed(2);
 });
 watchEffect(() => {
   form.nbr_valeur_terrain = nbr_valeur_terrain.value;
@@ -1038,7 +1041,7 @@ watchEffect(() => {
 watchEffect(() => {
   const surfaceBS = parseFloat(form.nbr_surface_bati_solPR) || 0;
   const nbrNiveau = parseFloat(form.nbr_niveauPR) || 0;
-  form.nbr_surface_utilePR = (surfaceBS * nbrNiveau * 0.78).toFixed(2);
+  form.nbr_surface_utilePR = (surfaceBS * nbrNiveau * coeffSurfaceUtile).toFixed(2);
 });
 watchEffect(() => {
   const utile = parseFloat(form.nbr_surface_utilePR) || 0;
@@ -1056,7 +1059,7 @@ watchEffect(() => {
   form.occupantsBP.forEach((occupant) => {
     const surfaceBS = parseFloat(occupant.nbr_surface_bati_solTG) || 0;
     const nbrNiveau = parseFloat(occupant.nbr_niveauTG) || 0;
-    occupant.nbr_surface_utileTG = (surfaceBS * nbrNiveau * 0.78).toFixed(2);
+    occupant.nbr_surface_utileTG = (surfaceBS * nbrNiveau * coeffSurfaceUtile).toFixed(2);
   });
 });
 watchEffect(() => {
@@ -1084,7 +1087,7 @@ watchEffect(() => {
 
 watchEffect(() => {
   form.occupantsCA.forEach((occupant) => {
-    const categorie = Number(occupant.slt_categorie_ca_total) || 0;
+    const categorie = String(occupant.slt_categorie_ca_total ?? "");
     const prixMetre = coeffCAValues[categorie] || 0;
     const surfaceCA = parseFloat(occupant.nbr_surface_ca_total) || 0;
     const coeffCA = parseFloat(occupant.nbr_coefficient_ca_total) || 0;
@@ -1101,7 +1104,7 @@ watchEffect(() => {
 
 watchEffect(() => {
   form.occupantsCL.forEach((occupant) => {
-    const categorieCL = Number(occupant.slt_categorie_clo) || 0;
+    const categorieCL = String(occupant.slt_categorie_clo ?? "");
     const prixmetrecarreCL = coeffCLValues[categorieCL] || 0;
     const lineaire = parseFloat(occupant.nbr_longueur_avant_clo) || 0;
     const coeffCL = parseFloat(occupant.nbr_coefficient_clo) || 0;
@@ -1134,33 +1137,20 @@ watchEffect(() => {
 
 // Valeur vénale et locative
 const nbr_valeurVenaleLimeuble = computed(() => {
-  const sol = parseFloat(form.nbr_valeur_terrain) || 0;
-  const bati = parseFloat(txt_valeur_terrain_bati.value) || 0;
+  const terrain = parseFloat(nbr_valeur_terrain.value) || 0;
+  const batiments = parseFloat(txt_valeur_terrain_bati.value) || 0;
   const ca = parseFloat(nbr_valeur_total_ca.value) || 0;
   const clotur = parseFloat(nbr_valeur_total_clotur.value) || 0;
   const ap = parseFloat(nbr_valeur_totale_ap.value) || 0;
-  return arrondirDeuxDecimales(sol + bati + ca + clotur + ap);
+  return arrondirDeuxDecimales(terrain + batiments + ca + clotur + ap);
 });
 watchEffect(() => {
   form.nbr_valeurVenaleLimeuble = nbr_valeurVenaleLimeuble.value;
 });
 
-const isPrincipalSelected = computed(() => {
-  const batiment = String(form.txt_dependant_domainePR || "").trim().toLowerCase();
-  return batiment === "primaire" || batiment === "principale";
-});
-const tauxValeurLocative = computed(() => {
-  if (!isPrincipalSelected.value) return 0;
-  const type = form.currentCat;
-  const code = String(form.slt_categoriePR || "");
-  if ((type === "Immeuble collectif" && code === "A") || (type === "Maison individuelle" && code === "1")) return 0.1344;
-  if ((type === "Immeuble collectif" && ["B", "C"].includes(code)) || (type === "Maison individuelle" && ["2", "3"].includes(code))) return 0.12;
-  return 0.10;
-});
 const nbr_valeurLocative = computed(() => {
-  if (!isPrincipalSelected.value) return 0;
-  const valeurVenale = parseFloat(nbr_valeurVenaleLimeuble.value) || 0;
-  return arrondirDeuxDecimales(valeurVenale * tauxValeurLocative.value);
+  const taux = tauxLocatifBareme(baremes, form.currentCat, form.slt_categoriePR);
+  return arrondirDeuxDecimales(nbr_valeurVenaleLimeuble.value * taux);
 });
 watchEffect(() => {
   form.nbr_valeurLocative = nbr_valeurLocative.value;
@@ -1299,7 +1289,7 @@ async function submit() {
       <div class="flex justify-center">
         <div class="w-full max-w-8xl">
           <div v-if="formVisible" class="w-full">
-            <div class="bg-white shadow-md rounded-xl">
+            <div class="sec-page bg-white shadow-md rounded-xl">
               <div class="p-4 border-b bg-primary rounded-t-xl">
                 <h1 class="text-2xl text-white font-semibold">Pages de Modification !</h1>
               </div>
@@ -1311,7 +1301,7 @@ async function submit() {
                     </h1>
                   </div>
 
-                  <form @submit.prevent="submit" class="space-y-4"> 
+                  <form @submit.prevent="submit" class="sec-form space-y-4"> 
                     <div class="p-6">
                       <div class="sm:col-span-12">
                         <!-- Reference Dossier -->
@@ -1459,11 +1449,7 @@ async function submit() {
                             @click="showAllSectionsMutation = !showAllSectionsMutation"
                             :title="showAllSectionsMutation ? 'Masquer les sections supplémentaires' : 'Afficher toutes les sections'"
                             :aria-label="showAllSectionsMutation ? 'Masquer les sections supplémentaires' : 'Afficher toutes les sections'"
-                            class="h-8 w-8 text-white bg-gradient-to-r from-primary via-primary-dark to-primary
-                                  hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
-                                  dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg
-                                  dark:shadow-blue-800/80 font-medium rounded-lg text-sm p-0 flex items-center justify-center
-                                  transition-transform duration-300"
+                            class="sec-icon"
                             :class="{ 'rotate-45': showAllSectionsMutation }"
                           >
                             +
@@ -1532,16 +1518,17 @@ async function submit() {
 
                         <!-- Références usage -->
                         <h5 class="text-lg font-bold mt-8">Réferences Usage</h5><br />
-                        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                           <BaseSelect v-model="form.slt_usage" id="slt_usage" label="Usage" :error="form.errors?.slt_usage" :options="usageOptions" />
                           <BaseSelect v-model="form.slt_residence" id="slt_residence" label="Type de résidence" :error="form.errors?.slt_residence" :options="residenceOptions" />
                         </div> 
 
                         <!-- Occupants -->
-                        <div class="w-full flex flex-wrap justify-between gap-4 mt-4">
-                          <TransitionGroup name="slide-fade" tag="div">
-                            <div v-for="(occupant, i) in form.occupants" :key="occupant.id || i" class="sm:col-span-8">
-                              <div class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        <div class="mt-4 w-full overflow-x-auto">
+                          <div class="flex w-max min-w-full items-end gap-3">
+                          <TransitionGroup name="slide-fade" tag="div" class="flex flex-col gap-3">
+                            <div v-for="(occupant, i) in form.occupants" :key="occupant.id || i">
+                              <div class="flex flex-nowrap items-end gap-2">
                                 <div class="sm:col-span-1">
                                   <BaseInput v-model="occupant.txt_nomOccupantTG" :label="`Nom Occupant ${i+1}`" class="w-30" />
                                 </div>
@@ -1570,16 +1557,17 @@ async function submit() {
                                   <BaseInput v-model="occupant.dt_dateDelivranceTG" :id="`DateDelivrance_${i}`" type="date" label="Date Déliv" class="w-28" />
                                 </div>
                               </div>
-                            </div><br>
+                            </div>
                           </TransitionGroup>
-                          <div class="flex gap-4 mt-6">
-                            <button @click="addBlock" type="button" class="h-8 text-white bg-primary hover:bg-primary-dark font-medium rounded-lg text-sm px-5 py-2.5">Ajouter</button>
-                            <button @click="removeBlock" type="button" class="h-8 text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-5 py-2.5">Retirer</button>
+                          <div class="flex shrink-0 gap-2 self-end">
+                            <button @click="addBlock" type="button" class="h-10 text-white bg-primary hover:bg-primary-dark font-medium rounded-lg text-sm px-5">Ajouter</button>
+                            <button @click="removeBlock" type="button" class="h-10 text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-5">Retirer</button>
+                          </div>
                           </div>
                         </div> 
 
                         <!-- Montants -->
-                        <div class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        <div class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-2 gap-2">
                           <div class="sm:col-span-2">
                             <BaseInput v-model="form.nbr_montantLoyerTotal" id="MontantLoyerTotal" label="Montant Loyer Total" readonly class="w-64" />
                           </div>
@@ -1678,25 +1666,25 @@ async function submit() {
                                           :options="categorieImmeubleOptions" class="w-20" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="form.nbr_prix_metre_carrePR" label="Prix m²" type="number" readonly class="w-20" />
+                                        <BaseInput v-model="form.nbr_prix_metre_carrePR" label="Prix m²" type="number" readonly class="w-24" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="form.nbr_surface_bati_solPR" label="Surf B S" type="number" class="w-20" />
+                                        <BaseInput v-model="form.nbr_surface_bati_solPR" label="Surf B S" type="number" class="w-24" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="form.nbr_niveauPR" label="Niveau" type="number" class="w-20" />
+                                        <BaseInput v-model="form.nbr_niveauPR" label="Niveau" type="number" class="w-24" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="form.nbr_surface_utilePR" label="Surf Utile" type="number" readonly class="w-20" />
+                                        <BaseInput v-model="form.nbr_surface_utilePR" label="Surf Utile" type="number" readonly class="w-24" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseSelect v-model="form.slt_coeffPR" id="slt_coeffPR" label="Coeff" :options="coefficientOptions" class="w-20" />
+                                        <BaseSelect v-model="form.slt_coeffPR" id="slt_coeffPR" label="Coeff" :options="coefficientOptions" class="w-24" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="form.nbr_surface_corrigerPR" label="S.Corrigee" type="number" readonly class="w-20" />
+                                        <BaseInput v-model="form.nbr_surface_corrigerPR" label="S.Corrigee" type="number" readonly class="w-24" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="form.nbr_valeurPR" label="Valeur" type="number" step="0.01" readonly class="w-20" />
+                                        <BaseInput v-model="form.nbr_valeurPR" label="Valeur" type="number" step="0.01" readonly class="w-28" />
                                       </div>
                                     </div>
                                   </div>
@@ -1722,25 +1710,25 @@ async function submit() {
                                           :options="categorieImmeubleOptions" class="w-20" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_prix_metre_carreTG" label="Prix m²" type="number" readonly class="w-20" />
+                                        <BaseInput v-model="occupant.nbr_prix_metre_carreTG" label="Prix m²" type="number" readonly class="w-24" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_surface_bati_solTG" label="Surf B S" type="number" class="w-20" />
+                                        <BaseInput v-model="occupant.nbr_surface_bati_solTG" label="Surf B S" type="number" class="w-24" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_niveauTG" label="Niveau" type="number" class="w-20" />
+                                        <BaseInput v-model="occupant.nbr_niveauTG" label="Niveau" type="number" class="w-24" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_surface_utileTG" label="Surf Utile" type="number" readonly class="w-20" />
+                                        <BaseInput v-model="occupant.nbr_surface_utileTG" label="Surf Utile" type="number" readonly class="w-24" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseSelect v-model="occupant.slt_coeffTG" id="slt_coeffTG" label="Coeff" :options="coefficientOptions" class="w-20" />
+                                        <BaseSelect v-model="occupant.slt_coeffTG" id="slt_coeffTG" label="Coeff" :options="coefficientOptions" class="w-24" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_surface_corrigerTG" label="S.Corrigee" type="number" readonly class="w-20" />
+                                        <BaseInput v-model="occupant.nbr_surface_corrigerTG" label="S.Corrigee" type="number" readonly class="w-24" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_valeurTG" label="Valeur" type="number" step="0.01" readonly class="w-20"
+                                        <BaseInput v-model="occupant.nbr_valeurTG" label="Valeur" type="number" step="0.01" readonly class="w-28"
                                           @blur="() => arrondirDeuxDecimales(occupant.nbr_valeurTG)" />
                                       </div>
                                     </div>
@@ -1753,7 +1741,7 @@ async function submit() {
                               </div>
                               <div class="flex justify-center gap-6 mb-8">
                                 <div>
-                                  <BaseInput :model-value="txt_valeur_terrain_bati" id="Valeur_terrain_bati" type="number" label="Valeur(s) bâtiment (s)" readonly />
+                                  <BaseInput :model-value="txt_valeur_terrain_bati" id="Valeur_terrain_bati" type="number" label="Valeur(s) bâtiment (s)" readonly class="w-64" />
                                 </div>
                               </div>
                             </div>
@@ -1765,22 +1753,22 @@ async function submit() {
                                   <div v-for="(occupant, i) in form.occupantsCA" :key="occupant.id || i" class="sm:col-span-8">
                                     <div class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                                       <div class="sm:col-span-1">
-                                        <BaseSelect v-model="occupant.slt_cours_amenager_totale" id="slt_cours_amenager_totale" label="Cours Aménagées Totale" :options="coursAmenageesOptions" class="w-34" />
+                                        <BaseSelect v-model="occupant.slt_cours_amenager_totale" id="slt_cours_amenager_totale" label="Cours Aménagées Totale" :options="coursAmenageesOptions" class="w-64" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_surface_ca_total" id="nbr_surface_ca_total" label="Surface" type="number" class="w-28" />
+                                        <BaseInput v-model="occupant.nbr_surface_ca_total" id="nbr_surface_ca_total" label="Surface" type="number" class="w-46" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseSelect v-model="occupant.slt_categorie_ca_total" id="slt_categorie_ca_total" label="Catégorie" :options="categorieCAOptions" class="w-28" />
+                                        <BaseSelect v-model="occupant.slt_categorie_ca_total" id="slt_categorie_ca_total" label="Catégorie" :options="categorieCAOptions" class="w-20" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_prix_metre_carre_ca_total" id="nbr_prix_metre_carre_ca_total" label="P/m²" type="number" readonly class="w-28" />
+                                        <BaseInput v-model="occupant.nbr_prix_metre_carre_ca_total" id="nbr_prix_metre_carre_ca_total" label="P/m²" type="number" readonly class="w-20" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseSelect v-model="occupant.nbr_coefficient_ca_total" id="nbr_coefficient_ca_total" label="Coefficient" :options="coefficientOptions" class="w-28" />
+                                        <BaseSelect v-model="occupant.nbr_coefficient_ca_total" id="nbr_coefficient_ca_total" label="Coefficient" :options="coefficientOptions" class="w-20" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_valeur_ca_total" id="Valeur_ca_total" label="Valeur" type="number" step="0.01" readonly class="w-28" />
+                                        <BaseInput v-model="occupant.nbr_valeur_ca_total" id="Valeur_ca_total" label="Valeur" type="number" step="0.01" readonly class="w-64" />
                                       </div>
                                     </div>
                                   </div>
@@ -1792,7 +1780,7 @@ async function submit() {
                               </div>
                               <div class="flex justify-center gap-6 mb-8">
                                 <div>
-                                  <BaseInput v-model="form.nbr_valeur_total_ca" id="nbr_valeur_total_ca" label="Valeur Total des Cours" type="number" readonly />
+                                  <BaseInput v-model="form.nbr_valeur_total_ca" id="nbr_valeur_total_ca" label="Valeur Total des Cours" type="number" class="w-64" readonly />
                                 </div>
                               </div>
                             </div>
@@ -1804,22 +1792,22 @@ async function submit() {
                                   <div v-for="(occupant, i) in form.occupantsCL" :key="occupant.id || i" class="sm:col-span-8">
                                     <div class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                                       <div class="sm:col-span-1">
-                                        <BaseSelect v-model="occupant.slt_cours_amenager_clo" id="slt_cours_amenager_clo" label="Clôtures" :options="clotureOptions" class="w-34" />
+                                        <BaseSelect v-model="occupant.slt_cours_amenager_clo" id="slt_cours_amenager_clo" label="Clôtures" :options="clotureOptions" class="w-64" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_longueur_avant_clo" id="nbr_longueur_avant_clo" label="Linéaire" type="number" class="w-28" />
+                                        <BaseInput v-model="occupant.nbr_longueur_avant_clo" id="nbr_longueur_avant_clo" label="Linéaire" type="number" class="w-20" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseSelect v-model="occupant.slt_categorie_clo" id="slt_categorie_clo" label="Catégorie" :options="categorieCLOptions" class="w-28" />
+                                        <BaseSelect v-model="occupant.slt_categorie_clo" id="slt_categorie_clo" label="Catégorie" :options="categorieCLOptions" class="w-36" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_prix_metre_carre_clo" id="nbr_prix_metre_carre_clo" label="P/mL" type="number" class="w-28" />
+                                        <BaseInput v-model="occupant.nbr_prix_metre_carre_clo" id="nbr_prix_metre_carre_clo" label="P/mL" type="number" class="w-36" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseSelect v-model="occupant.nbr_coefficient_clo" id="nbr_coefficient_clo" label="Coefficient" :options="coefficientOptions" class="w-28" />
+                                        <BaseSelect v-model="occupant.nbr_coefficient_clo" id="nbr_coefficient_clo" label="Coefficient" :options="coefficientOptions" class="w-36" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_valeur_clo" id="nbr_valeur_clo" label="Valeur" type="number" step="0.01" class="w-28" />
+                                        <BaseInput v-model="occupant.nbr_valeur_clo" id="nbr_valeur_clo" label="Valeur" type="number" step="0.01" class="w-46" />
                                       </div>
                                     </div>
                                   </div>
@@ -1831,7 +1819,7 @@ async function submit() {
                               </div>
                               <div class="flex justify-center gap-6 mb-8">
                                 <div>
-                                  <BaseInput v-model="form.nbr_valeur_total_clotur" id="Valeur_total_clotur" label="Valeurs Totale des Clôtures" type="number" step="0.01" readonly />
+                                  <BaseInput v-model="form.nbr_valeur_total_clotur" id="Valeur_total_clotur" label="Valeurs Totale des Clôtures" type="number" step="0.01" readonly class="w-64" />
                                 </div>
                               </div>
                             </div>
@@ -1844,19 +1832,19 @@ async function submit() {
                                   <div v-for="(occupant, i) in form.occupantsAP" :key="occupant.id || i" class="sm:col-span-8">
                                     <div class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.txt_designation_am" id="Designation_1" label="Designation" class="w-34" />
+                                        <BaseInput v-model="occupant.txt_designation_am" id="Designation_1" label="Designation" class="w-64" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_valeur_unitaire_am" id="Valeur_unitaire_1" label="Valeur Unitaire" type="number" class="w-28" />
+                                        <BaseInput v-model="occupant.nbr_valeur_unitaire_am" id="Valeur_unitaire_1" label="Valeur Unitaire" type="number" class="w-36"/>
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_quantile_am" id="Quantile_1" label="Quantité" type="number" class="w-34" />
+                                        <BaseInput v-model="occupant.nbr_quantile_am" id="Quantile_1" label="Quantité" type="number" class="w-28"/>
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseSelect v-model="occupant.slt_coeficien_am" id="Coeficien_1" label="Coefficient" :options="coefficientAPOptions" class="w-28" />
+                                        <BaseSelect v-model="occupant.slt_coeficien_am" id="Coeficien_1" label="Coefficient" :options="coefficientAPOptions" class="w-28"/>
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_valeur_am" id="Valeur" label="Valeur" type="number" inputmode="decimal" step="0.01" class="w-34" />
+                                        <BaseInput v-model="occupant.nbr_valeur_am" id="Valeur" label="Valeur" type="number" inputmode="decimal" step="0.01" class="w-64" readonly />
                                       </div>
                                     </div>
                                   </div>
@@ -1868,7 +1856,7 @@ async function submit() {
                               </div>
                               <div class="flex justify-center gap-6 mb-8">
                                 <div>
-                                  <BaseInput v-model="form.nbr_valeur_totale_ap" id="valeur_totale_ap" label="Valeur Totale des A.P" type="number" readonly />
+                                  <BaseInput v-model="form.nbr_valeur_totale_ap" id="valeur_totale_ap" label="Valeur Totale des A.P" type="number" readonly class="w-64" />
                                 </div>
                               </div>
                             </div>
@@ -1878,8 +1866,8 @@ async function submit() {
                         <!-- Valeurs finales -->
                         <div class="mb-6">
                           <div class="border-b">
-                            <div class="mb-4">
-                              <div class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            <div class="mb-4 w-full flex flex-wrap justify-center gap-4">
+                              <div class="flex flex-wrap justify-between gap-4">
                                 <div class="grid gap-6 mb-6 md:grid-cols-1">
                                   <BaseInput v-model="form.nbr_valeurVenaleLimeuble" id="nbr_valeurVenaleLimeuble" type="number" step="0.01" label="Valeur Vénale de l'immeuble" readonly class="w-64" />
                                 </div>
@@ -1931,3 +1919,175 @@ async function submit() {
     </div>
   </AuthenticatedLayout>
 </template>
+
+<style scoped>
+.sec-page {
+  overflow: hidden;
+  border: 1px solid rgba(230, 197, 162, 0.95);
+  border-radius: 1.15rem;
+  box-shadow: 0 18px 44px rgba(97, 49, 4, 0.1);
+}
+
+.sec-page > .bg-primary {
+  text-align: center;
+  background: linear-gradient(90deg, #613104, #8a4b12 55%, #a35200);
+}
+
+.sec-page > .bg-primary h1 {
+  font-size: 1.15rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.sec-form {
+  color: #3f2410;
+}
+
+.sec-form h1 {
+  display: inline-flex;
+  margin: 0 auto 0.5rem;
+  padding: 0.4rem 1rem;
+  border: 1px solid #e6c5a2;
+  border-radius: 999px;
+  background: #faefe6;
+  color: #613104;
+  font-size: 0.95rem;
+}
+
+.sec-form h5,
+.sec-form h6 {
+  margin: 1.6rem 0 0.8rem;
+  padding-left: 0.75rem;
+  border-left: 4px solid #a35200;
+  color: #613104;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.sec-form h6 {
+  border-left: 0;
+  padding-left: 0;
+  text-align: center;
+}
+
+.sec-form :deep(label) {
+  color: #613104;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.015em;
+}
+
+.sec-form :deep(input:not([type="checkbox"]):not([type="radio"]):not([type="file"])),
+.sec-form :deep(select),
+.sec-form :deep(textarea),
+.sec-form :deep(button[aria-expanded]) {
+  min-height: 2.15rem;
+  border: 1px solid #d9c7b2;
+  border-radius: 0.4rem;
+  background: #fff;
+  box-shadow: none;
+}
+
+.sec-form :deep(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus),
+.sec-form :deep(select:focus),
+.sec-form :deep(textarea:focus) {
+  border-color: #8a4b12;
+  box-shadow: none;
+  outline: none;
+}
+
+.sec-form :deep(input[readonly]) {
+  background: #f7efe6;
+  color: #613104;
+  font-weight: 650;
+}
+
+.sec-form ul.divide-x {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  padding: 0.4rem;
+  background: #faefe6;
+  border: 1px solid #e6c5a2;
+  border-radius: 0.95rem;
+}
+
+.sec-form ul.divide-x > li {
+  flex: 1 1 8.5rem;
+  width: auto;
+  border: 0 !important;
+}
+
+.sec-form ul.divide-x button {
+  border: 0 !important;
+  border-radius: 0.7rem !important;
+  padding: 0.72rem 0.55rem !important;
+  color: #643407 !important;
+  font-size: 0.84rem !important;
+  font-weight: 650;
+  background: transparent;
+}
+
+.sec-form ul.divide-x button.text-primary {
+  color: #fff !important;
+  background: #613104 !important;
+  box-shadow: 0 8px 16px rgba(97, 49, 4, 0.16);
+}
+
+.sec-form ul.divide-x button:hover {
+  background: #ffe5c5;
+}
+
+.sec-form button[type="button"]:not([aria-expanded]) {
+  height: 2.5rem;
+  padding: 0 1.05rem;
+  border-radius: 0.7rem;
+  color: #fff;
+  font-weight: 650;
+  background: linear-gradient(90deg, #613104, #a35200);
+  box-shadow: 0 8px 16px rgba(97, 49, 4, 0.16);
+}
+
+.sec-form .flex button[type="button"]:last-child:not(:only-child):not([aria-expanded]) {
+  color: #8a3414;
+  background: #fff;
+  border: 1px solid #e6c5a2;
+  box-shadow: none;
+}
+
+.sec-form .flex button[type="button"]:last-child:not(:only-child):not([aria-expanded]):hover {
+  background: #faefe6;
+}
+
+.sec-form .sec-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 0.65rem;
+  color: #fff;
+  background: #613104;
+  box-shadow: none;
+  transition: transform 0.2s ease;
+}
+
+.sec-form :deep(button[type="submit"]) {
+  width: 17rem;
+  height: 2.75rem;
+  border-radius: 0.8rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #613104, #a35200) !important;
+  box-shadow: 0 10px 22px rgba(97, 49, 4, 0.2) !important;
+}
+
+.sec-form .maz-py-4 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.75rem;
+}
+</style>

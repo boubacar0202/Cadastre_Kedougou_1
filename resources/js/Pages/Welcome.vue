@@ -89,9 +89,9 @@ const services = [
             <section class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:py-16">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-menu">
-                        Centre des services fiscaux
+                        Centre des services fiscaux de Kédougou
                     </p>
-                    <h1 class="mt-3 text-4xl font-bold leading-tight text-primary sm:text-5xl">
+                    <h1 class="mt-3 text-5xl font-bold leading-tight text-primary sm:text-5xl">
                         Cadastre de Kédougou
                     </h1>
                     <p class="mt-4 max-w-xl text-base leading-relaxed">
@@ -112,11 +112,11 @@ const services = [
                     </div>
                 </div>
 
-                <div class="relative h-44 overflow-hidden rounded-3xl border border-primary-only bg-white shadow-[0_18px_40px_rgba(97,49,4,0.12)] sm:h-56">
+                <div class="overflow-hidden rounded-3xl border border-primary-only bg-white shadow-[0_18px_40px_rgba(97,49,4,0.12)]">
                     <img
                         src="/pageAcceuil.jpg"
                         alt="Carte du Sénégal, région de Kédougou mise en évidence"
-                        class="absolute inset-x-0 top-0 w-full"
+                        class="h-auto w-full"
                     >
                 </div>
             </section>
@@ -146,7 +146,7 @@ const services = [
         </main>
 
         <footer class="border-t border-primary/20 bg-primary px-4 py-8 text-center text-sm text-primary-form">
-            <p class="font-semibold tracking-wide text-white">Centre des services fiscaux</p>
+            <p class="font-semibold tracking-wide text-white">Centre des services fiscaux de Kédougou</p>
             <p class="mt-1">Cadastre de Kédougou — Programme de gestion de base de données MB-1</p>
         </footer>
     </div>

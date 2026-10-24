@@ -21,7 +21,11 @@ const groupes = [
     { value: "secteur", label: "Secteur" },
     { value: "cours_amenagee", label: "Cours aménagée" },
     { value: "cloture", label: "Clôture" },
+    { value: "coefficient", label: "Coefficient" },
+    { value: "taux_locatif", label: "Taux locatif" },
 ];
+
+const groupesAvecType = ["batiment", "taux_locatif"];
 
 const typesBatiment = [
     { value: "Maison individuelle", label: "Maison individuelle" },
@@ -65,7 +69,7 @@ const lignesFiltrees = computed(() =>
 const submitForm = () => {
     form.transform((data) => ({
         ...data,
-        type: data.groupe === "batiment" ? data.type : "",
+        type: groupesAvecType.includes(data.groupe) ? data.type : "",
         actif: true,
         ordre: data.ordre === "" ? null : Number(data.ordre),
         prix: Number(data.prix),
@@ -86,7 +90,7 @@ const enregistrer = (ligne) => {
         route("parametre.bareme.update", ligne.id),
         {
             groupe: ligne.groupe,
-            type: ligne.groupe === "batiment" ? ligne.type : "",
+            type: groupesAvecType.includes(ligne.groupe) ? ligne.type : "",
             code: ligne.code,
             prix: Number(ligne.prix),
             ordre: Number(ligne.ordre),
@@ -156,13 +160,19 @@ const confirmerSuppression = async ({ adminCode } = {}) => {
                             <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-2">
                                 <BaseSelect v-model="form.groupe" label="Groupe" :options="groupes" />
                                 <BaseSelect
-                                    v-if="form.groupe === 'batiment'"
+                                    v-if="groupesAvecType.includes(form.groupe)"
                                     v-model="form.type"
                                     label="Type"
                                     :options="typesBatiment"
                                 />
                                 <BaseInput v-model="form.code" label="Code" type="text" />
-                                <BaseInput v-model="form.prix" label="Prix (FCFA)" type="number" min="0" />
+                                <BaseInput v-model="form.prix" label="Prix / valeur" type="number" min="0" step="any" />
+                                <p v-if="form.groupe === 'coefficient'" class="sm:col-span-6 text-sm text-primary-txt">
+                                    Codes utilisés par l'évaluation : tva, surface_utile, terrain_bati.
+                                </p>
+                                <p v-else-if="form.groupe === 'taux_locatif'" class="sm:col-span-6 text-sm text-primary-txt">
+                                    Le code reprend la catégorie du bâtiment. Le code defaut s'applique aux autres catégories.
+                                </p>
                                 <BaseInput v-model="form.ordre" label="Ordre" type="number" min="0" />
                                 <div class="sm:col-span-6 flex justify-center">
                                     <MazBtn
@@ -211,7 +221,7 @@ const confirmerSuppression = async ({ adminCode } = {}) => {
                                         <th class="px-3 py-2 text-xs text-primary font-bold text-center border bg-primary-only">Groupe</th>
                                         <th class="px-3 py-2 text-xs text-primary font-bold text-center border bg-primary-only">Type</th>
                                         <th class="px-3 py-2 text-xs text-primary font-bold text-center border bg-primary-only">Code</th>
-                                        <th class="px-3 py-2 text-xs text-primary font-bold text-center border bg-primary-only">Prix</th>
+                                        <th class="px-3 py-2 text-xs text-primary font-bold text-center border bg-primary-only">Prix / valeur</th>
                                         <th class="px-3 py-2 text-xs text-primary font-bold text-center border bg-primary-only">Ordre</th>
                                         <th class="px-3 py-2 text-xs text-primary font-bold text-center border bg-primary-only">Actif</th>
                                         <th class="px-3 py-2 text-xs text-primary font-bold text-center border bg-primary-only">Actions</th>
@@ -222,7 +232,7 @@ const confirmerSuppression = async ({ adminCode } = {}) => {
                                         <td class="px-2 py-2 border border-primary-only">{{ libelleGroupe(ligne.groupe) }}</td>
                                         <td class="px-2 py-2 border border-primary-only">
                                             <BaseSelect
-                                                v-if="ligne.groupe === 'batiment'"
+                                                v-if="groupesAvecType.includes(ligne.groupe)"
                                                 v-model="ligne.type"
                                                 :options="typesBatiment"
                                                 wrapper-class="w-full"
@@ -233,7 +243,7 @@ const confirmerSuppression = async ({ adminCode } = {}) => {
                                             <BaseInput v-model="ligne.code" type="text" input-class="text-center" wrapper-class="w-full" />
                                         </td>
                                         <td class="px-2 py-1 border border-primary-only">
-                                            <BaseInput v-model.number="ligne.prix" type="number" min="0" input-class="text-right" wrapper-class="w-full" />
+                                            <BaseInput v-model.number="ligne.prix" type="number" min="0" step="any" input-class="text-right" wrapper-class="w-full" />
                                         </td>
                                         <td class="px-2 py-1 border border-primary-only">
                                             <BaseInput v-model.number="ligne.ordre" type="number" min="0" input-class="text-center" wrapper-class="w-full" />

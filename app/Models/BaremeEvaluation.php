@@ -18,7 +18,7 @@ class BaremeEvaluation extends Model
     ];
 
     protected $casts = [
-        'prix' => 'integer',
+        'prix' => 'float',
         'ordre' => 'integer',
         'actif' => 'boolean',
     ];
@@ -30,5 +30,16 @@ class BaremeEvaluation extends Model
             ->orderBy('ordre')
             ->orderBy('id')
             ->get(['groupe', 'type', 'code', 'prix', 'ordre', 'actif']);
+    }
+
+    public static function coefficient(string $code, float $defaut): float
+    {
+        $prix = static::query()
+            ->where('actif', true)
+            ->where('groupe', 'coefficient')
+            ->where('code', $code)
+            ->value('prix');
+
+        return $prix === null ? $defaut : (float) $prix;
     }
 }

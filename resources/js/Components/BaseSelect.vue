@@ -93,7 +93,7 @@
         :aria-expanded="ouvert"
         :aria-label="label || placeholder || undefined"
         :class="[
-          'flex h-10 w-full items-center justify-between rounded-xl bg-white px-3.5 text-left text-base text-primary-txt',
+          'flex h-10 w-full items-center justify-between rounded-[0.8rem] bg-white px-3.5 text-left text-base text-primary-txt',
           'border border-gray-300 shadow-sm cursor-pointer',
           'transition-all duration-200 ease-in-out',
           'hover:border-gray-400 hover:shadow',
@@ -113,7 +113,7 @@
 
       <ul
         v-if="ouvert"
-        class="absolute left-0 right-0 top-full z-40 mt-1 max-h-64 overflow-y-auto rounded-xl border border-primary-only bg-white py-1 shadow-lg"
+        class="absolute left-0 right-0 top-full z-40 mt-1 max-h-64 overflow-y-auto rounded-[0.8rem] border border-primary-only bg-white py-1 shadow-lg"
         role="listbox"
       >
         <li v-for="option in normalizedOptions" :key="option.key">

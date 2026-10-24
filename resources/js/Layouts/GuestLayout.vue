@@ -17,7 +17,7 @@ onMounted(() => {
 
 <template>
     <div
-        class="h-screen w-screen flex items-center justify-center bg-center bg-cover overflow-hidden"
+        class="flex h-screen w-screen items-center justify-center overflow-hidden bg-primary-layout bg-contain bg-center bg-no-repeat"
         style="background-image: url('/pageAcceuil.jpg')"
     >
         <!-- Contenu centré -->

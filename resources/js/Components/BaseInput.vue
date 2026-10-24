@@ -89,7 +89,7 @@
         :accept="accept"
         :aria-label="label || placeholder || undefined"
         :class="[
-          'h-10 block w-full rounded-xl bg-white px-3.5 py-2 text-base text-primary-txt',
+          'h-10 block w-full rounded-[0.8rem] bg-white px-3.5 py-2 text-base text-primary-txt',
           $slots.append ? 'pr-10' : '',
           'border border-gray-300 shadow-sm',
           'transition-all duration-200 ease-in-out',
@@ -99,7 +99,7 @@
           'read-only:bg-gray-50 read-only:cursor-default read-only:focus:ring-0 read-only:focus:border-gray-300',
           'disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70',
           inputClass,
-          type === 'file' ? 'file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-form file:text-primary hover:file:bg-primary-only file:cursor-pointer cursor-pointer py-1.5' : '',
+          type === 'file' ? 'file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-primary-form file:text-primary hover:file:bg-primary-only file:cursor-pointer cursor-pointer py-1.5' : '',
           (error || customError)
             ? 'border-red-500 focus:ring-red-500/40 focus:border-red-500'
             : ''

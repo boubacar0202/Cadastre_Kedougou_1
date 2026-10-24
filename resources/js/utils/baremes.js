@@ -25,6 +25,55 @@ export function mapsFromBaremes(baremes = []) {
     };
 }
 
+export function valeurBareme(baremes = [], groupe, code, type = "") {
+    const row = actifs(baremes).find(
+        (bareme) => memeGroupe(bareme, groupe, type) && String(bareme.code) === String(code)
+    );
+
+    return row ? Number(row.prix) : null;
+}
+
+export function coefficientBareme(baremes = [], code, fallback) {
+    const valeur = valeurBareme(baremes, "coefficient", code);
+
+    return valeur === null ? fallback : valeur;
+}
+
+function tauxLocatifHistorique(type, code) {
+    const valeur = String(code);
+
+    if ((type === "Immeuble collectif" && valeur === "A") || (type === "Maison individuelle" && valeur === "1")) {
+        return 0.1344;
+    }
+
+    if (
+        (type === "Immeuble collectif" && ["B", "C"].includes(valeur))
+        || (type === "Maison individuelle" && ["2", "3"].includes(valeur))
+    ) {
+        return 0.12;
+    }
+
+    return 0.1;
+}
+
+export function tauxLocatifBareme(baremes = [], type, code) {
+    if (!type || code === "" || code === null || code === undefined) {
+        return 0;
+    }
+
+    const exact = valeurBareme(baremes, "taux_locatif", code, type);
+    if (exact !== null) {
+        return exact;
+    }
+
+    const defaut = valeurBareme(baremes, "taux_locatif", "defaut", type);
+    if (defaut !== null) {
+        return defaut;
+    }
+
+    return tauxLocatifHistorique(type, code);
+}
+
 export function baremeOptions(baremes = [], groupe, type = "", { numeric = false, withPrice = false } = {}) {
     return actifs(baremes)
         .filter((bareme) => memeGroupe(bareme, groupe, type))

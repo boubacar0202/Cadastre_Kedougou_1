@@ -8,7 +8,7 @@ import BaseSelect from '@/Components/BaseSelect.vue';
 import { Inertia } from '@inertiajs/inertia'
 import { useForm } from '@inertiajs/vue3';
 import { reactive, ref, watch, watchEffect, computed } from 'vue';
-import { baremeOptions, mapsFromBaremes } from '@/utils/baremes'; 
+import { baremeOptions, coefficientBareme, mapsFromBaremes, tauxLocatifBareme } from '@/utils/baremes'; 
 import DefaultLayout from "@/Layouts/DefaultLayout.vue"; 
 import { toast } from "@/Components/AppToast";  
 import axios from 'axios'
@@ -24,6 +24,9 @@ const props = defineProps({
 });
 
 const { categories, prixParSecteur, coeffCAValues, coeffCLValues } = mapsFromBaremes(props.baremes);
+const tauxTva = coefficientBareme(props.baremes, 'tva', 0.18);
+const coeffSurfaceUtile = coefficientBareme(props.baremes, 'surface_utile', 0.78);
+const coeffTerrainBati = coefficientBareme(props.baremes, 'terrain_bati', 0.5);
  
 const txt_num_dossier = ref('');  
 const formVisible = ref(false); 
@@ -368,7 +371,7 @@ const nbr_montantLoyerTotal = computed(() => {
 
 // Calculer TVA Total 
 const nbr_TVATotal = computed(() => {
-    return (nbr_montantLoyerTotal.value * 0.18).toFixed(2);
+    return (nbr_montantLoyerTotal.value * tauxTva).toFixed(2);
 });
 
 // Verification saisis txt_superficie_bati_sol 
@@ -407,7 +410,7 @@ function verifierSurfaceOccupant(occupant) {
 
 // Calcule nbr_surface_bati_solPR 
 watchEffect(() => {
-  const secteur = Number(form.slt_secteur);
+  const secteur = String(form.slt_secteur ?? '');
   form.nbr_prix_metre_carre = prixParSecteur[secteur] || 0;
 }); 
 
@@ -416,7 +419,7 @@ const nbr_valeur_terrain = computed(() => {
     const prix = parseFloat(form.nbr_prix_metre_carre) || 0;
     const bati = parseFloat(form.txt_superficie_bati_sol) || 0;
     const total = parseFloat(form.nbr_surface) || 0; 
-    return ((prix / 2) * bati + prix * (total - bati)).toFixed(2);
+    return ((prix * coeffTerrainBati) * bati + prix * (total - bati)).toFixed(2);
 }); 
 watchEffect(() => {
     form.nbr_valeur_terrain = nbr_valeur_terrain.value;
@@ -431,7 +434,7 @@ watchEffect(()  => {
 watchEffect(() => {
     const surfaceBS = parseFloat(form.nbr_surface_bati_solPR) || 0;
     const nbrNiveau = parseFloat(form.nbr_niveauPR) || 0;
-    form.nbr_surface_utilePR = (surfaceBS * nbrNiveau * 0.78).toFixed(2);
+    form.nbr_surface_utilePR = (surfaceBS * nbrNiveau * coeffSurfaceUtile).toFixed(2);
 });
 // Surface Corrigée PR
 watchEffect(() => { 
@@ -451,7 +454,7 @@ watchEffect(() => {
     form.occupantsBP.forEach((occupant) => {
         const surfaceBS = parseFloat(occupant.nbr_surface_bati_solTG) || 0;
         const nbrNiveau = parseFloat(occupant.nbr_niveauTG) || 0;
-        occupant.nbr_surface_utileTG = (surfaceBS * nbrNiveau * 0.78).toFixed(2);
+        occupant.nbr_surface_utileTG = (surfaceBS * nbrNiveau * coeffSurfaceUtile).toFixed(2);
     });
 });
 // Calcule Surface corrige 
@@ -486,7 +489,7 @@ watchEffect(() => {
 // calculer nbr_valeur_ca_total     
 watchEffect(() => {
     form.occupantsCA.forEach((occupant) => {
-        const categorie = Number(occupant.slt_categorie_ca_total) || 0;
+        const categorie = String(occupant.slt_categorie_ca_total ?? '');
         const prixMetre = coeffCAValues[categorie] || 0;  
         const surfaceCA = parseFloat(occupant.nbr_surface_ca_total) || 0;
         const coeffCA = parseFloat(occupant.nbr_coefficient_ca_total) || 0;
@@ -510,7 +513,7 @@ watchEffect(() => {
 // calculer nbr_valeur_clo  
 watchEffect(() => {
     form.occupantsCL.forEach((occupant) => {
-        const categorieCL = Number(occupant.slt_categorie_clo) || 0;
+        const categorieCL = String(occupant.slt_categorie_clo ?? '');
         const prixmetrecarreCL = coeffCLValues[categorieCL] || 0; 
 
         const lineaire = parseFloat(occupant.nbr_longueur_avant_clo) || 0;
@@ -569,26 +572,12 @@ watchEffect(() => {
     form.nbr_valeurVenaleLimeuble = nbr_valeurVenaleLimeuble.value;
 });
  
-// Calculer tauxValeurLocative
-const isPrincipalSelected = computed(() => form.txt_dependant_domainePR = 'Principale');
-const tauxValeurLocative = computed(() => {
-    if (!isPrincipalSelected.value) return 0;
-
-    const type = currentCat.value || form.currentCat;
-    const code = String(form.slt_categoriePR || "");
-
-    if ((type === "Immeuble collectif" && code === "A") || (type === "Maison individuelle" && code === "1")) {
-        return 0.1344;
-    }
-    if ((type === "Immeuble collectif" && ["B", "C"].includes(code)) || (type === "Maison individuelle" && ["2", "3"].includes(code))) {
-        return 0.12;
-    }
-    return 0.10;
-});
+const tauxValeurLocative = computed(() =>
+    tauxLocatifBareme(props.baremes, currentCat.value || form.currentCat, form.slt_categoriePR)
+);
 
 // valeur locative
 const nbr_valeurLocative = computed(() => {
-    if (!isPrincipalSelected.value) return 0; 
     const valeurVenale = parseFloat(form.nbr_valeurVenaleLimeuble) || 0;
     const taux = tauxValeurLocative.value;
    // return valeurVenale * taux;
@@ -1055,9 +1044,9 @@ const submitForm = async () => {
                                                             <BaseSelect v-model="occupant.slt_cours_amenager_clo" label="Clôture" :name="`cloture_${i}`" :options="designationsClotures" placeholder="Choisir" />
                                                             <BaseInput label="Linéaire" type="number" :name="`lineaire_clo_${i}`" v-model="occupant.nbr_longueur_avant_clo" />
                                                             <BaseSelect v-model="occupant.slt_categorie_clo" label="Catégorie" :name="`categorie_clo_${i}`" :options="categoriesCloture" placeholder="CAT" />
-                                                            <BaseInput label="Prix / mL" type="number" :name="`prix_clo_${i}`" v-model="occupant.nbr_prix_metre_carre_clo" />
+                                                            <BaseInput label="Prix / mL" type="number" :name="`prix_clo_${i}`" readonly v-model="occupant.nbr_prix_metre_carre_clo" />
                                                             <BaseSelect v-model="occupant.nbr_coefficient_clo" label="Coefficient" :name="`coeff_clo_${i}`" :options="coefficientsCloture" placeholder="Coeff" />
-                                                            <BaseInput label="Valeur" type="number" :name="`valeur_clo_${i}`" v-model="occupant.nbr_valeur_clo" />
+                                                            <BaseInput label="Valeur" type="number" :name="`valeur_clo_${i}`" readonly v-model="occupant.nbr_valeur_clo" />
                                                         </div>
                                                     </div>
                                                     
@@ -1098,7 +1087,7 @@ const submitForm = async () => {
                                                             <BaseInput label="Valeur unitaire" type="number" :name="`valeur_unitaire_am_${i}`" v-model="occupant.nbr_valeur_unitaire_am" />
                                                             <BaseInput label="Quantité" type="number" :name="`quantite_am_${i}`" v-model="occupant.nbr_quantile_am" />
                                                             <BaseSelect v-model="occupant.slt_coeficien_am" label="Coefficient" :name="`coeff_am_${i}`" :options="coefficientsAvecUn" placeholder="Coeff" />
-                                                            <BaseInput label="Valeur" type="number" :name="`valeur_am_${i}`" v-model="occupant.nbr_valeur_am" />
+                                                            <BaseInput label="Valeur" type="number" :name="`valeur_am_${i}`" readonly v-model="occupant.nbr_valeur_am" />
                                                         </div>
                                                     </div>
                                                 </TransitionGroup>
