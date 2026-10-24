@@ -492,7 +492,7 @@ const submitForm = function () {
         <div class="py-12">
             <div class="flex justify-center">
                 <div class="w-full max-w-8xl px-2 py-2">
-                    <div class="bg-white shadow-md rounded-xl"> 
+                    <div class="sec-page bg-white shadow-md rounded-xl"> 
                         <div class="p-4 border-b bg-primary flex items-center justify-between rounded-t-xl gap-2">
                             <h2 class="text-2xl leading-tight text-white font-bold">Formulaire de saisie des dossiers</h2>
 
@@ -501,10 +501,7 @@ const submitForm = function () {
                                     type="button" 
                                     no-shadow 
                                     no-hover-effect
-                                    class="inline-flex items-center justify-center gap-2 w-36 h-9 px-4 rounded-lg shadow-md text-primary-txt font-bold 
-                                        leading-tight bg-gradient-to-r from-primary-only via-primary-only to-primary-dark transition duration-200 hover:brightness-110 
-                                        hover:-translate-y-0.5 hover:shadow-lg hover:cursor-pointer hover:font-bold hover:text-primary-only focus:outline-none 
-                                        focus:ring-2 focus:ring-white/70 active:translate-y-0 rounded-xl"
+                                    class="sec-verify"
                                     size="medium"
                                     @click="verifierDossier"
                                 >
@@ -512,7 +509,7 @@ const submitForm = function () {
                                 </MazBtn>
                             </div> 
                         </div> 
-                        <form class="space-y-4" autocomplete="on" @submit.prevent="submitForm">
+                        <form class="sec-form space-y-4" autocomplete="on" @submit.prevent="submitForm">
                             <div class="p-6"> 
                                 <div class="flex items-center justify-between mb-2">
                                     <h5 class="text-lg text-primary-txt font-bold">
@@ -776,7 +773,7 @@ const submitForm = function () {
                                         Réferences Cadastrales
                                     </h5> 
                                 </div>
-                                <div class="mb-6">
+                                <div class="sec-simple mb-6">
                                     <!-- Nature Juridique -->
                                     <div class="sm:col-span-2">
                                         <label for="slt_dependant_domaine" class="block font-medium text-primary-txt">
@@ -817,9 +814,7 @@ const submitForm = function () {
                                                 /> 
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <br/>
+                                    </div> 
                                     <!-- Section Terrain Immatriculé -->
                                     <div v-if="activeTab === 'Terrain Immatriculé'" class="maz-py-4">
                                         <br>
@@ -924,8 +919,7 @@ const submitForm = function () {
                                                 {value: 'Etat', label: 'Etat'},
                                             ]"
                                         /> 
-                                    </div>
-                                    <br>
+                                    </div> 
                                     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
                                         <!-- Personne Physique -->
                                         <BaseInput 
@@ -1223,3 +1217,103 @@ const submitForm = function () {
         </div>
     </AuthenticatedLayout>
 </template>
+
+<style scoped>
+.sec-page {
+  overflow: hidden;
+  border: 1px solid rgba(230, 197, 162, 0.95);
+  border-radius: 1.15rem;
+  box-shadow: 0 18px 44px rgba(97, 49, 4, 0.1);
+}
+
+.sec-page > .bg-primary {
+  background: linear-gradient(90deg, #613104, #8a4b12 55%, #a35200);
+}
+
+.sec-page > .bg-primary h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.sec-verify {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 8.5rem;
+  height: 2.4rem;
+  border-radius: 0.7rem;
+  color: #613104;
+  font-weight: 700;
+  background: #fff;
+  box-shadow: none;
+}
+
+.sec-verify:hover {
+  background: #faefe6;
+}
+
+.sec-form {
+  color: #3f2410;
+}
+
+.sec-form h5 {
+  margin: 1.35rem 0 0.75rem;
+  padding-left: 0.75rem;
+  border-left: 4px solid #a35200;
+  color: #613104;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.sec-form :deep(label) {
+  color: #613104;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.015em;
+}
+
+.sec-form :deep(input:not([type="checkbox"]):not([type="radio"]):not([type="file"])),
+.sec-form :deep(select),
+.sec-form :deep(textarea),
+.sec-form :deep(button[aria-expanded]) {
+  min-height: 2.15rem;
+  border: 1px solid #d9c7b2;
+  border-radius: 0.4rem;
+  background: #fff;
+  box-shadow: none;
+}
+
+.sec-form :deep(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus),
+.sec-form :deep(select:focus),
+.sec-form :deep(textarea:focus) {
+  border-color: #8a4b12;
+  box-shadow: none;
+  outline: none;
+}
+
+.sec-form :deep(input[readonly]) {
+  background: #f7efe6;
+  color: #613104;
+  font-weight: 650;
+}
+
+.sec-form :deep(button[type="submit"]) {
+  width: 17rem;
+  height: 2.75rem;
+  border-radius: 0.8rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #613104, #a35200) !important;
+  box-shadow: 0 10px 22px rgba(97, 49, 4, 0.2) !important;
+}
+
+.sec-form .maz-py-4,
+.sec-form div.mt-2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: center;
+}
+
+</style>

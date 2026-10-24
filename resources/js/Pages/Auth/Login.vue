@@ -44,44 +44,44 @@ onMounted(() => {
         <link rel="icon" sizes="512x512" href="/logo-01.png">
     </Head>
 
-    <div class="min-h-screen bg-primary-layout text-primary-txt">
+    <div class="flex min-h-screen flex-col bg-primary-layout text-primary-txt">
         <div class="h-1.5 bg-gradient-to-r from-primary via-primary-menu to-primary-only"></div>
 
-        <header class="border-b border-primary-only/80 bg-white/90">
+        <header class="sticky top-0 z-20 border-b border-primary-only/80 bg-white/90 backdrop-blur-md">
             <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
                 <Link href="/" class="shrink-0">
                     <img
                         src="/logo.jpg"
                         alt="Direction Générale des Impôts et des Domaines"
-                        class="h-12 w-auto sm:h-14"
+                        class="h-12 w-auto sm:h-16"
                     >
                 </Link>
                 <Link
                     href="/"
-                    class="text-sm font-semibold text-primary transition hover:text-primary-dark"
+                    class="inline-flex shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold text-primary transition hover:bg-primary-form"
                 >
                     Retour à l'accueil
                 </Link>
             </div>
         </header>
 
-        <main class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-2 lg:py-16">
+        <main class="mx-auto grid w-full max-w-6xl flex-1 content-center gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(20rem,26rem)] lg:items-center lg:gap-12 lg:py-12">
             <section class="hidden lg:block">
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-menu">
-                    Centre des services fiscaux
+                    Centre des services fiscaux de Kédougou
                 </p>
-                <h1 class="mt-3 text-4xl font-bold leading-tight text-primary">
+                <h1 class="mt-3 text-4xl font-bold leading-tight text-primary sm:text-5xl">
                     Cadastre de Kédougou
                 </h1>
-                <p class="mt-4 max-w-md text-base leading-relaxed">
+                <p class="mt-4 max-w-xl text-base leading-relaxed">
                     Connectez-vous pour enregistrer les dossiers, suivre les courriers
                     et consulter la matrice cadastrale.
                 </p>
-                <div class="relative mt-8 h-44 overflow-hidden rounded-3xl border border-primary-only bg-white shadow-[0_18px_40px_rgba(97,49,4,0.12)]">
+                <div class="mt-6 aspect-[2.5/1] overflow-hidden rounded-3xl border border-primary-only bg-white shadow-[0_18px_40px_rgba(97,49,4,0.12)] sm:mt-8">
                     <img
-                        src="/pageAcceuil.jpg"
-                        alt="Carte du Sénégal, région de Kédougou mise en évidence"
-                        class="absolute inset-x-0 top-0 w-full"
+                        src="/pageAcceuil.jpg?v=kedougou"
+                        alt="Carte du Sénégal, arrondissement de Kédougou dans la région de Kédougou"
+                        class="h-full w-full object-cover object-top"
                     >
                 </div>
             </section>
@@ -169,5 +169,10 @@ onMounted(() => {
                 </form>
             </section>
         </main>
+ 
+        <footer class="mt-auto border-t border-primary/20 bg-primary px-4 py-8 text-center text-sm text-primary-form">
+            <p class="font-semibold tracking-wide text-white">Centre des services fiscaux de Kédougou</p>
+            <p class="mt-1">Cadastre de Kédougou — Programme de gestion de base de données MB-1</p>
+        </footer>
     </div>
 </template>

@@ -41,12 +41,23 @@ class BaremeEvaluationSeeder extends Seeder
         $cours = ['1' => 17500, '2' => 13500, '3' => 10500, '4' => 5000];
         $clotures = ['1' => 48269, '2' => 35105, '3' => 28084, '4' => 25744, '5' => 11848, '6' => 4209, '7' => 853];
 
+        $coefficients = [
+            'tva' => 0.18,
+            'surface_utile' => 0.78,
+            'terrain_bati' => 0.5,
+        ];
+        $tauxMaison = ['1' => 0.1344, '2' => 0.12, '3' => 0.12, 'defaut' => 0.1];
+        $tauxImmeuble = ['A' => 0.1344, 'B' => 0.12, 'C' => 0.12, 'defaut' => 0.1];
+
         return array_merge(
             $this->groupe('batiment', 'Maison individuelle', $maison),
             $this->groupe('batiment', 'Immeuble collectif', $immeuble),
             $this->groupe('secteur', '', $secteurs),
             $this->groupe('cours_amenagee', '', $cours),
             $this->groupe('cloture', '', $clotures),
+            $this->groupe('coefficient', '', $coefficients),
+            $this->groupe('taux_locatif', 'Maison individuelle', $tauxMaison),
+            $this->groupe('taux_locatif', 'Immeuble collectif', $tauxImmeuble),
         );
     }
 

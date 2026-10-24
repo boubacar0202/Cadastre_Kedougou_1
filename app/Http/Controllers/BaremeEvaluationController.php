@@ -68,7 +68,9 @@ class BaremeEvaluationController extends Controller
     private function valider(Request $request, ?BaremeEvaluation $bareme = null): array
     {
         $groupe = $request->input('groupe');
-        $type = $groupe === 'batiment' ? trim((string) $request->input('type', '')) : '';
+        $type = in_array($groupe, ['batiment', 'taux_locatif'], true)
+            ? trim((string) $request->input('type', ''))
+            : '';
 
         $request->merge([
             'type' => $type === '' ? null : $type,
@@ -83,14 +85,14 @@ class BaremeEvaluationController extends Controller
         }
 
         $validated = $request->validate([
-            'groupe' => ['required', Rule::in(['batiment', 'secteur', 'cours_amenagee', 'cloture'])],
+            'groupe' => ['required', Rule::in(['batiment', 'secteur', 'cours_amenagee', 'cloture', 'coefficient', 'taux_locatif'])],
             'type' => [
                 'nullable',
-                Rule::requiredIf($groupe === 'batiment'),
+                Rule::requiredIf(in_array($groupe, ['batiment', 'taux_locatif'], true)),
                 Rule::in(['Maison individuelle', 'Immeuble collectif']),
             ],
             'code' => ['required', 'string', 'max:20', $unique],
-            'prix' => ['required', 'integer', 'min:0'],
+            'prix' => ['required', 'numeric', 'min:0'],
             'ordre' => ['nullable', 'integer', 'min:0', 'max:999'],
             'actif' => ['required', 'boolean'],
         ], [
@@ -99,7 +101,7 @@ class BaremeEvaluationController extends Controller
             'code.required' => 'Le code est requis.',
             'code.unique' => 'Ce code existe déjà pour ce groupe.',
             'prix.required' => 'Le prix est requis.',
-            'prix.integer' => 'Le prix doit être un nombre entier.',
+            'prix.numeric' => 'Le prix doit être un nombre.',
             'prix.min' => 'Le prix ne peut pas être négatif.',
         ]);
 
