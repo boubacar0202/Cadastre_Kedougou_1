@@ -150,7 +150,7 @@ const categoriePMOptions = [
   { value: 'Industrie', label: 'Industrie' },
   { value: 'Restaurant', label: 'Restaurant' },
   { value: 'Hotel', label: 'Hotel' },
-  { value: 'Hauberge', label: 'Hauberge' },
+  { value: 'Auberge', label: 'Auberge' },
   { value: 'Elevage', label: 'Elevage' },
   { value: 'Agrobusiness', label: 'Agrobusiness' },
   { value: 'Epicerie', label: 'Epicerie' },
@@ -200,7 +200,7 @@ const categoriePMOptionsMutation = [
   { value: 'Industrie', label: 'Industrie' },
   { value: 'Restaurant', label: 'Restaurant' },
   { value: 'Hotel', label: 'Hotel' },
-  { value: 'Hauberge', label: 'Hauberge' },
+  { value: 'Auberge', label: 'Auberge' },
   { value: 'Elevage', label: 'Elevage' },
   { value: 'Agrobusiness', label: 'Agrobusiness' },
   { value: 'Epicerie', label: 'Epicerie' },
@@ -980,13 +980,19 @@ watchEffect(() => {
 
 // Surfaces
 watchEffect(() => {
-  const bati = Number(form.txt_superficie_bati_sol);
+  const brutBati = String(form.txt_superficie_bati_sol ?? "").replace(",", ".");
+  const partiesBati = brutBati.split(".");
+  if (partiesBati.length === 2 && partiesBati[1].length > 2) {
+    form.txt_superficie_bati_sol = `${partiesBati[0]}.${partiesBati[1].slice(0, 2)}`;
+    return;
+  }
+  const bati = Number(brutBati);
   const surfacebatiSolPR = Number(form.nbr_surface_bati_solPR);
   const surface = Number(form.nbr_surface);
   form.txt_superficie_non_bati = (surface - bati).toFixed(2);
   if (bati > surface) {
     toast.error("Surface bâtie dépasse la superficie terrain.");
-    form.txt_superficie_bati_sol = surface;
+    form.txt_superficie_bati_sol = arrondirDeuxDecimales(surface);
   }
   if (surfacebatiSolPR > bati) {
     toast.error("Surface bâtiment Principal dépasse la Superficie Bati.");
@@ -1069,7 +1075,8 @@ watchEffect(() => {
 });
 const txt_valeur_terrain_bati = computed(() => {
   const valeurPR = parseFloat(form.nbr_valeurPR) || 0;
-  return form.occupantsBP.reduce((total, occupant) => total + (parseFloat(occupant.nbr_valeurTG) || 0) + valeurPR, 0);
+  const annexes = form.occupantsBP.reduce((total, occupant) => total + (parseFloat(occupant.nbr_valeurTG) || 0), 0);
+  return arrondirDeuxDecimales(valeurPR + annexes);
 });
 watchEffect(() => {
   form.txt_valeur_terrain_bati = txt_valeur_terrain_bati.value;
@@ -1127,17 +1134,21 @@ watchEffect(() => {
 
 // Valeur vénale et locative
 const nbr_valeurVenaleLimeuble = computed(() => {
-  const terrain = parseFloat(txt_valeur_terrain_bati.value) || 0;
+  const sol = parseFloat(form.nbr_valeur_terrain) || 0;
+  const bati = parseFloat(txt_valeur_terrain_bati.value) || 0;
   const ca = parseFloat(nbr_valeur_total_ca.value) || 0;
   const clotur = parseFloat(nbr_valeur_total_clotur.value) || 0;
   const ap = parseFloat(nbr_valeur_totale_ap.value) || 0;
-  return terrain + ca + clotur + ap;
+  return arrondirDeuxDecimales(sol + bati + ca + clotur + ap);
 });
 watchEffect(() => {
   form.nbr_valeurVenaleLimeuble = nbr_valeurVenaleLimeuble.value;
 });
 
-const isPrincipalSelected = computed(() => form.txt_dependant_domainePR === "Principale");
+const isPrincipalSelected = computed(() => {
+  const batiment = String(form.txt_dependant_domainePR || "").trim().toLowerCase();
+  return batiment === "primaire" || batiment === "principale";
+});
 const tauxValeurLocative = computed(() => {
   if (!isPrincipalSelected.value) return 0;
   const type = form.currentCat;
@@ -1148,9 +1159,8 @@ const tauxValeurLocative = computed(() => {
 });
 const nbr_valeurLocative = computed(() => {
   if (!isPrincipalSelected.value) return 0;
-  const valeurVenale = parseFloat(form.nbr_valeurVenaleLimeuble) || 0;
-  const taux = tauxValeurLocative.value;
-  return valeurVenale * taux;
+  const valeurVenale = parseFloat(nbr_valeurVenaleLimeuble.value) || 0;
+  return arrondirDeuxDecimales(valeurVenale * tauxValeurLocative.value);
 });
 watchEffect(() => {
   form.nbr_valeurLocative = nbr_valeurLocative.value;
@@ -1209,13 +1219,13 @@ async function submit() {
             const pdfFormMutation = new FormData();
             pdfFormMutation.append("fichierPDFMutation", form.fichierPDFMutation);
 
-            await axios.post(
+            const { data } = await axios.post(
                 route("secretariat.uploadPDFMutation", terrain.id),
                 pdfFormMutation,
                 { headers: { "Content-Type": "multipart/form-data" } }
             );
 
-            form.fichierPDFMutation = null; // ✅ reset
+            form.fichierPDFMutation = data.path;
         }
 
         // 3. Vérification titulaire
@@ -1618,7 +1628,7 @@ async function submit() {
                                 <BaseInput v-model="form.txt_superficie_totale" id="txt_superficie_totale" type="number" label="Superficie Totale Terrain" readonly />
                               </div>
                               <div class="sm:col-span-2">
-                                <BaseInput v-model="form.txt_superficie_bati_sol" id="Superficie_bati_sol" type="number" label="Superficie Bâti au sol" min="0" :max="form.nbr_surface" />
+                                <BaseInput v-model="form.txt_superficie_bati_sol" id="Superficie_bati_sol" type="number" step="0.01" label="Superficie Bâti au sol" min="0" :max="form.nbr_surface" />
                               </div>
                               <div class="sm:col-span-2">
                                 <BaseInput v-model="form.txt_superficie_non_bati" id="Superficie_non_bati" type="number" label="Superficie Non Bâti" readonly />

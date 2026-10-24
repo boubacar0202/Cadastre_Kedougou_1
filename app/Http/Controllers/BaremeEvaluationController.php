@@ -46,11 +46,7 @@ class BaremeEvaluationController extends Controller
             'code' => 'required|string',
         ]);
 
-        $code = CodeAcces::where('id', 1)
-            ->where('code', $request->code)
-            ->first();
-
-        if (! $code) {
+        if (! CodeAcces::confirme(1, (string) $request->input('code'))) {
             return response()->json([
                 'success' => false,
                 'message' => "Code d'accès est invalide. Contacter l'administrateur !",

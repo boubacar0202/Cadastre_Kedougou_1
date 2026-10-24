@@ -98,7 +98,9 @@ class ShapefileController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {
-            return back()->withErrors(['shp' => 'Erreur lecture : ' . $e->getMessage()]);
+            report($e);
+
+            return back()->withErrors(['shp' => 'Le fichier shapefile n’a pas pu être lu.']);
         }
 
         $features = $geojson['features'];
@@ -159,7 +161,9 @@ class ShapefileController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Erreur lecture : ' . $e->getMessage()], 422);
+            report($e);
+
+            return response()->json(['message' => 'Le fichier shapefile n’a pas pu être lu.'], 422);
         }
     }
 
@@ -245,9 +249,7 @@ class ShapefileController extends Controller
 
         if (!file_exists($path)) {
             return response()->json([
-                'error'     => 'Fichier introuvable',
-                'path'      => $path,
-                'nom_table' => $shapefile->nom_table,
+                'error' => 'Fichier introuvable',
             ], 404);
         }
 
@@ -268,11 +270,7 @@ class ShapefileController extends Controller
             'code' => 'required|string',
         ]);
 
-        $code = CodeAcces::where('id', 3)
-            ->where('code', $request->input('code'))
-            ->first();
-
-        if (!$code) {
+        if (! CodeAcces::confirme(3, (string) $request->input('code'))) {
             return response()->json([
                 'success' => false,
                 'message' => 'Code d’accès invalide. Contacter l’administrateur !',

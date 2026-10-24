@@ -22,11 +22,7 @@ class TerrainController extends Controller
                 ], 422);
             }
 
-            $code = CodeAcces::where('id', 3)
-                ->where('code', $request->input('code'))
-                ->first();
-
-            if (!$code) {
+            if (! CodeAcces::confirme(3, (string) $request->input('code'))) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Code d\'accès invalide.'
@@ -63,15 +59,19 @@ class TerrainController extends Controller
                 'message' => 'Terrain supprimé avec succès.'
             ]);
   
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            throw $e;
         } catch (\Throwable $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
-            
+            report($e);
+
             return redirect()->route('donnee.create')->with([
                 'success' => false,
                 'message' => 'Erreur serveur lors de la suppression.',
-                'error' => $e->getMessage() // utile en dev
-            ], 500);
+            ]);
  
 
         }

@@ -492,6 +492,21 @@ class SecretariatController extends Controller
 
         return response()->json(['success' => true, 'path' => $path]);
     }
+
+    public function uploadPDFMutation(Request $request, Terrain $terrain)
+    {
+        $request->validate([
+            'fichierPDFMutation' => 'required|file|mimes:pdf|max:122880',
+        ], [
+            'fichierPDFMutation.required' => 'Le fichier PDF de la mutation est obligatoire.',
+            'fichierPDFMutation.mimes' => 'Le fichier doit être au format PDF.',
+            'fichierPDFMutation.max' => 'La taille du fichier ne doit pas dépasser 120 Mo.',
+        ]);
+
+        $path = $request->file('fichierPDFMutation')->store('mutations', 'public');
+
+        return response()->json(['success' => true, 'path' => $path]);
+    }
   
     // Mise à jour d'un terrain
     public function update(Request $request, $id)
@@ -717,10 +732,10 @@ class SecretariatController extends Controller
             // 🎯 Mapping : [champ BDD mutation => clé request]
             $mutationData = [
                 // Références
-                'txt_numeroMutation'          => $terrain->dossier?->txt_num_dossier,
+                'txt_numeroMutation'          => $terrain->dossier?->txt_num_dossier ?: '',
                 'txt_nicadMutation'           => $terrain->txt_nicad,
-                'txt_num_lotissementMutation' => $terrain->txt_num_lotissement,
-                'txt_lotissementMutation'     => $terrain->txt_lotissement,
+                'txt_num_lotissementMutation' => $request->input('txt_num_lotissement') ?: ($terrain->txt_num_lotissement ?: ''),
+                'txt_lotissementMutation'     => $request->input('txt_lotissement') ?: ($terrain->txt_lotissement ?: ($terrain->txt_HorsLotissement ?: '')),
 
                 // Ancien titulaire (champs normaux, suffixe MT)
                 'slt_titulaireMT'             => $request->input('slt_titulaire'),
@@ -799,8 +814,11 @@ class SecretariatController extends Controller
             ];
 
             // Gestion PDF mutation
+            $cheminMutation = $request->input('fichierPDFMutation');
             if ($request->hasFile('fichierPDFMutation') && $request->file('fichierPDFMutation')->isValid()) {
                 $mutationData['fichierPDFMutation'] = $request->file('fichierPDFMutation')->store('mutations', 'public');
+            } elseif (is_string($cheminMutation) && preg_match('#^mutations/[A-Za-z0-9_\-.]+$#', $cheminMutation) && Storage::disk('public')->exists($cheminMutation)) {
+                $mutationData['fichierPDFMutation'] = $cheminMutation;
             } else {
                 $mutationData['fichierPDFMutation'] = null;
             }

@@ -122,11 +122,7 @@ class ParametreController extends Controller
         ]);
 
         // Vérifier le code
-        $code = CodeAcces::where('id', 3)
-                        ->where('code', $request->code)
-                        ->first();
-
-        if (!$code) {
+        if (! CodeAcces::confirme(3, (string) $request->input('code'))) {
             return response()->json([
                 'success' => false,
                 'message' => 'Code d’accès invalide. Contacter l’administrateur !'
@@ -295,11 +291,7 @@ class ParametreController extends Controller
         ]);
 
         // Chercher un code spécifique (par exemple id = 3)
-        $code = CodeAcces::where('id', 3)
-                        ->where('code', $request->code)
-                        ->first();
-
-        if (!$code) {
+        if (! CodeAcces::confirme(3, (string) $request->input('code'))) {
             return response()->json([
                 'success' => false,
                 'message' => 'Code d’accès estinvalide. Contacter l’administrateur !'
@@ -327,8 +319,7 @@ class ParametreController extends Controller
 
     private function compteProtege(User $user): bool
     {
-        return (int) $user->id === 4
-            && strcasecmp(trim((string) $user->email), 'mbengueboubacar095@gmail.com') === 0;
+        return $user->estProtege();
     }
 
     public function adminEdit($id)
@@ -491,11 +482,7 @@ class ParametreController extends Controller
         ]);
 
         // Vérifier le code
-        $code = CodeAcces::where('id', 3)
-                        ->where('code', $request->code)
-                        ->first();
-
-        if (!$code) {
+        if (! CodeAcces::confirme(3, (string) $request->input('code'))) {
             return response()->json([
                 'success' => false,
                 'message' => 'Code d’accès invalide. Contacter l’administrateur !'
@@ -1373,11 +1360,7 @@ class ParametreController extends Controller
             'code' => 'required|string',
         ]);
 
-        $code = CodeAcces::where('id', 3)
-            ->where('code', $request->code)
-            ->first();
-
-        if (!$code) {
+        if (! CodeAcces::confirme(3, (string) $request->input('code'))) {
             return response()->json([
                 'success' => false,
                 'message' => 'Code d’accès invalide. Contacter l’administrateur !',
@@ -1471,11 +1454,7 @@ class ParametreController extends Controller
             'code' => 'required|string',
         ]);
 
-        $code = CodeAcces::where('id', 3)
-            ->where('code', $request->code)
-            ->first();
-
-        if (! $code) {
+        if (! CodeAcces::confirme(3, (string) $request->input('code'))) {
             return response()->json([
                 'success' => false,
                 'message' => 'Code d’accès invalide. Contacter l’administrateur !',

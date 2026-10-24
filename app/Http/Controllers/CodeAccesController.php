@@ -7,70 +7,54 @@ use Illuminate\Http\Request;
 
 class CodeAccesController extends Controller
 {
-    //
     public function verify(Request $request)
     {
         $request->validate([
-            'code' => 'required|string'
+            'code' => 'required|string|max:100',
         ]);
 
-        $code = CodeAcces::where('code', $request->code)->first();
-
-        if ($code) {
-            // ✅ Marquer comme utilisé 
-            $code->save();
-
+        if (CodeAcces::confirme(null, (string) $request->input('code'))) {
             return response()->json([
                 'exists' => true,
-                'success' => 'Code confirmé.'
+                'success' => 'Code confirmé.',
             ]);
         }
 
         return response()->json([
             'exists' => false,
-            'error' => 'Code invalide.'
+            'error' => 'Code invalide.',
         ]);
     }
 
     public function verifyLotissement(Request $request)
     {
         $request->validate([
-            'code' => 'required|string'
+            'code' => 'required|string|max:100',
         ]);
 
-        $code = CodeAcces::where('id', 3)
-                        ->where('code', $request->code)
-                        ->first();
- 
-        if ($code) {
-            // ✅ Marquer comme utilisé 
-            $code->save();
-
+        if (CodeAcces::confirme(3, (string) $request->input('code'))) {
             return response()->json([
                 'exists' => true,
-                'success' => 'Code confirmé.'
+                'success' => 'Code confirmé.',
             ]);
         }
 
         return response()->json([
             'exists' => false,
-            'error' => 'Code invalide.'
+            'error' => 'Code invalide.',
         ]);
     }
- 
-    // verifier point
+
     public function verifyPoint(Request $request)
     {
-        $request->validate(['code' => 'required|string']);
+        $request->validate([
+            'code' => 'required|string|max:100',
+        ]);
 
-        $code = CodeAcces::where('code', $request->code)->first();
-
-        if (!$code) {
+        if (! CodeAcces::confirme(null, (string) $request->input('code'))) {
             return response()->json(['exists' => false, 'error' => 'Code invalide.']);
-        } 
+        }
 
         return response()->json(['exists' => true, 'success' => 'Code confirmé.']);
     }
-
-
 }

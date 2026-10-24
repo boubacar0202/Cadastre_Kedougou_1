@@ -138,6 +138,7 @@ Route::middleware('auth')->group(function () {
     // ✅ Vérifier Nicad
     Route::get('/verifier-nicad/{nicad}', [GeometreController::class, 'verifierNicad']);  
     Route::post('/secretariat/{terrain}/upload-pdf', [SecretariatController::class, 'uploadPDF'])->name('secretariat.uploadPDF');
+    Route::post('/secretariat/{terrain}/upload-pdf-mutation', [SecretariatController::class, 'uploadPDFMutation'])->name('secretariat.uploadPDFMutation');
     
     // ✅ Terrain
     Route::post('/terrain/delete/{id}', [TerrainController::class, 'destroyTerrain'])->name('terrain.destroyTerrain');

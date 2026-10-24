@@ -23,7 +23,7 @@ class MessageController extends Controller
 
     public function create()
     {
-        $users = User::where('id', '!=', Auth::id())->get();
+        $users = User::where('id', '!=', Auth::id())->get(['id', 'name']);
 
         return Inertia::render('message/create', [
             'authUser' => Auth::user(),
@@ -70,7 +70,7 @@ class MessageController extends Controller
         // Retourne la page Inertia
         return Inertia::render('message/create', [
             'messages' => $messages,
-            'withUser' => $otherUser,
+            'withUser' => $otherUser->only(['id', 'name']),
             'authUser' => Auth::user(),
 
         ]);
@@ -172,13 +172,16 @@ class MessageController extends Controller
         $authUserId = Auth::id();
 
         $users = User::where('id', '!=', $authUserId)
-            ->get()
-            ->map(function($user) use ($authUserId) {
-                $user->unread_count = Message::where('sender_id', $user->id)
-                                            ->where('receiver_id', $authUserId)
-                                            ->where('is_read', false) // ou read_at
-                                            ->count();
-                return $user;
+            ->get(['id', 'name'])
+            ->map(function ($user) use ($authUserId) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'unread_count' => Message::where('sender_id', $user->id)
+                        ->where('receiver_id', $authUserId)
+                        ->where('is_read', false)
+                        ->count(),
+                ];
             });
 
         return response()->json($users);

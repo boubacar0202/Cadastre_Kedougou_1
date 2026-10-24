@@ -52,6 +52,12 @@ class User extends Authenticatable
     /**
      * Ramène un libellé saisi (admin, Administrateur, utilisateur…) à la valeur stockée.
      */
+    public function estProtege(): bool
+    {
+        return (int) $this->id === 4
+            && strcasecmp(trim((string) $this->email), 'mbengueboubacar095@gmail.com') === 0;
+    }
+
     public static function normalizeRole(mixed $role): string
     {
         $value = strtolower(trim((string) $role));

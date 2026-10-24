@@ -292,11 +292,11 @@ const confirmerSuppressionUtilisateur = async ({ adminCode } = {}) => {
                                                 class="sticky top-0 z-10 text-primary-txt text-center uppercase bg-primary-form bg-gray-50 dark:bg-gray-700 dark:text-primary-txt whitespace-nowrap"
                                             >
                                                 <tr class="h-10  text-sm text-white text-center font-semibold">
-                                                    <th class="px-2 py-2 border bg-primary font-bold">N°</th>
-                                                    <th class="px-2 py-2 border bg-primary font-bold">Prénom & Nom</th>
-                                                    <th class="px-2 py-2 border bg-primary font-bold">Email</th> 
-                                                    <th class="px-2 py-2 border bg-primary font-bold">Rôle</th>
-                                                    <th class="px-2 py-2 border bg-primary-only font-bold">ACTIONS</th>
+                                                    <th class="px-2 py-2 border text-white bg-primary font-bold">N°</th>
+                                                    <th class="px-2 py-2 border text-white bg-primary font-bold">Prénom & Nom</th>
+                                                    <th class="px-2 py-2 border text-white bg-primary font-bold">Email</th> 
+                                                    <th class="px-2 py-2 border text-white bg-primary font-bold">Rôle</th>
+                                                    <th class="px-2 py-2 border text-white bg-primary-only font-bold">ACTIONS</th>
                                                 </tr>
                                             </thead>
 

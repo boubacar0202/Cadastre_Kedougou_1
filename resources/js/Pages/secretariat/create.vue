@@ -1056,7 +1056,7 @@ const submitForm = function () {
                                                 {value: 'Industrie', label: 'Industrie'},
                                                 {value: 'Restaurant', label: 'Restaurant'},
                                                 {value: 'Hotel', label: 'Hotel'},
-                                                {value: 'Hauberge', label: 'Hauberge'},
+                                                {value: 'Auberge', label: 'Auberge'},
                                                 {value: 'Elevage', label: 'Elevage'},
                                                 {value: 'Agrobusiness', label: 'Agrobusiness'},
                                                 {value: 'Epicerie', label: 'Epicerie'},

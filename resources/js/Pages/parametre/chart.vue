@@ -617,13 +617,13 @@ watchEffect((onInvalidate) => {
             </header>
 
             <section class="stat-grid">
-                <article class="stat-card stat-card--orange">
-                    <p class="stat-label">Délimitation</p>
-                    <p class="stat-value text-orange-600">{{ stats.dossiers_delimitation || 0 }}</p>
-                </article>
                 <article class="stat-card stat-card--teal">
                     <p class="stat-label">Extrait de plan</p>
                     <p class="stat-value text-teal-600">{{ stats.dossiers_extrait_plan || 0 }}</p>
+                </article>
+                <article class="stat-card stat-card--orange">
+                    <p class="stat-label">Délimitation</p>
+                    <p class="stat-value text-orange-600">{{ stats.dossiers_delimitation || 0 }}</p>
                 </article>
                 <article class="stat-card stat-card--brown">
                     <p class="stat-label">Implantation</p>

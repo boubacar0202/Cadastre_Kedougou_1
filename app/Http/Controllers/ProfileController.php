@@ -29,13 +29,21 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $utilisateur = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($utilisateur->estProtege() && $request->validated('email') !== $utilisateur->email) {
+            return Redirect::route('profile.edit')->withErrors([
+                'email' => 'L’adresse de ce compte protégé ne peut pas être modifiée.',
+            ]);
         }
 
-        $request->user()->save();
+        $utilisateur->fill($request->validated());
+
+        if ($utilisateur->isDirty('email')) {
+            $utilisateur->email_verified_at = null;
+        }
+
+        $utilisateur->save();
 
         return Redirect::route('profile.edit');
     }
@@ -50,6 +58,12 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+
+        if ($user->estProtege()) {
+            return Redirect::route('profile.edit')->withErrors([
+                'password' => 'Ce compte est protégé et ne peut pas être supprimé.',
+            ]);
+        }
 
         Auth::logout();
 
