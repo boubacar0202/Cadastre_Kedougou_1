@@ -274,6 +274,7 @@ const coefficientOptions = [
   { value: '0.60', label: '0.6' },
   { value: '0.70', label: '0.7' },
   { value: '0.80', label: '0.8' },
+  { value: '0.90', label: '0.9' },
 ]
 
 const coefficientAPOptions = [
@@ -1653,7 +1654,7 @@ async function submit() {
                                   <div class="sm:col-span-8">
                                     <div class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="form.txt_dependant_domainePR" label="Bâtiment" readonly class="w-36" />
+                                        <BaseInput v-model="form.txt_dependant_domainePR" label="Bâtiment" readonly class="w-40" />
                                       </div>
                                       <div class="sm:col-span-2">
                                         <BaseSelect
@@ -1666,25 +1667,25 @@ async function submit() {
                                           :options="categorieImmeubleOptions" class="w-20" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="form.nbr_prix_metre_carrePR" label="Prix m²" type="number" readonly class="w-24" />
+                                        <BaseInput v-model="form.nbr_prix_metre_carrePR" label="Prix m²" type="number" readonly class="w-28 " />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="form.nbr_surface_bati_solPR" label="Surf B S" type="number" class="w-24" />
+                                        <BaseInput v-model="form.nbr_surface_bati_solPR" label="Surf B S" type="number" class="w-28" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="form.nbr_niveauPR" label="Niveau" type="number" class="w-24" />
+                                        <BaseInput v-model="form.nbr_niveauPR" label="Niveau" type="number" class="w-28" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="form.nbr_surface_utilePR" label="Surf Utile" type="number" readonly class="w-24" />
+                                        <BaseInput v-model="form.nbr_surface_utilePR" label="Surf Utile" type="number" readonly class="w-28" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseSelect v-model="form.slt_coeffPR" id="slt_coeffPR" label="Coeff" :options="coefficientOptions" class="w-24" />
+                                        <BaseSelect v-model="form.slt_coeffPR" id="slt_coeffPR" label="Coeff" :options="coefficientOptions" class="w-28" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="form.nbr_surface_corrigerPR" label="S.Corrigee" type="number" readonly class="w-24" />
+                                        <BaseInput v-model="form.nbr_surface_corrigerPR" label="S.Corrigee" type="number" readonly class="w-28" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="form.nbr_valeurPR" label="Valeur" type="number" step="0.01" readonly class="w-28" />
+                                        <BaseInput v-model="form.nbr_valeurPR" label="Valeur" type="number" step="0.01" readonly class="w-40" />
                                       </div>
                                     </div>
                                   </div>
@@ -1697,7 +1698,7 @@ async function submit() {
                                   <div v-for="(occupant, i) in form.occupantsBP" :key="occupant.id || i" class="sm:col-span-8">
                                     <div class="flex grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
                                       <div class="sm:col-span-1">
-                                        <BaseSelect v-model="occupant.slt_dependant_domaineTG" id="slt_dependant_domaineTG" label="Bâtiment" :options="batimentSecondaireOptions" class="w-36" />
+                                        <BaseSelect v-model="occupant.slt_dependant_domaineTG" id="slt_dependant_domaineTG" label="Bâtiment" class="w-40" :options="batimentSecondaireOptions"/>
                                       </div>
                                       <div class="sm:col-span-2">
                                         <BaseSelect
@@ -1710,25 +1711,25 @@ async function submit() {
                                           :options="categorieImmeubleOptions" class="w-20" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_prix_metre_carreTG" label="Prix m²" type="number" readonly class="w-24" />
+                                        <BaseInput v-model="occupant.nbr_prix_metre_carreTG" label="Prix m²" type="number" readonly class="w-28" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_surface_bati_solTG" label="Surf B S" type="number" class="w-24" />
+                                        <BaseInput v-model="occupant.nbr_surface_bati_solTG" label="Surf B S" type="number" class="w-28" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_niveauTG" label="Niveau" type="number" class="w-24" />
+                                        <BaseInput v-model="occupant.nbr_niveauTG" label="Niveau" type="number" class="w-28" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_surface_utileTG" label="Surf Utile" type="number" readonly class="w-24" />
+                                        <BaseInput v-model="occupant.nbr_surface_utileTG" label="Surf Utile" type="number" readonly class="w-28" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseSelect v-model="occupant.slt_coeffTG" id="slt_coeffTG" label="Coeff" :options="coefficientOptions" class="w-24" />
+                                        <BaseSelect v-model="occupant.slt_coeffTG" id="slt_coeffTG" label="Coeff" :options="coefficientOptions" class="w-28" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_surface_corrigerTG" label="S.Corrigee" type="number" readonly class="w-24" />
+                                        <BaseInput v-model="occupant.nbr_surface_corrigerTG" label="S.Corrigee" type="number" readonly class="w-28" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_valeurTG" label="Valeur" type="number" step="0.01" readonly class="w-28"
+                                        <BaseInput v-model="occupant.nbr_valeurTG" label="Valeur" type="number" step="0.01" readonly class="w-40"
                                           @blur="() => arrondirDeuxDecimales(occupant.nbr_valeurTG)" />
                                       </div>
                                     </div>
@@ -1762,7 +1763,7 @@ async function submit() {
                                         <BaseSelect v-model="occupant.slt_categorie_ca_total" id="slt_categorie_ca_total" label="Catégorie" :options="categorieCAOptions" class="w-20" />
                                       </div>
                                       <div class="sm:col-span-1">
-                                        <BaseInput v-model="occupant.nbr_prix_metre_carre_ca_total" id="nbr_prix_metre_carre_ca_total" label="P/m²" type="number" readonly class="w-20" />
+                                        <BaseInput v-model="occupant.nbr_prix_metre_carre_ca_total" id="nbr_prix_metre_carre_ca_total" label="P/m²" type="number" readonly class="w-28" />
                                       </div>
                                       <div class="sm:col-span-1">
                                         <BaseSelect v-model="occupant.nbr_coefficient_ca_total" id="nbr_coefficient_ca_total" label="Coefficient" :options="coefficientOptions" class="w-20" />
@@ -2024,16 +2025,16 @@ async function submit() {
   border: 0 !important;
   border-radius: 0.7rem !important;
   padding: 0.72rem 0.55rem !important;
-  color: #643407 !important;
+  color: #ffffff !important;
   font-size: 0.84rem !important;
   font-weight: 650;
   background: transparent;
 }
 
 .sec-form ul.divide-x button.text-primary {
-  color: #fff !important;
-  background: #613104 !important;
-  box-shadow: 0 8px 16px rgba(97, 49, 4, 0.16);
+  color: #ffffff !important;
+  background: #693300 !important;
+  box-shadow: 0 8px 16px rgba(255, 226, 199, 0.16);
 }
 
 .sec-form ul.divide-x button:hover {
@@ -2044,16 +2045,16 @@ async function submit() {
   height: 2.5rem;
   padding: 0 1.05rem;
   border-radius: 0.7rem;
-  color: #fff;
+  color: #794400;
   font-weight: 650;
-  background: linear-gradient(90deg, #613104, #a35200);
+  background: linear-gradient(90deg, #f1b072, #ffc286);
   box-shadow: 0 8px 16px rgba(97, 49, 4, 0.16);
 }
 
 .sec-form .flex button[type="button"]:last-child:not(:only-child):not([aria-expanded]) {
   color: #8a3414;
   background: #fff;
-  border: 1px solid #e6c5a2;
+  border: 1px solid #683600;
   box-shadow: none;
 }
 
