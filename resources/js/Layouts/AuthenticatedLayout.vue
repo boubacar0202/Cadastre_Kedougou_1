@@ -10,6 +10,19 @@ import { route } from 'ziggy-js'
 const page = usePage();
 const user = computed(() => page.props.auth?.user);
 const isAdmin = computed(() => user.value?.role === 'admin');
+const profilMenu = ref(null);
+const initiales = computed(() => {
+    const parts = String(user.value?.name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    return parts.slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('');
+});
+const roleLibelle = computed(() => {
+    const role = String(user.value?.role || '').trim().toLowerCase();
+    if (role === 'admin') return 'Administrateur';
+    if (role === 'user' || role === 'utilisateur') return 'Utilisateur';
+    if (!role) return 'Agent';
+    return role.charAt(0).toUpperCase() + role.slice(1);
+});
 const isMenuOpen = ref((() => {
     if (typeof window === 'undefined' || window.innerWidth < 768) return false;
     const saved = localStorage.getItem('menuOpen');
@@ -129,6 +142,8 @@ onMounted(() => {
     
     // Mettre à jour toutes les 3 secondes (plus réactif)
     intervalUnread = setInterval(fetchUnreadTotal, 3000);
+    document.addEventListener('pointerdown', fermerProfilSiDehors);
+    document.addEventListener('keydown', onProfilKey);
 });
 
 // Nettoyer l'intervalle
@@ -136,6 +151,8 @@ onUnmounted(() => {
     if (intervalUnread) {
         clearInterval(intervalUnread);
     }
+    document.removeEventListener('pointerdown', fermerProfilSiDehors);
+    document.removeEventListener('keydown', onProfilKey);
 });
 
 // Surveille la largeur d'écran
@@ -163,6 +180,20 @@ function onNavClick(event) {
     if (event.target.closest('a')) {
         isMenuOpen.value = false
     }
+}
+
+function fermerProfil() {
+    showingNavigationDropdown.value = false
+}
+
+function fermerProfilSiDehors(event) {
+    if (!profilMenu.value?.contains(event.target)) {
+        showingNavigationDropdown.value = false
+    }
+}
+
+function onProfilKey(event) {
+    if (event.key === 'Escape') showingNavigationDropdown.value = false
 }
 
 // Garde l’état du menu après rafraîchissement
@@ -569,23 +600,27 @@ onUnmounted(() => {
                     <slot name="header" />
                 </div>
 
-                <!-- User Dropdown -->
-                <div class="relative shrink-0">
-                    <button 
+                <div ref="profilMenu" class="profil-menu-root relative shrink-0">
+                    <button
+                        type="button"
+                        class="profil-trigger"
+                        :aria-expanded="showingNavigationDropdown"
+                        aria-haspopup="menu"
                         @click="showingNavigationDropdown = !showingNavigationDropdown"
-                        class="flex items-center gap-3 px-4 py-2 bg-primary text-white rounded-xl shadow hover:bg-primary-dark transition"
                     >
-                        <div class="w-8 h-8 flex items-center justify-center rounded-full bg-white text-primary font-bold">
-                            {{ user?.name?.charAt(0).toUpperCase() }}
-                        </div>
-                        <span class="font-medium">{{ user?.name }}</span>
+                        <span class="profil-avatar" aria-hidden="true">{{ initiales }}</span>
+                        <span class="profil-identite">
+                            <span class="profil-nom">{{ user?.name }}</span>
+                            <span class="profil-role">{{ roleLibelle }}</span>
+                        </span>
                         <svg
-                            class="w-4 h-4 transition-transform duration-300"
-                            :class="{ 'rotate-180': showingNavigationDropdown }"
+                            class="profil-chevron"
+                            :class="{ 'is-open': showingNavigationDropdown }"
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
+                            aria-hidden="true"
                         >
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                         </svg>
@@ -599,37 +634,48 @@ onUnmounted(() => {
                         leave-from-class="opacity-100 scale-100 translate-y-0"
                         leave-to-class="opacity-0 scale-95 translate-y-1"
                     >
-                        <div
-                            v-if="showingNavigationDropdown"
-                            class="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50"
-                        >
-                            <div class="px-4 py-3 bg-gray-50 border-b">
-                                <p class="text-sm text-primary-txt">Connecté en tant que</p>
-                                <p class="font-semibold text-primary-txt truncate">{{ user?.name }}</p>
+                        <div v-if="showingNavigationDropdown" class="profil-panel" role="menu">
+                            <div class="profil-panel-head">
+                                <span class="profil-avatar profil-avatar-lg" aria-hidden="true">{{ initiales }}</span>
+                                <div class="min-w-0">
+                                    <p class="profil-panel-kicker">Session en cours</p>
+                                    <p class="profil-panel-nom">{{ user?.name }}</p>
+                                    <p class="profil-panel-email">{{ user?.email }}</p>
+                                    <span class="profil-badge">{{ roleLibelle }}</span>
+                                </div>
                             </div>
 
-                            <div class="py-2">
+                            <div class="profil-panel-actions">
                                 <Link
                                     :href="route('profile.edit')"
-                                    class="flex items-center gap-2 w-full px-4 py-2 text-sm text-primary-txt hover:bg-primary-form transition"
+                                    class="profil-action"
+                                    role="menuitem"
+                                    @click="fermerProfil"
                                 >
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                                         <circle cx="12" cy="8" r="3.2" stroke-width="1.8"/>
                                         <path d="M5 19.5c.8-3.2 3.2-5 7-5s6.2 1.8 7 5" stroke-width="1.8" stroke-linecap="round"/>
                                     </svg>
-                                    Profil
+                                    <span>
+                                        <strong>Profil</strong>
+                                        <small>Identité et mot de passe</small>
+                                    </span>
                                 </Link>
                                 <Link
                                     :href="route('logout')"
                                     method="post"
                                     as="button"
-                                    class="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                                    class="profil-action profil-action-danger"
+                                    role="menuitem"
                                 >
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
                                             d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1m0-10V7" />
                                     </svg>
-                                    Déconnexion
+                                    <span>
+                                        <strong>Déconnexion</strong>
+                                        <small>Quitter la session</small>
+                                    </span>
                                 </Link>
                             </div>
                         </div>
@@ -737,5 +783,210 @@ onUnmounted(() => {
 
 .animate-pulse {
     animation: pulse 1.5s ease-in-out infinite;
+}
+
+.profil-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    max-width: 16rem;
+    height: 3rem;
+    padding: 0.3rem 0.7rem 0.3rem 0.35rem;
+    border: 1px solid #ead9c6;
+    border-radius: 999px;
+    background: #fff;
+    color: #613104;
+    box-shadow: 0 8px 20px rgba(97, 49, 4, 0.08);
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.profil-trigger:hover,
+.profil-trigger[aria-expanded="true"] {
+    border-color: #c7812e;
+    box-shadow: 0 10px 24px rgba(97, 49, 4, 0.14);
+}
+
+.profil-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.15rem;
+    height: 2.15rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: linear-gradient(145deg, #8a4b12, #613104);
+    color: #fff !important;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.profil-avatar-lg {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 0.9rem;
+}
+
+.profil-identite {
+    display: none;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.15;
+}
+
+.profil-nom,
+.profil-panel-nom {
+    max-width: 9.5rem;
+    overflow: hidden;
+    color: #613104 !important;
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profil-role {
+    color: rgba(97, 49, 4, 0.62) !important;
+    font-size: 0.68rem !important;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.profil-chevron {
+    width: 0.95rem;
+    height: 0.95rem;
+    flex-shrink: 0;
+    color: #a35200;
+    transition: transform 0.2s ease;
+}
+
+.profil-chevron.is-open {
+    transform: rotate(180deg);
+}
+
+.profil-panel {
+    position: absolute;
+    right: 0;
+    z-index: 50;
+    width: 18.5rem;
+    margin-top: 0.7rem;
+    overflow: hidden;
+    border: 1px solid #ead9c6;
+    border-radius: 1.15rem;
+    background: #fff;
+    box-shadow: 0 22px 48px rgba(97, 49, 4, 0.16);
+    transform-origin: top right;
+}
+
+.profil-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1rem;
+    background: linear-gradient(180deg, #fff8f1 0%, #faefe6 100%);
+    border-bottom: 1px solid #ead9c6;
+}
+
+.profil-panel-kicker,
+.profil-panel-email {
+    margin: 0 !important;
+    color: rgba(97, 49, 4, 0.68) !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    line-height: 1.35 !important;
+}
+
+.profil-panel-nom {
+    max-width: 12rem;
+    margin: 0.1rem 0 !important;
+}
+
+.profil-panel-email {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profil-badge {
+    display: inline-flex;
+    margin-top: 0.4rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: #fff;
+    color: #613104 !important;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    box-shadow: inset 0 0 0 1px #e6c5a2;
+}
+
+.profil-panel-actions {
+    display: flex;
+    flex-direction: column;
+    padding: 0.4rem;
+}
+
+.profil-action {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.65rem 0.7rem;
+    border: 0;
+    border-radius: 0.85rem;
+    background: transparent;
+    color: #613104;
+    text-align: left;
+    cursor: pointer;
+}
+
+.profil-action svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex-shrink: 0;
+}
+
+.profil-action span {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.profil-action strong {
+    font-size: 0.84rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.profil-action small {
+    color: rgba(97, 49, 4, 0.62);
+    font-size: 0.72rem;
+    line-height: 1.3;
+}
+
+.profil-action:hover {
+    background: #fff4e8;
+}
+
+.profil-action-danger {
+    color: #9f1239;
+}
+
+.profil-action-danger small {
+    color: rgba(159, 18, 57, 0.72);
+}
+
+.profil-action-danger:hover {
+    background: #fff1f2;
+}
+
+@media (min-width: 640px) {
+    .profil-identite {
+        display: flex;
+    }
 }
 </style>

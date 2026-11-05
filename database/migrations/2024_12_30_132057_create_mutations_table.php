@@ -50,6 +50,7 @@ return new class extends Migration
 
             // État (titulaire) — sans accent
             $table->text('slt_etablissementPA_MT')->nullable();
+            $table->text('txt_nomEtablissementPA_MT')->nullable();
             $table->text('txt_personneResponsablePA_MT')->nullable();
             $table->text('txt_fonctionResponsablePA_MT')->nullable();
             $table->text('txt_telephonePA_MT')->nullable();
@@ -93,6 +94,7 @@ return new class extends Migration
 
             // État (acquéreur) — sans accent
             $table->text('slt_etablissementPA_Mutation')->nullable();
+            $table->text('txt_nomEtablissementPA_Mutation')->nullable();
             $table->text('txt_personneResponsablePA_Mutation')->nullable();
             $table->text('txt_fonctionResponsablePA_Mutation')->nullable();
             $table->text('txt_telephonePA_Mutation')->nullable();

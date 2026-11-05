@@ -45,6 +45,7 @@ class Mutation extends Model
 
         // État (titulaire) — NOM SANS ACCENT
         'slt_etablissementPA_MT',
+        'txt_nomEtablissementPA_MT',
         'txt_personneResponsablePA_MT',
         'txt_fonctionResponsablePA_MT',
         'txt_telephonePA_MT',
@@ -88,6 +89,7 @@ class Mutation extends Model
 
         // État (acquéreur) — NOM SANS ACCENT
         'slt_etablissementPA_Mutation',
+        'txt_nomEtablissementPA_Mutation',
         'txt_personneResponsablePA_Mutation',
         'txt_fonctionResponsablePA_Mutation',
         'txt_telephonePA_Mutation',

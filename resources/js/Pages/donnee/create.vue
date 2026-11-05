@@ -28,6 +28,10 @@ const props = defineProps({
         type: Array,
         default: () => []
     },
+    uniqueEtablissements: {
+        type: Array,
+        default: () => []
+    },
     totalGeneral: {
         type: Number,
         default: 0
@@ -48,7 +52,8 @@ const filters = ref({
     annee: props.filters.annee || '',
     numero: props.filters.numero || '',
     prenomNom: props.filters.prenomNom || '',
-    refServiceRendu: props.filters.refServiceRendu || ''
+    refEtablissement: props.filters.refEtablissement || '',
+    refServiceRendu: props.filters.refServiceRendu || '',
 });
 
 const showDeleteModal = ref(false);
@@ -186,7 +191,8 @@ const resetFilters = () => {
         annee: '',
         numero: '',
         prenomNom: '',
-        refServiceRendu: ''
+        refServiceRendu: '',
+        refEtablissement: ''
     };
 };
 
@@ -307,10 +313,16 @@ function telephoneRepresentant(titulaire) {
                                 </span>
                             </div>
                             <div class="flex flex-wrap items-center gap-2">
-                                <BaseInput v-model="filters.mois" type="number" min="1" max="12" placeholder="Mois" wrapper-class="w-20" />
-                                <BaseInput v-model="filters.annee" type="number" min="2000" max="2100" placeholder="Année" wrapper-class="w-24" />
-                                <BaseInput v-model="filters.numero" type="text" placeholder="N° dossier" wrapper-class="w-32" />
-                                <BaseInput v-model="filters.prenomNom" type="text" placeholder="Prénom Nom" wrapper-class="w-40" />
+                                <BaseInput v-model="filters.mois" type="number" min="1" max="12" placeholder="Mois" wrapper-class="w-20"/>
+                                <BaseInput v-model="filters.annee" type="number" min="2000" max="2100" placeholder="Année" wrapper-class="w-24"/>
+                                <BaseInput v-model="filters.numero" type="text" placeholder="N° dossier" wrapper-class="w-32"/>
+                                <BaseInput v-model="filters.prenomNom" type="text" placeholder="Prénom Nom" wrapper-class="w-40"/> 
+                                <BaseSelect
+                                    v-model="filters.refEtablissement"
+                                    :options="uniqueEtablissements"
+                                    placeholder="Tous les établissements"
+                                    wrapper-class="w-44"
+                                />
                                 <BaseSelect
                                     v-model="filters.refServiceRendu"
                                     :options="uniqueServices"
@@ -445,7 +457,7 @@ function telephoneRepresentant(titulaire) {
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.slt_titulaire || '' }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.txt_nationalite || '' }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.slt_civilite || '' }}</td>
-                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.txt_prenom || '' }} {{ terrain.titulaire?.txt_denominationPM || '' }} {{ terrain.titulaire?.txt_nom || '' }}</td>
+                                            <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.txt_prenom || '' }} {{ terrain.titulaire?.txt_nom || '' }} {{ terrain.titulaire?.txt_denominationPM || '' }} {{ terrain.titulaire?.txt_nomEtablissementPA || '' }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.slt_piece || '' }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ terrain.titulaire?.txt_numPiece || '' }}</td>
                                             <td class="px-2 py-1 text-xs border whitespace-nowrap">{{ formatDate(terrain.titulaire?.dt_date_delivrance) || '' }}</td>

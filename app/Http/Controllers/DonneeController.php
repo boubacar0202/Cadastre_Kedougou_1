@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Terrain;
 use App\Models\Dossier;
+use App\Models\Titulaire;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -72,7 +73,8 @@ class DonneeController extends Controller
                         $q->where(function($subQ) use ($term) {
                             $subQ->where('txt_prenom', 'like', $term)
                                 ->orWhere('txt_nom', 'like', $term)
-                                ->orWhere('txt_denominationPM', 'like', $term);
+                                ->orWhere('txt_denominationPM', 'like', $term)
+                                ->orWhere('txt_nomEtablissementPA', 'like', $term);
                         });
                     }
                 } else {
@@ -82,6 +84,7 @@ class DonneeController extends Controller
                         $subQ->where('txt_prenom', 'like', $term)
                             ->orWhere('txt_nom', 'like', $term)
                             ->orWhere('txt_denominationPM', 'like', $term)
+                            ->orWhere('txt_nomEtablissementPA', 'like', $term)
                             // Recherche sur le nom complet
                             ->orWhere(DB::raw("CONCAT_WS(' ', txt_prenom, txt_nom)"), 'like', $term);
                     });
@@ -92,6 +95,11 @@ class DonneeController extends Controller
         if ($request->filled('refServiceRendu')) {
             $query->whereHas('dossier', function($q) use ($request) {
                 $q->where('slt_service_rendu', $request->refServiceRendu);
+            });
+        }
+        if ($request->filled('refEtablissement')) {
+            $query->whereHas('titulaire', function($q) use ($request) {
+                $q->where('slt_etablissementPA', $request->refEtablissement);
             });
         }
         // Pagination
@@ -116,12 +124,25 @@ class DonneeController extends Controller
                 ->toArray();
         });
 
+        // Récupération des établissements uniques (slt_etablissementPA)
+        $uniqueEtablissements = Cache::remember('unique_etablissements_donnee', 3600, function () {
+            return Titulaire::query()
+                ->whereNotNull('slt_etablissementPA')
+                ->where('slt_etablissementPA', '!=', '')
+                ->distinct()
+                ->orderBy('slt_etablissementPA')
+                ->pluck('slt_etablissementPA')
+                ->values()
+                ->all();
+        });
+
         return Inertia::render('donnee/create', [
             'terrains' => $terrains,
             'uniqueServices' => $uniqueServices,
+            'uniqueEtablissements' => $uniqueEtablissements,
             'totalGeneral' => $totalGeneral, 
             'terrainsSansNicad' => $terrainsSansNicad,
-            'filters' => $request->only(['mois', 'annee', 'numero', 'prenomNom', 'refServiceRendu'])
+            'filters' => $request->only(['mois', 'annee', 'numero', 'prenomNom', 'refServiceRendu', 'refEtablissement'])
         ]);
     }
 

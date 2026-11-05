@@ -40,6 +40,7 @@ return new class extends Migration
             $table->string('txt_adressePM')->nullable(); 
                 // Personne morale
             $table->string('slt_etablissementPA')->nullable();
+            $table->string('txt_nomEtablissementPA')->nullable();
             $table->string('txt_personneResponsablePA')->nullable();
             $table->string('txt_fonctionResponsablePA')->nullable();
             $table->string('txt_telephonePA')->nullable();

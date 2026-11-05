@@ -279,6 +279,7 @@ class SecretariatController extends Controller
             'txt_adressePM' => 'nullable|string',
 
             'slt_etablissementPA' => 'nullable|string',
+            'txt_nomEtablissementPA' => 'nullable|string',
             'txt_personneResponsablePA' => 'nullable|string',
             'txt_fonctionResponsablePA' => 'nullable|string',
             'txt_telephonePA' => 'nullable|string',
@@ -428,6 +429,7 @@ class SecretariatController extends Controller
                 'txt_adressePM' => $validated['txt_adressePM'] ?? null,
 
                 'slt_etablissementPA' => $validated['slt_etablissementPA'] ?? null,
+                'txt_nomEtablissementPA' => $validated['txt_nomEtablissementPA'] ?? null,
                 'txt_personneResponsablePA' => $validated['txt_personneResponsablePA'] ?? null,
                 'txt_fonctionResponsablePA' => $validated['txt_fonctionResponsablePA'] ?? null,
                 'txt_telephonePA' => $validated['txt_telephonePA'] ?? null,
@@ -652,6 +654,7 @@ class SecretariatController extends Controller
                 'txt_emailPM'                   => $titulaireExistant->txt_emailPM,
                 'txt_adressePM'                 => $titulaireExistant->txt_adressePM,
                 'slt_etablissementPA'           => $titulaireExistant->slt_etablissementPA,
+                'txt_nomEtablissementPA'        => $titulaireExistant->txt_nomEtablissementPA,
                 'txt_personneResponsablePA'     => $titulaireExistant->txt_personneResponsablePA,
                 'txt_fonctionResponsablePA'     => $titulaireExistant->txt_fonctionResponsablePA,
                 'txt_telephonePA'               => $titulaireExistant->txt_telephonePA,
@@ -691,6 +694,7 @@ class SecretariatController extends Controller
                 'txt_emailPM'                 => 'txt_emailPM',
                 'txt_adressePM'               => 'txt_adressePM',
                 'slt_etablissementPA'         => 'slt_etablissementPA',
+                'txt_nomEtablissementPA'      => 'txt_nomEtablissementPA',
                 'txt_personneResponsablePA'   => 'txt_personneResponsablePA',
                 'txt_fonctionResponsablePA'   => 'txt_fonctionResponsablePA',
                 'txt_telephonePA'             => 'txt_telephonePA',
@@ -766,6 +770,7 @@ class SecretariatController extends Controller
 
                 // Personne morale (ancien titulaire)
                 'slt_etablissementPA_MT'      => $request->input('slt_etablissementPA'),
+                'txt_nomEtablissementPA_MT'   => $request->input('txt_nomEtablissementPA'),
                 'txt_personneResponsablePA_MT'=> $request->input('txt_personneResponsablePA'),
                 'txt_fonctionResponsablePA_MT'=> $request->input('txt_fonctionResponsablePA'),
                 'txt_telephonePA_MT'          => $request->input('txt_telephonePA'),
@@ -806,6 +811,7 @@ class SecretariatController extends Controller
 
                 // Personne morale (acquéreur)
                 'slt_etablissementPA_Mutation'=> $request->input('slt_etablissementPA_Mutation'),
+                'txt_nomEtablissementPA_Mutation' => $request->input('txt_nomEtablissementPA_Mutation'),
                 'txt_personneResponsablePA_Mutation' => $request->input('txt_personneResponsablePA_Mutation'),
                 'txt_fonctionResponsablePA_Mutation' => $request->input('txt_fonctionResponsablePA_Mutation'),
                 'txt_telephonePA_Mutation'    => $request->input('txt_telephonePA_Mutation'),

@@ -48,7 +48,19 @@
     normalizedOptions.value.find((option) => String(option.value) === String(props.modelValue ?? ""))
   )
 
-  const libelleAffiche = computed(() => optionChoisie.value?.label || props.placeholder || "Sélectionner")
+  const libelleAffiche = computed(() => {
+    if (optionChoisie.value?.label != null && optionChoisie.value.label !== "") {
+      return optionChoisie.value.label
+    }
+    if (props.modelValue !== null && props.modelValue !== undefined && String(props.modelValue) !== "") {
+      return String(props.modelValue)
+    }
+    return props.placeholder || "Sélectionner"
+  })
+
+  const aUneValeur = computed(() =>
+    props.modelValue !== null && props.modelValue !== undefined && String(props.modelValue) !== ""
+  )
 
   function choisir(option) {
     if (props.disabled) return
@@ -92,6 +104,7 @@
         :disabled="disabled"
         :aria-expanded="ouvert"
         :aria-label="label || placeholder || undefined"
+        :title="aUneValeur ? String(libelleAffiche) : undefined"
         :class="[
           'flex h-10 w-full items-center justify-between rounded-[0.8rem] bg-white px-3.5 text-left text-base text-primary-txt',
           'border border-gray-300 shadow-sm cursor-pointer',
@@ -99,13 +112,13 @@
           'hover:border-gray-400 hover:shadow',
           'focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary',
           'disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70',
-          !optionChoisie ? 'text-primary-txt/50' : '',
+          !aUneValeur ? 'text-primary-txt/50' : '',
           inputClass,
           customError ? 'border-red-500 focus:ring-red-500/40 focus:border-red-500' : ''
         ]"
         @click="basculer"
       >
-        <span class="truncate">{{ libelleAffiche }}</span>
+        <span class="truncate" :class="aUneValeur ? 'select-valeur' : 'select-placeholder'">{{ libelleAffiche }}</span>
         <svg class="h-4 w-4 shrink-0 text-primary-txt" :class="{ 'rotate-180': ouvert }" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
         </svg>
@@ -139,3 +152,16 @@
     </p>
   </div>
 </template>
+
+<style scoped>
+/* La barre .bg-primary force les span en blanc. Le libellé doit rester lisible sur le fond blanc du champ. */
+.select-valeur {
+  color: #643407 !important;
+  font-weight: 600;
+}
+
+.select-placeholder {
+  color: rgba(100, 52, 7, 0.55) !important;
+  font-weight: 500;
+}
+</style>

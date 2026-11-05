@@ -472,6 +472,7 @@ const form = useForm({
   txt_emailPM: terrain?.titulaire?.txt_emailPM || "",
   txt_adressePM: terrain?.titulaire?.txt_adressePM || "",
   slt_etablissementPA: terrain?.titulaire?.slt_etablissementPA || "",
+  txt_nomEtablissementPA: terrain?.titulaire?.txt_nomEtablissementPA || "",
   txt_personneResponsablePA: terrain?.titulaire?.txt_personneResponsablePA || "",
   txt_fonctionResponsablePA: terrain?.titulaire?.txt_fonctionResponsablePA || "", 
   txt_telephonePA: terrain?.titulaire?.txt_telephonePA || "",
@@ -512,6 +513,7 @@ const form = useForm({
   txt_adressePM_Mutation: mutationSource.txt_adressePM_Mutation || "",
 
   slt_etablissementPA_Mutation: mutationSource.slt_etablissementPA_Mutation || "",
+  txt_nomEtablissementPA_Mutation: mutationSource.txt_nomEtablissementPA_Mutation || "",
   txt_personneResponsablePA_Mutation: mutationSource.txt_personneResponsablePA_Mutation || "",
   txt_fonctionResponsablePA_Mutation: mutationSource.txt_fonctionResponsablePA_Mutation || "",
   txt_telephonePA_Mutation: mutationSource.txt_telephonePA_Mutation || "",
@@ -1434,11 +1436,12 @@ async function submit() {
                           <!-- État -->
                           <template v-if="showSectionPA">
                             <BaseSelect v-model="form.slt_etablissementPA" id="slt_etablissementPA" label="Etablissement" :options="etablissementPAOptions" />
-                            <BaseInput v-model="form.txt_personneResponsablePA" id="txt_personneResponsablePA" label="Personne Responsable" />
-                            <BaseInput v-model="form.txt_fonctionResponsablePA" id="txt_fonctionResponsablePA" label="Fonction" />
-                            <BaseInput v-model="form.txt_telephonePA" id="txt_telephonePA" label="Téléphone" />
-                            <BaseInput v-model="form.txt_emailPA" id="txt_emailPA" type="email" label="Email" />
-                            <BaseInput v-model="form.txt_ministereTutelePA" id="txt_ministereTutelePA" label="Ministère Tutelle" />
+                            <BaseInput v-model="form.txt_nomEtablissementPA" id="txt_nomEtablissementPA" label="Nom Etablissement" :error="form.errors.txt_nomEtablissementPA" />
+                            <BaseInput v-model="form.txt_personneResponsablePA" id="txt_personneResponsablePA" label="Personne Responsable" :error="form.errors.txt_personneResponsablePA" />
+                            <BaseInput v-model="form.txt_fonctionResponsablePA" id="txt_fonctionResponsablePA" label="Fonction" :error="form.errors.txt_fonctionResponsablePA" />
+                            <BaseInput v-model="form.txt_telephonePA" id="txt_telephonePA" label="Téléphone" :error="form.errors.txt_telephonePA" />
+                            <BaseInput v-model="form.txt_emailPA" id="txt_emailPA" type="email" label="Email" :error="form.errors.txt_emailPA" />
+                            <BaseInput v-model="form.txt_ministereTutelePA" id="txt_ministereTutelePA" label="Ministère Tutelle" :error="form.errors.txt_ministereTutelePA" />
                           </template>
                         </div>
                         <br/> 
@@ -1498,6 +1501,7 @@ async function submit() {
                           <!-- ✅ État -->
                           <template v-if="showSectionPAMutation">
                             <BaseSelect v-model="form.slt_etablissementPA_Mutation" id="slt_etablissementPA" label="Etablissement" :options="etablissementPAOptionsMutation" />
+                            <BaseInput v-model="form.txt_nomEtablissementPA_Mutation" id="txt_nomEtablissementPA" label="Nom Etablissement" :error="form.errors.txt_nomEtablissementPA_Mutation" />
                             <BaseInput v-model="form.txt_personneResponsablePA_Mutation" id="txt_personneResponsablePA" label="Personne Responsable" :error="form.errors.txt_personneResponsablePA_Mutation" />
                             <BaseInput v-model="form.txt_fonctionResponsablePA_Mutation" id="txt_fonctionResponsablePA" label="Fonction" :error="form.errors.txt_fonctionResponsablePA_Mutation" />
                             <BaseInput v-model="form.txt_telephonePA_Mutation" id="txt_telephonePA" label="Téléphone" :error="form.errors.txt_telephonePA_Mutation" />

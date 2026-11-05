@@ -37,6 +37,7 @@ class Titulaire extends Model
         'txt_adressePM', 
             // Personne morale
         'slt_etablissementPA',
+        'txt_nomEtablissementPA',
         'txt_personneResponsablePA',
         'txt_fonctionResponsablePA',
         'txt_telephonePA',
