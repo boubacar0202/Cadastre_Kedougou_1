@@ -211,9 +211,6 @@ const confirmerSuppression = async ({ deleteCode, adminCode } = {}) => {
                       <th class="px-4 py-3 text-sm text-primary-txt text-center border bg-primary-only font-bold">
                         Nom & Prénom
                       </th>
-                      <!-- <th class="px-4 py-3 text-sm text-primary-txt text-center border bg-primary-only font-bold">
-                        NICAD
-                      </th> -->
                       <th class="px-4 py-3 text-sm text-primary-txt text-center border bg-primary-only font-bold">
                         N° Pièce
                       </th>

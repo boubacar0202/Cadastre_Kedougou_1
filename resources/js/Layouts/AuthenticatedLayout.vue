@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3'; 
 import NavLink from '@/Components/NavLink.vue';
 import { toast } from "@/Components/AppToast"; 
+import ChatWidget from '@/Components/ChatWidget.vue';
 import axios from 'axios';
 import { route } from 'ziggy-js'
 
@@ -189,6 +190,7 @@ onUnmounted(() => {
         </Head>
         <div v-if="isMenuOpen && isSmallScreen" class="app-overlay" @click="isMenuOpen = false"></div>
         <nav class="app-sidebar" :class="{ 'is-open': isMenuOpen }" @click="onNavClick">
+            <div class="app-sidebar-scroll">
             <!-- Logo -->
             <div class="flex items-center justify-center mb-6">
                 <Link :href="route('dashboard')">
@@ -548,12 +550,12 @@ onUnmounted(() => {
             <footer class="bg-primary-form/60 border-t border-primary-only/80 text-center text-xs tracking-wide text-primary-txt mt-auto py-4 rounded-xl">
                 <b>CENTRE DES SERVICES FISCAUX</b><br>CADASTRE KÉDOUGOU
             </footer>
-
+            </div>
         </nav>
 
         <!-- Page Content -->
-        <div class="flex min-h-screen w-full flex-col md:pl-64">
-            <header class="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b border-primary-only/50 bg-white/90 p-4 shadow-sm backdrop-blur-md">
+        <div class="flex min-h-screen w-full flex-col">
+            <header class="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b border-primary-only/50 bg-white/90 p-4 shadow-sm backdrop-blur-md md:pl-[17rem]">
                 <button
                     v-if="isSmallScreen"
                     type="button"
@@ -635,28 +637,11 @@ onUnmounted(() => {
                 </div>
             </header>
 
-            <main class="w-full flex-1 bg-primary-layout p-4 md:p-6">
+            <main class="app-main w-full flex-1 bg-primary-layout p-4 md:py-6 md:pr-6 md:pl-0">
                 <slot />
             </main>
         </div>
-
-        <div v-if="!route().current('message.create')" class="fixed bottom-6 right-6 z-[2000]">
-            <Link
-                :href="route('message.create')"
-                class="relative inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/70"
-                aria-label="Discussion"
-            >
-                <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none">
-                    <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8z" fill="currentColor"/>
-                </svg>
-                <span
-                    v-if="unreadTotal > 0"
-                    class="absolute -top-1 -right-1 inline-flex min-w-[20px] h-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white shadow-lg"
-                >
-                    {{ unreadTotal }}
-                </span>
-            </Link>
-        </div>
+        <ChatWidget />
     </div>
 </template>
 
@@ -674,13 +659,24 @@ onUnmounted(() => {
     bottom: 0;
     left: 0;
     z-index: 50;
-    display: flex;
     width: 16rem;
     height: 100vh;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 248, 242, 0.12));
+    -webkit-backdrop-filter: blur(28px) saturate(1.85);
+    backdrop-filter: blur(28px) saturate(1.85);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.75),
+        inset -1px 0 0 rgba(255, 255, 255, 0.4),
+        10px 0 36px rgba(97, 49, 4, 0.1);
+    transition: transform 0.28s ease;
+}
+
+.app-sidebar-scroll {
+    display: flex;
+    height: 100%;
     flex-direction: column;
     overflow-y: auto;
     padding: 1rem;
-    transition: transform 0.28s ease;
 }
 
 @media (max-width: 767px) {

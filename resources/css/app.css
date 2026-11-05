@@ -239,10 +239,15 @@ main table thead th {
 }
 
 nav.app-sidebar {
-    background: linear-gradient(180deg, #fffdfb 0%, #f7efe6 100%);
-    border-right: 1px solid #ead9c6;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-left: 0;
     border-radius: 0 1.5rem 1.5rem 0;
-    box-shadow: 8px 0 28px rgba(97, 49, 4, 0.06);
+}
+
+@media (min-width: 768px) {
+    main.app-main > * {
+        padding-left: 17rem;
+    }
 }
 
 nav.app-sidebar a,
