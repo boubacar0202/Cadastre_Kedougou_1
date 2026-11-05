@@ -172,8 +172,19 @@ class MessageController extends Controller
         $authUserId = Auth::id();
 
         $users = User::where('id', '!=', $authUserId)
+            ->orderBy('name')
             ->get(['id', 'name'])
             ->map(function ($user) use ($authUserId) {
+                $last = Message::query()
+                    ->where(function ($q) use ($authUserId, $user) {
+                        $q->where('sender_id', $authUserId)->where('receiver_id', $user->id);
+                    })
+                    ->orWhere(function ($q) use ($authUserId, $user) {
+                        $q->where('sender_id', $user->id)->where('receiver_id', $authUserId);
+                    })
+                    ->latest('id')
+                    ->first();
+
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -181,8 +192,12 @@ class MessageController extends Controller
                         ->where('receiver_id', $authUserId)
                         ->where('is_read', false)
                         ->count(),
+                    'last_message' => $last?->content,
+                    'last_message_at' => $last?->created_at,
                 ];
-            });
+            })
+            ->sortByDesc(fn ($user) => $user['last_message_at'] ? strtotime((string) $user['last_message_at']) : 0)
+            ->values();
 
         return response()->json($users);
     }

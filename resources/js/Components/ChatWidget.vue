@@ -6,7 +6,25 @@ import BaseInput from "@/Components/BaseInput.vue";
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user || null);
-const users = computed(() => page.props.chatUsers || []);
+const loadedUsers = ref([]);
+const users = computed(() => {
+    const map = new Map();
+    [...(page.props.chatUsers || []), ...loadedUsers.value].forEach((u) => {
+        if (!u?.id) return;
+        const id = Number(u.id);
+        map.set(id, {
+            ...(map.get(id) || {}),
+            ...u,
+            id,
+        });
+    });
+    return Array.from(map.values()).sort((a, b) => {
+        const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+        const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+        if (aTime !== bTime) return bTime - aTime;
+        return String(a.name || "").localeCompare(String(b.name || ""), "fr");
+    });
+});
 
 const open = ref(false);
 const receiverId = ref(null);
@@ -111,6 +129,23 @@ function scrollToBottom() {
             container.scrollTop = container.scrollHeight;
         }
     });
+}
+
+async function fetchUsers() {
+    if (!user.value) return;
+    try {
+        const res = await axios.get("/messages/unread-per-user");
+        const list = Array.isArray(res.data) ? res.data : [];
+        loadedUsers.value = list;
+        const counts = { ...unreadCounts.value };
+        list.forEach((item) => {
+            counts[item.id] = item.unread_count || 0;
+        });
+        unreadCounts.value = counts;
+        publishState();
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 async function fetchUnread() {
@@ -260,8 +295,10 @@ watch(open, (isOpen) => {
 
 let timer;
 onMounted(() => {
+    fetchUsers();
     fetchUnread();
     timer = setInterval(async () => {
+        await fetchUsers();
         await fetchUnread();
         if (open.value && receiverId.value) {
             await fetchMessages();
@@ -314,7 +351,10 @@ onUnmounted(() => {
                 <li v-for="u in otherUsers" :key="u.id">
                     <button type="button" class="chat-user" @click="selectUser(u.id)">
                         <span class="chat-avatar">{{ initials(u.name) }}</span>
-                        <span class="truncate">{{ u.name }}</span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block truncate">{{ u.name }}</span>
+                            <span v-if="u.last_message" class="chat-preview">{{ u.last_message }}</span>
+                        </span>
                         <span v-if="u.unread > 0" class="chat-badge">{{ u.unread }}</span>
                     </button>
                 </li>
@@ -506,6 +546,16 @@ onUnmounted(() => {
     color: white;
     font-size: 0.75rem;
     font-weight: 700;
+}
+
+.chat-preview {
+    display: block;
+    overflow: hidden;
+    color: #7a5a40;
+    font-size: 0.75rem;
+    font-weight: 400;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .chat-badge {

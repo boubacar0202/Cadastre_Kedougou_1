@@ -637,7 +637,7 @@ onUnmounted(() => {
                 </div>
             </header>
 
-            <main class="app-main w-full flex-1 bg-primary-layout p-4 md:py-6 md:pr-6 md:pl-0">
+            <main class="w-full flex-1 bg-primary-layout p-4 md:py-6 md:pr-6 md:pl-[17rem]">
                 <slot />
             </main>
         </div>
@@ -661,13 +661,8 @@ onUnmounted(() => {
     z-index: 50;
     width: 16rem;
     height: 100vh;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 248, 242, 0.12));
-    -webkit-backdrop-filter: blur(28px) saturate(1.85);
-    backdrop-filter: blur(28px) saturate(1.85);
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.75),
-        inset -1px 0 0 rgba(255, 255, 255, 0.4),
-        10px 0 36px rgba(97, 49, 4, 0.1);
+    background: linear-gradient(180deg, #fffdfb 0%, #f7efe6 100%);
+    box-shadow: 8px 0 28px rgba(97, 49, 4, 0.06);
     transition: transform 0.28s ease;
 }
 
